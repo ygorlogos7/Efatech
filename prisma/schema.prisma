@@ -1,0 +1,792 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Clientes {
+  Id                    Int             @id(map: "PK_Clientes") @default(autoincrement())
+  TipoCliente           String
+  Nome                  String
+  Email                 String?
+  Telefone              String?
+  CPFCNPJ               String?
+  Ativo                 Boolean
+  TelefoneComercial     String?
+  TelefoneCelular       String?
+  Fax                   String?
+  Site                  String?
+  VendedorResponsavel   String
+  LimiteCredito         Decimal?        @db.Decimal(18, 2)
+  PermitirExcederLimite Boolean
+  Observacoes           String?
+  FotoPath              String?
+  Endereco              Endereco[]
+  Orcamentos            Orcamento[]
+  OrdensServico         OrdensServico[]
+  Vendas                Vendas[]
+}
+
+model Endereco {
+  Id           Int         @id(map: "PK_Endereco") @default(autoincrement())
+  Tipo         String?
+  Cep          String?
+  Logradouro   String?
+  Numero       String?
+  Complemento  String?
+  Bairro       String?
+  Cidade       String?
+  UF           String?
+  ClienteId    Int
+  FornecedorId Int?
+  Clientes     Clientes    @relation(fields: [ClienteId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Endereco_Clientes_ClienteId")
+  Fornecedor   Fornecedor? @relation(fields: [FornecedorId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Endereco_Fornecedor_FornecedorId")
+
+  @@index([ClienteId], map: "IX_Endereco_ClienteId")
+  @@index([FornecedorId], map: "IX_Endereco_FornecedorId")
+}
+
+model EnderecoFornecedor {
+  Id           Int        @id(map: "PK_EnderecoFornecedor") @default(autoincrement())
+  Tipo         String?
+  Cep          String?
+  Logradouro   String?
+  Numero       String?
+  Complemento  String?
+  Bairro       String?
+  Cidade       String?
+  UF           String?
+  FornecedorId Int
+  Fornecedor   Fornecedor @relation(fields: [FornecedorId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_EnderecoFornecedor_Fornecedor_FornecedorId")
+
+  @@index([FornecedorId], map: "IX_EnderecoFornecedor_FornecedorId")
+}
+
+model EnderecoFuncionario {
+  Id            Int         @id(map: "PK_EnderecoFuncionario") @default(autoincrement())
+  Cep           String?
+  Logradouro    String?
+  Numero        String?
+  Complemento   String?
+  Bairro        String?
+  Cidade        String?
+  UF            String?
+  FuncionarioId Int
+  Funcionario   Funcionario @relation(fields: [FuncionarioId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_EnderecoFuncionario_Funcionario_FuncionarioId")
+
+  @@index([FuncionarioId], map: "IX_EnderecoFuncionario_FuncionarioId")
+}
+
+model Financeiro {
+  Id             Int       @id(map: "PK_Financeiro") @default(autoincrement())
+  Descricao      String    @db.VarChar(150)
+  Valor          Decimal   @db.Decimal(18, 2)
+  DataVencimento DateTime  @db.Timestamptz(6)
+  DataPagamento  DateTime? @db.Timestamptz(6)
+  Status         String    @db.VarChar(30)
+  Observacoes    String
+}
+
+model Fornecedor {
+  Id                 Int                  @id(map: "PK_Fornecedor") @default(autoincrement())
+  Nome               String
+  TipoFornecedor     String
+  CPFCNPJ            String?
+  Telefone           String?
+  TelefoneCelular    String?
+  Email              String?
+  Ativo              Boolean
+  Observacoes        String?
+  Endereco           Endereco[]
+  EnderecoFornecedor EnderecoFornecedor[]
+}
+
+model Funcionario {
+  Id                    Int                   @id(map: "PK_Funcionario") @default(autoincrement())
+  Nome                  String
+  Cargo                 String?
+  Email                 String?
+  TelefoneFixo          String?
+  TelefoneCelular1      String?
+  TelefoneCelular2      String?
+  CPFCNPJ               String?
+  RG                    String?
+  Sexo                  String?
+  Comissao              Decimal?              @db.Decimal(5, 2)
+  DataNascimento        DateTime?             @db.Timestamptz(6)
+  Ativo                 Boolean
+  PermitirAcessoSistema Boolean
+  Observacoes           String?
+  EnderecoFuncionario   EnderecoFuncionario[]
+}
+
+model Produtos {
+  Id               Int          @id(map: "PK_Produtos") @default(autoincrement())
+  Cod_Nome         String       @db.VarChar(100)
+  Cod_CodigoBarras String       @db.VarChar(50)
+  Cod_Preco        Decimal      @db.Decimal(10, 2)
+  Cod_Estoque      Int
+  Ativo            Boolean
+  VendaItens       VendaItens[]
+}
+
+model Servicos {
+  Id                 Int      @id(map: "PK_Servicos") @default(autoincrement())
+  Nome               String
+  Descricao          String?
+  ValorCusto         Decimal  @db.Decimal
+  ValorVenda         Decimal  @db.Decimal
+  Ativo              Boolean? @default(false)
+  Categoria          String?  @default("")
+  CodigoServico      String?  @default("")
+  IssRetidoFonte     Boolean? @default(false)
+  Observacoes        String?  @default("")
+  PercentualTributos Decimal? @default(0.0) @db.Decimal
+  RegraTributacao    String?  @default("")
+  TipoServico        String?  @default("")
+}
+
+model Usuarios {
+  Id       Int     @id(map: "PK_Usuarios") @default(autoincrement())
+  Nome     String
+  Email    String
+  Senha    String
+  Telefone String?
+  Celular  String?
+}
+
+model ValoresVenda {
+  Id         Int    @id(map: "PK_ValoresVenda") @default(autoincrement())
+  Desc_Lucro String @db.VarChar(100)
+  Lucro      Int
+}
+
+model EFMigrationsHistory {
+  MigrationId    String @id(map: "PK___EFMigrationsHistory") @db.VarChar(150)
+  ProductVersion String @db.VarChar(32)
+
+  @@map("__EFMigrationsHistory")
+}
+
+model Transportadora {
+  Id              Int     @id(map: "PK_Transportadora") @default(autoincrement())
+  Nome            String
+  CPFCNPJ         String?
+  Telefone        String?
+  TelefoneCelular String?
+  Email           String?
+  Ativo           Boolean @default(true)
+  Observacoes     String?
+}
+
+model ProdutoGrupo {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Ativo Boolean @default(true)
+}
+
+model ProdutoUnidade {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Sigla String
+  Ativo Boolean @default(true)
+}
+
+model ProdutoGrade {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Ativo Boolean @default(true)
+}
+
+model ProdutoEtiqueta {
+  Id     Int     @id @default(autoincrement())
+  Nome   String
+  Codigo String?
+  Ativo  Boolean @default(true)
+}
+
+model Orcamento {
+  Id            Int       @id @default(autoincrement())
+  Numero        Int       @unique @default(autoincrement())
+  DataEmissao   DateTime  @default(now())
+  DataValidade  DateTime?
+  ClienteId     Int?
+  SituacaoId    Int?
+  Observacoes   String?
+  TotalProdutos Decimal   @default(0)
+  TotalServicos Decimal   @default(0)
+  Desconto      Decimal   @default(0)
+  Total         Decimal   @default(0)
+  Ativo         Boolean   @default(true)
+  CreatedAt     DateTime  @default(now())
+  UpdatedAt     DateTime  @default(now()) @updatedAt
+  Descricao     String?
+  Clientes      Clientes? @relation(fields: [ClienteId], references: [Id])
+}
+
+model OrcamentoSituacao {
+  Id                 Int     @id @default(autoincrement())
+  Nome               String
+  Cor                String?
+  Ativo              Boolean @default(true)
+  ExibirNaListagem   Boolean @default(true)
+  TransformarEmVenda Boolean @default(false)
+}
+
+model OrcamentoModeloEmail {
+  Id      Int     @id @default(autoincrement())
+  Nome    String
+  Assunto String
+  Corpo   String
+  Ativo   Boolean @default(true)
+}
+
+model OrcamentoConfig {
+  Id                   Int     @id @default(autoincrement())
+  ValidadePadraoEmDias Int     @default(30)
+  MensagemRodape       String?
+  NumeracaoAutomatica  Boolean @default(true)
+  EmailPadrao          String?
+}
+
+model EstoqueMovimentacao {
+  Id            Int      @id @default(autoincrement())
+  Tipo          String
+  ProdutoId     Int?
+  Quantidade    Decimal
+  Motivo        String?
+  Observacoes   String?
+  DataMovimento DateTime @default(now())
+  CreatedAt     DateTime @default(now())
+}
+
+model EstoqueAjuste {
+  Id                 Int      @id @default(autoincrement())
+  ProdutoId          Int?
+  QuantidadeAnterior Decimal  @default(0)
+  QuantidadeNova     Decimal  @default(0)
+  Motivo             String?
+  Observacoes        String?
+  DataAjuste         DateTime @default(now())
+  CreatedAt          DateTime @default(now())
+}
+
+model EstoqueTransferencia {
+  Id                Int      @id @default(autoincrement())
+  ProdutoId         Int?
+  Quantidade        Decimal
+  LocalOrigem       String?
+  LocalDestino      String?
+  Observacoes       String?
+  DataTransferencia DateTime @default(now())
+  CreatedAt         DateTime @default(now())
+}
+
+model EstoqueCotacao {
+  Id           Int      @id @default(autoincrement())
+  Numero       Int      @unique @default(autoincrement())
+  FornecedorId Int?
+  Status       String   @default("pendente")
+  Total        Decimal  @default(0)
+  Observacoes  String?
+  DataCotacao  DateTime @default(now())
+  CreatedAt    DateTime @default(now())
+}
+
+model ComprasProdutos {
+  Id           Int      @id @default(autoincrement())
+  Numero       Int      @unique @default(autoincrement())
+  FornecedorId Int?
+  Status       String   @default("pendente")
+  Total        Decimal  @default(0)
+  Desconto     Decimal  @default(0)
+  Observacoes  String?
+  DataCompra   DateTime @default(now())
+  CreatedAt    DateTime @default(now())
+  UpdatedAt    DateTime @updatedAt
+}
+
+model ComprasServicos {
+  Id           Int      @id @default(autoincrement())
+  Numero       Int      @unique @default(autoincrement())
+  FornecedorId Int?
+  Status       String   @default("pendente")
+  Total        Decimal  @default(0)
+  Desconto     Decimal  @default(0)
+  Observacoes  String?
+  DataCompra   DateTime @default(now())
+  CreatedAt    DateTime @default(now())
+  UpdatedAt    DateTime @updatedAt
+}
+
+model EstoqueTrocaDevolucao {
+  Id             Int      @id @default(autoincrement())
+  Tipo           String
+  ProdutoId      Int?
+  Quantidade     Decimal
+  Motivo         String?
+  Observacoes    String?
+  DataOcorrencia DateTime @default(now())
+  CreatedAt      DateTime @default(now())
+}
+
+model EstoqueLocal {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Ativo Boolean @default(true)
+}
+
+model EstoqueSituacao {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Cor   String?
+  Ativo Boolean @default(true)
+}
+
+model ContaPagar {
+  Id            Int       @id @default(autoincrement())
+  Descricao     String
+  Valor         Decimal
+  Vencimento    DateTime
+  Pagamento     DateTime?
+  FornecedorId  Int?
+  SituacaoId    Int?
+  PlanoContaId  Int?
+  CentroCustoId Int?
+  FormaPgtoId   Int?
+  CaixaId       Int?
+  Observacoes   String?
+  CreatedAt     DateTime  @default(now())
+  UpdatedAt     DateTime  @updatedAt
+}
+
+model ContaReceber {
+  Id            Int       @id @default(autoincrement())
+  Descricao     String
+  Valor         Decimal
+  Vencimento    DateTime
+  Recebimento   DateTime?
+  ClienteId     Int?
+  SituacaoId    Int?
+  PlanoContaId  Int?
+  CentroCustoId Int?
+  FormaPgtoId   Int?
+  CaixaId       Int?
+  Observacoes   String?
+  CreatedAt     DateTime  @default(now())
+  UpdatedAt     DateTime  @updatedAt
+}
+
+model Caixa {
+  Id           Int      @id @default(autoincrement())
+  Nome         String
+  SaldoInicial Decimal  @default(0)
+  SaldoAtual   Decimal  @default(0)
+  Ativo        Boolean  @default(true)
+  CreatedAt    DateTime @default(now())
+}
+
+model ContaBancaria {
+  Id           Int      @id @default(autoincrement())
+  Banco        String
+  Agencia      String?
+  Conta        String?
+  Titular      String?
+  SaldoInicial Decimal  @default(0)
+  SaldoAtual   Decimal  @default(0)
+  Ativo        Boolean  @default(true)
+  CreatedAt    DateTime @default(now())
+}
+
+model FormaPagamento {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Ativo Boolean @default(true)
+}
+
+model PlanoConta {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Tipo  String
+  Ativo Boolean @default(true)
+}
+
+model CentroCusto {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Ativo Boolean @default(true)
+}
+
+model FinanceiroSituacao {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Cor   String?
+  Ativo Boolean @default(true)
+}
+
+model TransferenciaFinanceira {
+  Id          Int      @id @default(autoincrement())
+  Valor       Decimal
+  OrigemId    Int
+  OrigemTipo  String
+  DestinoId   Int
+  DestinoTipo String
+  Data        DateTime @default(now())
+  Observacoes String?
+  CreatedAt   DateTime @default(now())
+}
+
+model BoletoBancario {
+  Id             Int      @id @default(autoincrement())
+  Numero         String
+  Vencimento     DateTime
+  Valor          Decimal
+  Status         String   @default("pendente")
+  ContaReceberId Int?
+  CreatedAt      DateTime @default(now())
+}
+
+model TabelaRateio {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Ativo Boolean @default(true)
+}
+
+model FinanceiroConfig {
+  Id                 Int     @id @default(1)
+  MultaAtraso        Decimal @default(0)
+  JurosMensal        Decimal @default(0)
+  DiasProtesto       Int     @default(0)
+  InstrucoesCobranca String?
+}
+
+model NotaFiscal {
+  Id           Int      @id @default(autoincrement())
+  Numero       Int?
+  Serie        Int?
+  Chave        String?  @unique
+  Tipo         String
+  Status       String   @default("pendente")
+  Destinatario String?
+  ValorTotal   Decimal  @default(0)
+  DataEmissao  DateTime @default(now())
+  Xml          String?
+  CreatedAt    DateTime @default(now())
+}
+
+model NotaCompra {
+  Id          Int       @id @default(autoincrement())
+  Numero      Int?
+  Serie       Int?
+  Chave       String?   @unique
+  Fornecedor  String?
+  ValorTotal  Decimal   @default(0)
+  DataEmissao DateTime?
+  DataEntrada DateTime  @default(now())
+  Xml         String?
+  CreatedAt   DateTime  @default(now())
+}
+
+model NaturezaOperacao {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Cfop  String?
+  Tipo  String?
+  Ativo Boolean @default(true)
+}
+
+model Tributacao {
+  Id     Int     @id @default(autoincrement())
+  Nome   String
+  Icms   Decimal @default(0)
+  Ipi    Decimal @default(0)
+  Pis    Decimal @default(0)
+  Cofins Decimal @default(0)
+  Ativo  Boolean @default(true)
+}
+
+model AtividadeServico {
+  Id     Int     @id @default(autoincrement())
+  Nome   String
+  Codigo String?
+  Ativo  Boolean @default(true)
+}
+
+model CertificadoDigital {
+  Id        Int       @id @default(autoincrement())
+  Nome      String?
+  Validade  DateTime?
+  Cnpj      String?
+  Subject   String?
+  CreatedAt DateTime  @default(now())
+}
+
+model Intermediador {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Cnpj  String?
+  Ativo Boolean @default(true)
+}
+
+model NotasConfig {
+  Id                Int    @id @default(1)
+  Ambiente          String @default("homologacao")
+  SeriePadrao       Int    @default(1)
+  ProximoNumeroNFe  Int    @default(1)
+  ProximoNumeroNFSe Int    @default(1)
+  ProximoNumeroNFCe Int    @default(1)
+}
+
+model Atendimento {
+  Id             Int       @id @default(autoincrement())
+  Assunto        String
+  ClienteId      Int?
+  Descricao      String?
+  SituacaoId     Int?
+  CategoriaId    Int?
+  CanalId        Int?
+  Prioridade     String    @default("media")
+  DataAbertura   DateTime  @default(now())
+  DataFechamento DateTime?
+  CreatedAt      DateTime  @default(now())
+}
+
+model AtendimentoCategoria {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Ativo Boolean @default(true)
+}
+
+model AtendimentoCanal {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Ativo Boolean @default(true)
+}
+
+model AtendimentoSituacao {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Cor   String?
+  Ativo Boolean @default(true)
+}
+
+model AtendimentoMensagem {
+  Id            Int      @id @default(autoincrement())
+  AtendimentoId Int
+  Conteudo      String
+  Origem        String   @default("sistema")
+  Data          DateTime @default(now())
+}
+
+model Empresa {
+  Id                Int      @id @default(1)
+  RazaoSocial       String
+  NomeFantasia      String?
+  Cnpj              String   @unique
+  InscricaoEstadual String?
+  Logradouro        String?
+  Numero            String?
+  Bairro            String?
+  Cidade            String?
+  Uf                String?
+  Cep               String?
+  Telefone          String?
+  Email             String?
+  LogoPath          String?
+  Cores             String?
+  CreatedAt         DateTime @default(now())
+}
+
+model Plano {
+  Id            Int       @id @default(1)
+  Nome          String    @default("Gratuito")
+  DataExpiracao DateTime?
+  Ativo         Boolean   @default(true)
+}
+
+model ConfigGeral {
+  Id          Int    @id @default(1)
+  NomeSistema String @default("Efatech ERP")
+  Moeda       String @default("BRL")
+  Timezone    String @default("America/Sao_Paulo")
+}
+
+model LogSistema {
+  Id        Int      @id @default(autoincrement())
+  Usuario   String?
+  Acao      String
+  Modulo    String?
+  Descricao String?
+  Ip        String?
+  Data      DateTime @default(now())
+}
+
+model Assinatura {
+  Id           Int      @id @default(autoincrement())
+  Nome         String
+  ClienteId    Int?
+  Valor        Decimal  @default(0)
+  Plano        String?
+  Frequencia   String   @default("mensal")
+  DiaPagamento Int      @default(5)
+  Ativo        Boolean  @default(true)
+  CreatedAt    DateTime @default(now())
+}
+
+model Contrato {
+  Id            Int       @id @default(autoincrement())
+  Numero        String?
+  ClienteId     Int?
+  ValorMensal   Decimal   @default(0)
+  DiaVencimento Int       @default(10)
+  SituacaoId    Int?
+  DataInicio    DateTime  @default(now())
+  DataFim       DateTime?
+  Observacoes   String?
+  CreatedAt     DateTime  @default(now())
+}
+
+model ContratoSituacao {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Cor   String?
+  Ativo Boolean @default(true)
+}
+
+model Locacao {
+  Id          Int       @id @default(autoincrement())
+  Descricao   String
+  ClienteId   Int?
+  ValorDiario Decimal   @default(0)
+  DataInicio  DateTime  @default(now())
+  DataFim     DateTime?
+  SituacaoId  Int?
+  CreatedAt   DateTime  @default(now())
+}
+
+model LocacaoSituacao {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Cor   String?
+  Ativo Boolean @default(true)
+}
+
+model OrdensServico {
+  Id                Int       @id @default(autoincrement())
+  Numero            Int       @unique @default(autoincrement())
+  DataAbertura      DateTime  @default(now())
+  DataPrevisao      DateTime?
+  DataFechamento    DateTime?
+  ClienteId         Int?
+  TecnicoId         Int?
+  SituacaoId        Int?
+  Equipamento       String?
+  Defeito           String?
+  Solucao           String?
+  Observacoes       String?
+  Total             Decimal   @default(0)
+  AssinaturaCliente String?
+  AssinaturaTecnico String?
+  Ativo             Boolean   @default(true)
+  CreatedAt         DateTime  @default(now())
+  UpdatedAt         DateTime  @updatedAt
+  Cliente           Clientes? @relation(fields: [ClienteId], references: [Id])
+}
+
+model OrdemServicoConfig {
+  Id                   Int     @id @default(autoincrement())
+  ValidadePadraoEmDias Int     @default(7)
+  MensagemRodape       String?
+  NumeracaoAutomatica  Boolean @default(true)
+  EmailPadrao          String?
+}
+
+model OrdemServicoModeloEmail {
+  Id      Int     @id @default(autoincrement())
+  Nome    String
+  Assunto String
+  Corpo   String
+  Ativo   Boolean @default(true)
+}
+
+model OrdemServicoSituacao {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Cor   String?
+  Ativo Boolean @default(true)
+}
+
+model Vendas {
+  Id                Int          @id @default(autoincrement())
+  Numero            Int          @unique @default(autoincrement())
+  Tipo              String       @default("produtos")
+  DataVenda         DateTime     @default(now())
+  ClienteId         Int?
+  SituacaoId        Int?
+  CanalId           Int?
+  TotalProdutos     Decimal      @default(0)
+  TotalServicos     Decimal      @default(0)
+  Desconto          Decimal      @default(0)
+  Total             Decimal      @default(0)
+  Observacoes       String?
+  AssinaturaCliente String?
+  Ativo             Boolean      @default(true)
+  CreatedAt         DateTime     @default(now())
+  UpdatedAt         DateTime     @updatedAt
+  Vendedor          String?
+  Itens             VendaItens[]
+  Cliente           Clientes?    @relation(fields: [ClienteId], references: [Id])
+}
+
+model VendaItens {
+  Id         Int      @id @default(autoincrement())
+  VendaId    Int
+  ProdutoId  Int
+  Quantidade Decimal  @default(1)
+  ValorTotal Decimal  @default(0)
+  Produtos   Produtos @relation(fields: [ProdutoId], references: [Id])
+  Vendas     Vendas   @relation(fields: [VendaId], references: [Id], onDelete: Cascade)
+}
+
+model VendaBalanca {
+  Id     Int     @id @default(autoincrement())
+  Nome   String
+  Modelo String?
+  Porta  String?
+  Ativo  Boolean @default(true)
+}
+
+model VendaCanal {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Ativo Boolean @default(true)
+}
+
+model VendaConfig {
+  Id                  Int     @id @default(autoincrement())
+  MensagemRodape      String?
+  NumeracaoAutomatica Boolean @default(true)
+  EmailPadrao         String?
+  PermitirDesconto    Boolean @default(true)
+  DescontoMaximo      Decimal @default(100)
+}
+
+model VendaModeloEmail {
+  Id      Int     @id @default(autoincrement())
+  Nome    String
+  Assunto String
+  Corpo   String
+  Ativo   Boolean @default(true)
+}
+
+model VendaSituacao {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Cor   String?
+  Ativo Boolean @default(true)
+}

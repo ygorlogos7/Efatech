@@ -1,0 +1,40 @@
+import { Home } from "lucide-react";
+import Link from "next/link";
+import { TransportadoraForm } from "@/components/forms/TransportadoraForm";
+import { getTransportadoraById } from "@/actions/transportadoras";
+import { notFound } from "next/navigation";
+
+export default async function EditTransportadoraPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const idNum = parseInt(resolvedParams.id, 10);
+  if (isNaN(idNum)) return notFound();
+
+  const { success, data, error } = await getTransportadoraById(idNum);
+
+  if (!success || !data) {
+    return (
+      <div className="p-10 text-center">
+        <h2 className="text-xl font-bold text-gray-800">Erro ao carregar</h2>
+        <p className="text-gray-500 mt-2">{error || "Não encontrada."}</p>
+        <Link href="/cadastros/transportadoras" className="mt-4 inline-block text-blue-600 hover:underline">Voltar para a lista</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-gray-900 font-bold text-2xl mb-0">Editar transportadora</h3>
+        <div className="text-gray-500 text-sm flex items-center gap-1">
+          <Home className="w-4 h-4 mr-1" />
+          <Link href="/home" className="hover:underline">Início</Link>
+          <span>&gt;</span>
+          <Link href="/cadastros/transportadoras" className="hover:underline">Transportadoras</Link>
+          <span>&gt;</span>
+          <span className="text-gray-400">Editar</span>
+        </div>
+      </div>
+      <TransportadoraForm initialData={data} isReadOnly={false} />
+    </div>
+  );
+}
