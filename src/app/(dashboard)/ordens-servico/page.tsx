@@ -1,8 +1,9 @@
 import React from "react";
 import Link from "next/link";
-import { SearchIcon, PlusCircle, Edit2, ClipboardList, Printer } from "lucide-react";
+import { SearchIcon, PlusCircle, Edit2, ClipboardList, Printer, Eye, Share2, FileText, DollarSign, CheckSquare, Coins, MessageCircle, Mail } from "lucide-react";
 import { getOrdensServico } from "@/actions/ordensServico";
 import { DeleteOSButton } from "@/components/forms/DeleteOSButton";
+import { MoreActionsDropdown } from "@/components/common/MoreActionsDropdown";
 
 export default async function OrdensServicoPage({
   searchParams,
@@ -11,7 +12,10 @@ export default async function OrdensServicoPage({
 }) {
   const resolvedParams = await searchParams;
   const pesquisa = resolvedParams?.pesquisa || "";
-  const { success, data: items } = await getOrdensServico(pesquisa);
+  const page = Number(resolvedParams?.page) || 1;
+  const { success, data: items, total = 0 } = await getOrdensServico(pesquisa, page, 20);
+  const from = total === 0 ? 0 : (page - 1) * 20 + 1;
+  const to = total === 0 ? 0 : Math.min(page * 20, total);
 
   return (
     <div className="space-y-6">
@@ -31,7 +35,7 @@ export default async function OrdensServicoPage({
         </div>
       </div>
 
-      <div className="bg-white rounded-md shadow-sm overflow-hidden border border-gray-100">
+      <div className="bg-white rounded-md shadow-sm border border-gray-100">
         <table className="w-full text-sm text-left border-collapse min-w-[800px]">
           <thead className="bg-[#f8f9fa] border-b border-gray-200 text-gray-700 font-semibold">
             <tr>
@@ -59,8 +63,8 @@ export default async function OrdensServicoPage({
                   <td className="py-3 px-4 font-bold text-gray-900">#{item.Numero}</td>
                   <td className="py-3 px-4 text-gray-700">{item.Equipamento || "-"}</td>
                   <td className="py-3 px-6 text-gray-600 max-w-[200px] truncate">{item.Defeito || "-"}</td>
-                  <td className="py-3 px-4 text-gray-500">{new Date(item.DataAbertura).toLocaleDateString("pt-BR")}</td>
-                  <td className="py-3 px-4 text-gray-500">{item.DataPrevisao ? new Date(item.DataPrevisao).toLocaleDateString("pt-BR") : "-"}</td>
+                  <td className="py-3 px-4 text-gray-500" suppressHydrationWarning>{new Date(item.DataAbertura).toLocaleDateString("pt-BR")}</td>
+                  <td className="py-3 px-4 text-gray-700" suppressHydrationWarning>{item.DataPrevisao ? new Date(item.DataPrevisao).toLocaleDateString("pt-BR") : "-"}</td>
                   <td className="py-3 px-4 text-right font-bold text-green-700">R$ {item.Total.toFixed(2).replace(".", ",")}</td>
                   <td className="py-3 px-4 text-center">
                     <span className={`inline-block px-2.5 py-1 text-[11px] font-medium rounded border ${item.Ativo ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-gray-100 text-gray-600 border-gray-200"}`}>
@@ -68,17 +72,47 @@ export default async function OrdensServicoPage({
                     </span>
                   </td>
                   <td className="py-3 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <Link href={`/ordens-servico/preview/${item.Id}`} className="p-1.5 text-blue-400 hover:text-blue-600 border border-blue-100 rounded hover:bg-blue-50 transition-colors" title="Visualizar">
-                        <SearchIcon className="w-4 h-4" />
+                    <div className="flex justify-end items-center gap-1">
+                      <Link 
+                        href={`/ordens-servico/preview/${item.Id}`} 
+                        className="flex items-center justify-center w-[30px] h-[30px] bg-[#00c0ef] hover:bg-[#00a7d0] text-white rounded-[3px] transition-colors shadow-sm"
+                        title="Visualizar"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
                       </Link>
-                      <Link href={`/ordens-servico/print/${item.Id}`} className="p-1.5 text-indigo-500 hover:text-indigo-700 border border-indigo-100 rounded hover:bg-indigo-50 transition-colors" title="Imprimir OS">
-                        <Printer className="w-4 h-4" />
-                      </Link>
-                      <Link href={`/ordens-servico/edit/${item.Id}`} className="p-1.5 text-blue-500 hover:text-blue-700 border border-blue-100 rounded hover:bg-blue-50 transition-colors" title="Editar">
-                        <Edit2 className="w-4 h-4" />
+                      <Link 
+                        href={`/ordens-servico/edit/${item.Id}`} 
+                        className="flex items-center justify-center w-[30px] h-[30px] bg-[#f39c12] hover:bg-[#db8b0b] text-white rounded-[3px] transition-colors shadow-sm"
+                        title="Editar"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
                       </Link>
                       <DeleteOSButton id={item.Id} numero={item.Numero} />
+                      <MoreActionsDropdown 
+                        variant="row"
+                        actions={[
+                          { 
+                            label: "Imprimir", 
+                            icon: <Printer className="w-4 h-4" />,
+                            subItems: [
+                              { label: "Formato A4", href: `/ordens-servico/print/${item.Id}/a4` },
+                              { label: "Térmico (POS80)", href: `/ordens-servico/print/${item.Id}` },
+                            ]
+                          },
+                          { label: "Link de cobrança", icon: <DollarSign className="w-4 h-4" /> },
+                          { label: "Alterar situação", icon: <CheckSquare className="w-4 h-4" /> },
+                          { 
+                            label: "Compartilhar", 
+                            icon: <Share2 className="w-4 h-4" />,
+                            subItems: [
+                              { label: "Via WhatsApp", icon: <MessageCircle className="w-3.5 h-3.5" /> },
+                              { label: "Via E-mail", icon: <Mail className="w-3.5 h-3.5" /> },
+                            ]
+                          },
+                          { label: "Gerar Recibo", icon: <FileText className="w-4 h-4" /> },
+                          { label: "Ver no financeiro", icon: <Coins className="w-4 h-4" /> },
+                        ]} 
+                      />
                     </div>
                   </td>
                 </tr>
@@ -86,6 +120,48 @@ export default async function OrdensServicoPage({
             )}
           </tbody>
         </table>
+      </div>
+      
+      <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white rounded-b-md">
+        <div className="text-sm text-gray-600">
+          Mostrando <span className="font-medium">{from}</span> a <span className="font-medium">{to}</span> de um total de <span className="font-medium">{total}</span>
+        </div>
+
+        <div className="flex items-center -space-x-px">
+          <Link
+            href={`/ordens-servico?page=${Math.max(1, page - 1)}`}
+            className={`px-3 py-2 border border-gray-200 text-gray-500 rounded-l-md hover:bg-gray-50 transition-colors ${page === 1 ? 'pointer-events-none opacity-50' : ''}`}
+          >
+            ‹
+          </Link>
+
+          {Array.from({ length: Math.ceil(total / 20) }).map((_, i) => {
+            const p = i + 1;
+            if (p === 1 || p === Math.ceil(total / 20) || (p >= page - 1 && p <= page + 1)) {
+              return (
+                <Link
+                  key={p}
+                  href={`/ordens-servico?page=${p}`}
+                  className={`px-4 py-2 border border-gray-200 text-sm font-medium transition-colors ${page === p
+                      ? "bg-[#0c1a25] text-white border-[#0c1a25] z-10"
+                      : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                >
+                  {p}
+                </Link>
+              );
+            }
+            if (p === page - 2 || p === page + 2) return <span key={p} className="px-3 py-2 border border-gray-200 bg-white text-gray-400">...</span>;
+            return null;
+          })}
+
+          <Link
+            href={`/ordens-servico?page=${Math.min(Math.ceil(total / 20), page + 1)}`}
+            className={`px-3 py-2 border border-gray-200 text-gray-500 rounded-r-md hover:bg-gray-50 transition-colors ${page === Math.ceil(total / 20) || total === 0 ? 'pointer-events-none opacity-50' : ''}`}
+          >
+            ›
+          </Link>
+        </div>
       </div>
     </div>
   );

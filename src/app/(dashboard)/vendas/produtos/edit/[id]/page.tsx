@@ -15,6 +15,23 @@ export default async function EditVendaProdutosPage({ params }: { params: Promis
       <Link href="/vendas/produtos" className="mt-4 inline-block text-blue-600 hover:underline">Voltar</Link>
     </div>
   );
+  const serializedData = {
+    ...data,
+    Total: Number(data.Total),
+    TotalProdutos: Number(data.TotalProdutos),
+    TotalServicos: Number(data.TotalServicos),
+    Desconto: Number(data.Desconto),
+    Itens: data.Itens.map((item: any) => ({
+      ...item,
+      Quantidade: Number(item.Quantidade),
+      ValorTotal: Number(item.ValorTotal),
+      Produtos: item.Produtos ? {
+        ...item.Produtos,
+        Cod_Preco: Number(item.Produtos.Cod_Preco || 0)
+      } : null
+    }))
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4">
@@ -25,7 +42,7 @@ export default async function EditVendaProdutosPage({ params }: { params: Promis
           <span>&gt;</span><span className="text-gray-400">Editar</span>
         </div>
       </div>
-      <VendaForm tipo="produtos" initialData={data} isReadOnly={false} />
+      <VendaForm tipo="produtos" initialData={serializedData} isReadOnly={false} />
     </div>
   );
 }

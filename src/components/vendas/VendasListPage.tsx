@@ -5,25 +5,24 @@ import { getVendas } from "@/actions/vendas";
 import { DeleteVendaButton } from "@/components/forms/DeleteVendaButton";
 import { MoreActionsDropdown } from "@/components/common/MoreActionsDropdown";
 
+import { VendasHeader } from "./VendasHeader";
+
 interface VendasListPageProps {
   tipo: "produtos" | "balcao" | "servicos";
   title: string;
+  page?: number;
 }
 
-export async function VendasListPage({ tipo, title }: VendasListPageProps) {
-  const { success, data: items } = await getVendas(tipo);
+export async function VendasListPage({ tipo, title, page = 1 }: VendasListPageProps) {
+  const { success, data: items, total = 0 } = await getVendas(tipo, page, 20);
+  const from = total === 0 ? 0 : (page - 1) * 20 + 1;
+  const to = total === 0 ? 0 : Math.min(page * 20, total);
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-end mb-4">
-        <h2 className="text-3xl font-bold text-gray-900">{title}</h2>
-        <Link href={`/vendas/${tipo}/create`} className="flex items-center gap-1.5 bg-[#00b050] hover:bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-md shadow-sm">
-          <PlusCircle className="w-4 h-4" />
-          Nova Venda
-        </Link>
-      </div>
+      <VendasHeader tipo={tipo} title={title} />
 
-      <div className="bg-white rounded-md shadow-sm overflow-hidden border border-gray-100">
+      <div className="bg-white rounded-md shadow-sm border border-gray-100">
         <table className="w-full text-sm text-left border-collapse min-w-[750px]">
           <thead className="bg-[#f8f9fa] border-b border-gray-200 text-gray-700 font-semibold">
             <tr>
@@ -32,8 +31,9 @@ export async function VendasListPage({ tipo, title }: VendasListPageProps) {
               <th className="py-3 px-4 text-right">Produtos</th>
               <th className="py-3 px-4 text-right">Serviços</th>
               <th className="py-3 px-4 text-right">Desconto</th>
+              <th className="py-3 px-4 text-right pr-10">Valor</th>
               <th className="py-3 px-4 text-center">Status</th>
-              <th className="py-3 px-6 text-right w-[150px]">Ações</th>
+              <th className="py-3 px-6 text-right w-[180px]">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -61,7 +61,7 @@ export async function VendasListPage({ tipo, title }: VendasListPageProps) {
                   <td className="py-3 px-6 text-right">
                     <div className="flex justify-end items-center gap-1">
                       <Link 
-                        href={`/vendas/${tipo}/edit/${item.Id}`} 
+                        href={`/vendas/${tipo}/preview/${item.Id}`} 
                         className="flex items-center justify-center w-[30px] h-[30px] bg-[#00c0ef] hover:bg-[#00a7d0] text-white rounded-[3px] transition-colors shadow-sm"
                         title="Visualizar"
                       >
@@ -82,11 +82,8 @@ export async function VendasListPage({ tipo, title }: VendasListPageProps) {
                           { 
                             label: "Imprimir", 
                             icon: <Printer className="w-4 h-4" />,
-                            subItems: [
-                              { label: "Formato A4", href: `/vendas/${tipo}/print/${item.Id}` },
-                              { label: "Cupom", href: `/vendas/${tipo}/print/${item.Id}` },
-                              { label: "Produção", href: `/vendas/${tipo}/print/${item.Id}` },
-                            ]
+                            href: `/vendas/${tipo}/print/${item.Id}`,
+                            target: "_blank"
                           },
                           { label: "Alterar situação", icon: <CheckSquare className="w-4 h-4" /> },
                           { 
@@ -117,6 +114,48 @@ export async function VendasListPage({ tipo, title }: VendasListPageProps) {
             )}
           </tbody>
         </table>
+        
+        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white rounded-b-md">
+          <div className="text-sm text-gray-600">
+            Mostrando <span className="font-medium">{from}</span> a <span className="font-medium">{to}</span> de um total de <span className="font-medium">{total}</span>
+          </div>
+
+          <div className="flex items-center -space-x-px">
+            <Link
+              href={`/vendas/${tipo}?page=${Math.max(1, page - 1)}`}
+              className={`px-3 py-2 border border-gray-200 text-gray-500 rounded-l-md hover:bg-gray-50 transition-colors ${page === 1 ? 'pointer-events-none opacity-50' : ''}`}
+            >
+              ‹
+            </Link>
+
+            {Array.from({ length: Math.ceil(total / 20) }).map((_, i) => {
+              const p = i + 1;
+              if (p === 1 || p === Math.ceil(total / 20) || (p >= page - 1 && p <= page + 1)) {
+                return (
+                  <Link
+                    key={p}
+                    href={`/vendas/${tipo}?page=${p}`}
+                    className={`px-4 py-2 border border-gray-200 text-sm font-medium transition-colors ${page === p
+                        ? "bg-[#0c1a25] text-white border-[#0c1a25] z-10"
+                        : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
+                  >
+                    {p}
+                  </Link>
+                );
+              }
+              if (p === page - 2 || p === page + 2) return <span key={p} className="px-3 py-2 border border-gray-200 bg-white text-gray-400">...</span>;
+              return null;
+            })}
+
+            <Link
+              href={`/vendas/${tipo}?page=${Math.min(Math.ceil(total / 20), page + 1)}`}
+              className={`px-3 py-2 border border-gray-200 text-gray-500 rounded-r-md hover:bg-gray-50 transition-colors ${page === Math.ceil(total / 20) || total === 0 ? 'pointer-events-none opacity-50' : ''}`}
+            >
+              ›
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

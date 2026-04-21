@@ -12,7 +12,10 @@ export default async function OrcamentosServicosPage({
 }) {
   const resolvedParams = await searchParams;
   const pesquisa = resolvedParams?.pesquisa || "";
-  const { success, data: items } = await getOrcamentosServicos(pesquisa);
+  const page = Number(resolvedParams?.page) || 1;
+  const { success, data: items, total = 0 } = await getOrcamentosServicos(pesquisa, page, 20);
+  const from = total === 0 ? 0 : (page - 1) * 20 + 1;
+  const to = total === 0 ? 0 : Math.min(page * 20, total);
 
   return (
     <div className="space-y-6">
@@ -125,6 +128,48 @@ export default async function OrcamentosServicosPage({
             )}
           </tbody>
         </table>
+      </div>
+      
+      <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white rounded-b-md">
+        <div className="text-sm text-gray-600">
+          Mostrando <span className="font-medium">{from}</span> a <span className="font-medium">{to}</span> de um total de <span className="font-medium">{total}</span>
+        </div>
+
+        <div className="flex items-center -space-x-px">
+          <Link
+            href={`/orcamentos/servicos?page=${Math.max(1, page - 1)}`}
+            className={`px-3 py-2 border border-gray-200 text-gray-500 rounded-l-md hover:bg-gray-50 transition-colors ${page === 1 ? 'pointer-events-none opacity-50' : ''}`}
+          >
+            ‹
+          </Link>
+
+          {Array.from({ length: Math.ceil(total / 20) }).map((_, i) => {
+            const p = i + 1;
+            if (p === 1 || p === Math.ceil(total / 20) || (p >= page - 1 && p <= page + 1)) {
+              return (
+                <Link
+                  key={p}
+                  href={`/orcamentos/servicos?page=${p}`}
+                  className={`px-4 py-2 border border-gray-200 text-sm font-medium transition-colors ${page === p
+                      ? "bg-[#0c1a25] text-white border-[#0c1a25] z-10"
+                      : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                >
+                  {p}
+                </Link>
+              );
+            }
+            if (p === page - 2 || p === page + 2) return <span key={p} className="px-3 py-2 border border-gray-200 bg-white text-gray-400">...</span>;
+            return null;
+          })}
+
+          <Link
+            href={`/orcamentos/servicos?page=${Math.min(Math.ceil(total / 20), page + 1)}`}
+            className={`px-3 py-2 border border-gray-200 text-gray-500 rounded-r-md hover:bg-gray-50 transition-colors ${page === Math.ceil(total / 20) || total === 0 ? 'pointer-events-none opacity-50' : ''}`}
+          >
+            ›
+          </Link>
+        </div>
       </div>
     </div>
   );

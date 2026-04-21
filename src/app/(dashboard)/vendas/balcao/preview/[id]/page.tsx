@@ -1,8 +1,7 @@
 import { Home } from "lucide-react";
 import Link from "next/link";
-import { VendaForm } from "@/components/forms/VendaForm";
+import { VendaView } from "@/components/vendas/VendaView";
 import { getVendaById } from "@/actions/vendas";
-import { PrintButton } from "@/components/forms/PrintButton";
 import { notFound } from "next/navigation";
 
 export default async function PreviewVendaBalcaoPage({ params }: { params: Promise<{ id: string }> }) {
@@ -19,17 +18,14 @@ export default async function PreviewVendaBalcaoPage({ params }: { params: Promi
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4 print:hidden">
-        <h3 className="text-2xl font-bold text-gray-900">Venda #{data.Numero} — Balcão</h3>
-        <div className="flex items-center gap-3">
-          <PrintButton label="Imprimir Recibo" />
-          <div className="text-gray-500 text-sm flex items-center gap-1">
-            <Home className="w-4 h-4 mr-1" /><Link href="/home" className="hover:underline">Início</Link>
-            <span>&gt;</span><Link href="/vendas/balcao" className="hover:underline">Vendas Balcão</Link>
-            <span>&gt;</span><span className="text-gray-400">#{data.Numero}</span>
-          </div>
+        <h3 className="text-xl font-bold text-gray-700 tracking-tight">Visualizar venda</h3>
+        <div className="text-gray-500 text-[11px] flex items-center gap-1 uppercase font-bold">
+          <Home className="w-3 h-3 mr-1" /><Link href="/home" className="hover:underline">Início</Link>
+          <span>&gt;</span><Link href="/vendas/balcao" className="hover:underline">Vendas Balcão</Link>
+          <span>&gt;</span><span className="text-gray-400">Visualizar</span>
         </div>
       </div>
-      <VendaForm tipo="balcao" initialData={data} isReadOnly={true} />
+      <VendaView tipo="balcao" venda={data} />
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { createVenda, updateVenda } from "@/actions/vendas";
 import { getClientes } from "@/actions/clientes";
 import { getProdutos } from "@/actions/produtos";
 import { getFuncionarios } from "@/actions/funcionarios";
+import { getVendaCanais } from "@/actions/vendas";
+import { getFormasPagamento } from "@/actions/financeiro";
 import { 
   ShoppingBasket, 
   DollarSign, 
@@ -20,7 +22,13 @@ import {
   Mail,
   Smartphone,
   CreditCard,
-  UserCheck
+  UserCheck,
+  Calendar,
+  AlertCircle,
+  Truck,
+  FileSearch,
+  ExternalLink,
+  Pencil
 } from "lucide-react";
 import Link from "next/link";
 import { useNotification } from "@/hooks/use-notification";
@@ -48,8 +56,14 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
   const [clientes, setClientes] = useState<any[]>([]);
   const [produtos, setProdutos] = useState<any[]>([]);
   const [funcionarios, setFuncionarios] = useState<any[]>([]);
+  const [canais, setCanais] = useState<any[]>([]);
+  const [formasPagamento, setFormasPagamento] = useState<any[]>([]);
+  
   const [selectedClienteId, setSelectedClienteId] = useState<number | null>(initialData?.ClienteId || null);
   const [selectedVendedor, setSelectedVendedor] = useState<string>(initialData?.Vendedor || "");
+  const [selectedCanalId, setSelectedCanalId] = useState<number | null>(initialData?.CanalId || null);
+  const [selectedFormaPagamentoId, setSelectedFormaPagamentoId] = useState<number | null>(initialData?.FormaPagamentoId || null);
+  const [garantia, setGarantia] = useState<string>(initialData?.Garantia || "");
   const [items, setItems] = useState<VendaItem[]>(initialData?.Itens?.map((i: any) => ({
     ProdutoId: i.ProdutoId,
     Nome: i.Produtos?.Cod_Nome || "Produto",
@@ -80,6 +94,12 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
           setSelectedVendedor(funcs[0].Nome);
         }
       }
+
+      const canalRes = await getVendaCanais();
+      if (canalRes.success) setCanais(canalRes.data || []);
+
+      const formaRes = await getFormasPagamento();
+      if (formaRes.success) setFormasPagamento(formaRes.data || []);
     };
     loadData();
   }, []);
@@ -129,16 +149,23 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
       error("Adicione ao menos um produto.");
       return;
     }
+    if (!selectedFormaPagamentoId) {
+      error("Por favor, selecione uma Forma de Pagamento.");
+      return;
+    }
 
     // Append items and signature to formData
     formData.append("Itens", JSON.stringify(items));
     formData.append("AssinaturaCliente", signature);
     formData.append("ClienteId", selectedClienteId ? String(selectedClienteId) : "");
+    if (selectedFormaPagamentoId) formData.append("FormaPagamentoId", String(selectedFormaPagamentoId));
     formData.append("TotalProdutos", totalProdutos.toString());
     formData.append("TotalServicos", "0");
     formData.append("Total", totalGeral.toString());
     formData.append("Desconto", desconto.toString());
     formData.append("Vendedor", selectedVendedor);
+    formData.append("CanalId", selectedCanalId ? String(selectedCanalId) : "");
+    formData.append("Garantia", garantia);
 
     startTransition(async () => {
       let r;
@@ -160,294 +187,332 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
   };
 
   return (
-    <form action={handleSubmit} className="space-y-6 max-w-6xl mx-auto pb-20">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Left Column: Client and Items */}
-        <div className="lg:col-span-2 space-y-6">
-          
-          {/* Client Selection */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="bg-gray-50 px-5 py-4 border-b border-gray-200 flex items-center gap-2">
-              <User className="w-5 h-5 text-indigo-600" />
-              <h3 className="font-bold text-gray-800">Identificação do Cliente</h3>
+    <form action={handleSubmit} className="space-y-6 max-w-[95%] mx-auto pb-20 font-sans text-gray-700">
+      
+      {/* 1. Status Alert (Top) */}
+      {initialData?.Ativo && (
+        <div className="bg-[#fcf8e3] border border-[#faebcc] p-3 rounded text-[#8a6d3b] text-sm flex items-center gap-2 shadow-sm">
+          <AlertCircle className="w-4 h-4" />
+          <span>Algumas informações não poderão ser alteradas, pois esta venda encontra-se com a situação <strong>Concretizada</strong>.</span>
+        </div>
+      )}
+
+      {/* 2. Card: Dados Gerais */}
+      <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-[#fcfcfc] px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+          <Pencil className="w-4 h-4 text-gray-500" />
+          <h3 className="font-bold text-gray-700 text-sm uppercase tracking-tight">Dados gerais</h3>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-5">
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-500">Número</label>
+              <div className="flex bg-gray-100 border border-gray-200 rounded overflow-hidden">
+                <input readOnly value={initialData?.Numero || "NOVA"} className="w-full bg-transparent p-2 outline-none" />
+                <div className="bg-white border-l border-gray-200 p-2"><FileSearch className="w-3 h-3 text-gray-400" /></div>
+              </div>
             </div>
-            <div className="p-5">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-500">Cliente *</label>
+              <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-blue-400 focus-within:border-blue-400 transition-all">
                 <input 
                   type="text" 
-                  placeholder="Pesquisar cliente por nome ou CPF..." 
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                  value={searchCli}
+                  placeholder="Pesquisar..." 
+                  className="w-full p-2 outline-none bg-white"
+                  value={searchCli || selectedCliente?.Nome || ""}
                   onChange={(e) => setSearchCli(e.target.value)}
                 />
-              </div>
-              <div className="mt-3 max-h-40 overflow-y-auto border border-gray-100 rounded-lg">
-                {clientes
-                  .filter(c => c.Nome.toLowerCase().includes(searchCli.toLowerCase()) || c.CPFCNPJ?.includes(searchCli))
-                  .map(cliente => (
-                    <div 
-                      key={cliente.Id}
-                      onClick={() => { setSelectedClienteId(cliente.Id); setSearchCli(cliente.Nome); }}
-                      className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 flex justify-between items-center border-b last:border-0 ${selectedClienteId === cliente.Id ? 'bg-indigo-50' : ''}`}
-                    >
-                      <div>
-                        <p className="font-medium text-sm text-gray-800">{cliente.Nome}</p>
-                        <p className="text-xs text-gray-500">{cliente.CPFCNPJ || "Sem documento"}</p>
-                      </div>
-                      {selectedClienteId === cliente.Id && <Check className="w-4 h-4 text-indigo-600" />}
-                    </div>
-                  ))}
-              </div>
-
-              {/* Client Details (Visible when selected) */}
-              {selectedCliente && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-dashed border-gray-300 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-1 duration-300">
-                  <div className="flex items-start gap-3">
-                    <CreditCard className="w-4 h-4 text-gray-400 mt-1" />
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Documento (CPF/CNPJ)</p>
-                      <p className="text-sm font-medium text-gray-700">{selectedCliente.CPFCNPJ || "Não informado"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Smartphone className="w-4 h-4 text-gray-400 mt-1" />
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Contato</p>
-                      <p className="text-sm font-medium text-gray-700">{selectedCliente.TelefoneCelular || selectedCliente.Telefone || "Sem telefone"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Mail className="w-4 h-4 text-gray-400 mt-1" />
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">E-mail</p>
-                      <p className="text-sm font-medium text-gray-700 truncate max-w-[180px]">{selectedCliente.Email || "Não informado"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-4 h-4 text-gray-400 mt-1" />
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Endereço</p>
-                      <p className="text-sm font-medium text-gray-700 leading-tight">
-                        {endereco ? `${endereco.Logradouro}, ${endereco.Numero} - ${endereco.Bairro}, ${endereco.Cidade}/${endereco.UF}` : "Endereço não cadastrado"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Product Items */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="bg-gray-50 px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ShoppingBasket className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-bold text-gray-800">Itens do Carrinho</h3>
-              </div>
-              <span className="text-xs font-semibold bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                {items.length} Itens
-              </span>
-            </div>
-            <div className="p-5">
-              {/* Product Search Input */}
-              <div className="relative mb-6">
-                <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input 
-                  type="text" 
-                  placeholder="Pesquisar produto por nome ou código..." 
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
-                  value={searchProd}
-                  onChange={(e) => setSearchProd(e.target.value)}
-                />
-                {searchProd && (
-                  <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
-                    {produtos
-                      .filter(p => p.Cod_Nome.toLowerCase().includes(searchProd.toLowerCase()) || p.Cod_CodigoBarras?.includes(searchProd))
-                      .map(prod => (
-                        <div 
-                          key={prod.Id}
-                          onClick={() => addItem(prod)}
-                          className="px-4 py-3 hover:bg-emerald-50 cursor-pointer flex justify-between items-center border-b last:border-0"
-                        >
-                          <div>
-                            <p className="font-bold text-sm text-gray-800">{prod.Cod_Nome}</p>
-                            <p className="text-xs text-gray-500">Cod: {prod.Cod_CodigoBarras || "N/A"}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-emerald-600">R$ {Number(prod.Cod_Preco).toFixed(2)}</p>
-                            <Plus className="w-4 h-4 text-emerald-400 ml-auto mt-1" />
-                          </div>
-                        </div>
+                <button type="button" onClick={() => { setSelectedClienteId(null); setSearchCli(""); }} className="bg-white border-l border-gray-200 p-2 hover:bg-gray-50"><Trash2 className="w-3 h-3 text-gray-400" /></button>
+                {searchCli && (
+                   <div className="absolute z-50 mt-10 bg-white border border-gray-200 shadow-xl rounded w-[300px] max-h-60 overflow-y-auto">
+                      {clientes.filter(c => c.Nome.toLowerCase().includes(searchCli.toLowerCase())).map(c => (
+                        <div key={c.Id} onClick={() => { setSelectedClienteId(c.Id); setSearchCli(c.Nome); }} className="p-2 hover:bg-blue-50 cursor-pointer border-b text-sm">{c.Nome}</div>
                       ))}
-                  </div>
+                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Items Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-gray-500 border-b">
-                      <th className="pb-3 font-semibold">Descrição</th>
-                      <th className="pb-3 font-semibold text-center w-24">Qtd</th>
-                      <th className="pb-3 font-semibold text-right">Unitário</th>
-                      <th className="pb-3 font-semibold text-right">Subtotal</th>
-                      <th className="pb-3 w-10"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {items.map((item) => (
-                      <tr key={item.ProdutoId} className="group">
-                        <td className="py-4">
-                          <p className="font-bold text-gray-800">{item.Nome}</p>
-                          <p className="text-xs text-gray-400">ID: {item.ProdutoId}</p>
-                        </td>
-                        <td className="py-4">
-                          <div className="flex items-center justify-center gap-2">
-                            <button 
-                              type="button" 
-                              onClick={() => updateQty(item.ProdutoId, item.Quantidade - 1)}
-                              className="w-6 h-6 flex items-center justify-center border border-gray-200 rounded hover:bg-gray-50"
-                            >
-                              -
-                            </button>
-                            <span className="font-bold w-6 text-center">{item.Quantidade}</span>
-                            <button 
-                              type="button" 
-                              onClick={() => updateQty(item.ProdutoId, item.Quantidade + 1)}
-                              className="w-6 h-6 flex items-center justify-center border border-gray-200 rounded hover:bg-gray-50"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </td>
-                        <td className="py-4 text-right text-gray-600">R$ {item.Preco.toFixed(2)}</td>
-                        <td className="py-4 text-right font-bold text-gray-900">R$ {item.ValorTotal.toFixed(2)}</td>
-                        <td className="py-4 text-right">
-                          <button 
-                            type="button" 
-                            onClick={() => removeItem(item.ProdutoId)}
-                            className="text-gray-300 hover:text-red-500 transition-colors p-1"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {items.length === 0 && (
-                      <tr>
-                        <td colSpan={5} className="py-12 text-center text-gray-400 italic">
-                          Nenhum item adicionado ao carrinho
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-500">Vendedor / Responsável</label>
+              <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm">
+                <select 
+                  className="w-full p-2 outline-none bg-white cursor-pointer"
+                  value={selectedVendedor}
+                  onChange={(e) => setSelectedVendedor(e.target.value)}
+                >
+                  {funcionarios.map(f => (
+                    <option key={f.Id} value={f.Nome}>{f.Nome}</option>
+                  ))}
+                </select>
+                <div className="bg-white border-l border-gray-200 p-2"><Trash2 className="w-3 h-3 text-gray-400" /></div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Right Column: Totals, Seller and Signature */}
-        <div className="space-y-6">
-          
-          {/* Seller Selection */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3 uppercase tracking-wider">
-              <UserCheck className="w-4 h-4 text-indigo-500" />
-              Vendedor Responsável
-            </label>
-            <select 
-              className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-gray-50 transition-all font-medium"
-              value={selectedVendedor}
-              onChange={(e) => setSelectedVendedor(e.target.value)}
-            >
-              {funcionarios.length === 0 && <option value="">Carregando vendedores...</option>}
-              {funcionarios.map(f => (
-                <option key={f.Id} value={f.Nome}>{f.Nome}</option>
-              ))}
-            </select>
-          </div>
-          
-          {/* Summary Card */}
-          <div className="bg-indigo-900 text-white rounded-xl shadow-lg border border-indigo-800 overflow-hidden">
-            <div className="px-5 py-4 border-b border-indigo-800 flex items-center gap-2">
-              <DollarSign className="w-5 h-5" />
-              <h3 className="font-bold uppercase tracking-wider text-xs">Resumo Financeiro</h3>
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-500">Situação *</label>
+              <select className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm transition-all focus:ring-1 focus:ring-blue-400">
+                <option value="Concretizada">{initialData?.Ativo ? "Concretizada" : "Aberta"}</option>
+              </select>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="flex justify-between text-sm opacity-80">
-                <span>Subtotal</span>
-                <span>R$ {totalProdutos.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span>Desconto</span>
-                <input 
-                  type="number" 
-                  step="0.01" 
-                  className="bg-indigo-800 border border-indigo-700 rounded px-2 py-1 text-right w-24 outline-none focus:ring-1 focus:ring-indigo-400" 
-                  value={desconto}
-                  onChange={(e) => setDesconto(Number(e.target.value))}
-                />
-              </div>
-              <div className="border-t border-indigo-800 pt-4 mt-2">
-                <div className="flex justify-between items-end">
-                  <span className="text-xs uppercase font-bold opacity-60">Total a Pagar</span>
-                  <span className="text-3xl font-extrabold leading-none">R$ {totalGeral.toFixed(2)}</span>
-                </div>
+
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-500 font-bold text-red-500">Data *</label>
+              <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm">
+                 <input type="text" readOnly value={new Date(initialData?.DataVenda || Date.now()).toLocaleDateString("pt-BR")} className="w-full p-2 outline-none" />
+                 <div className="bg-white border-l border-gray-200 p-2"><Calendar className="w-3 h-3 text-gray-400" /></div>
               </div>
             </div>
-            <div className="bg-indigo-950 px-5 py-4">
-              <button 
-                type="submit" 
-                disabled={isPending}
-                className="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-3 rounded-lg shadow-md flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-500">Prazo de entrega</label>
+              <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm">
+                 <input type="text" readOnly value={new Date(initialData?.DataVenda || Date.now()).toLocaleDateString("pt-BR")} className="w-full p-2 outline-none" />
+                 <div className="bg-white border-l border-gray-200 p-2"><Calendar className="w-3 h-3 text-gray-400" /></div>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-500 font-bold text-red-500">Canal de venda *</label>
+              <select 
+                className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm"
+                value={selectedCanalId || ""}
+                onChange={(e) => setSelectedCanalId(Number(e.target.value))}
               >
-                {isPending ? <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" /> : <Check className="w-5 h-5" />}
-                {isPending ? "PROCESSANDO..." : "FINALIZAR VENDA"}
-              </button>
+                <option value="">Selecione...</option>
+                {canais.map(c => (
+                  <option key={c.Id} value={c.Id}>{c.Nome}</option>
+                ))}
+              </select>
             </div>
-          </div>
-
-          {/* Signature Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <SignaturePad 
-              onSave={(base64: string) => setSignature(base64)} 
-              label="Assinatura Digital" 
-              initialImage={initialData?.AssinaturaCliente}
-              width={280} 
-              height={150} 
-            />
-          </div>
-
-          {/* Observations */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3 uppercase tracking-wider">
-              <FileText className="w-4 h-4 text-gray-400" />
-              Observações Internas
-            </label>
-            <textarea 
-              name="Observacoes" 
-              rows={3} 
-              defaultValue={initialData?.Observacoes || ""}
-              placeholder="Digite aqui observações relevantes sobre esta venda..."
-              className="w-full text-sm border border-gray-200 rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300 bg-gray-50"
-            />
-          </div>
-
-          {/* Secondary Actions */}
-          <div className="flex flex-col gap-2">
-            <Link 
-              href={`/vendas/${tipo}`} 
-              className="w-full py-2.5 text-center text-sm font-bold text-gray-500 hover:text-red-500 transition-colors"
-            >
-              DESCARTAR E VOLTAR
-            </Link>
+            
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-500">Centro de custo</label>
+              <input readOnly placeholder="Digite para buscar" className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm placeholder:text-gray-400" />
+            </div>
           </div>
         </div>
       </div>
+
+      {/* 3. Card: Produtos */}
+      <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-[#fcfcfc] px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+          <Package className="w-4 h-4 text-gray-500" />
+          <h3 className="font-bold text-gray-700 text-sm uppercase tracking-tight">Produtos</h3>
+        </div>
+        <div className="p-4">
+           <table className="w-full border-collapse text-[11px] text-gray-600 mb-4">
+              <thead>
+                <tr className="border bg-gray-50 text-gray-500 uppercase font-black tracking-widest leading-loose">
+                  <th className="px-3 border text-left font-bold py-1">Produto *</th>
+                  <th className="px-3 border text-left font-bold py-1">Detalhes</th>
+                  <th className="px-3 border text-center font-bold py-1 w-20 text-red-500">Quant.*</th>
+                  <th className="px-3 border text-center font-bold py-1 w-24 text-red-500">Valor*</th>
+                  <th className="px-3 border text-center font-bold py-1 w-32">Desconto</th>
+                  <th className="px-3 border text-center font-bold py-1 w-32">Subtotal</th>
+                  <th className="px-3 border text-center font-bold py-1 w-12">Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.ProdutoId} className="border text-xs">
+                    <td className="p-2 border">
+                      <div className="flex bg-gray-50 rounded border px-2 py-1 items-center justify-between">
+                         <span className="uppercase text-[10px] font-bold text-gray-400">{item.Nome}</span>
+                         <Trash2 className="w-3 h-3 text-gray-400" />
+                      </div>
+                    </td>
+                    <td className="p-2 border"><input className="w-full bg-gray-50 border rounded p-1 outline-none h-8" /></td>
+                    <td className="p-2 border">
+                      <input 
+                        type="number" 
+                        value={item.Quantidade} 
+                        onChange={(e) => updateQty(item.ProdutoId, Number(e.target.value))}
+                        className="w-full bg-gray-50 border rounded p-1 text-center font-bold h-8" 
+                      />
+                    </td>
+                    <td className="p-2 border"><input readOnly value={item.Preco.toFixed(2)} className="w-full bg-gray-100 border rounded p-1 text-right h-8" /></td>
+                    <td className="p-2 border">
+                      <div className="flex bg-gray-50 border rounded p-1 items-center h-8">
+                        <input className="w-full bg-transparent outline-none text-right px-1" value="0,00" readOnly />
+                        <span className="text-[9px] text-gray-400 ml-1">R$</span>
+                      </div>
+                    </td>
+                    <td className="p-2 border text-right font-bold bg-gray-50 text-gray-500 pr-3">{item.ValorTotal.toFixed(2).replace(".", ",")}</td>
+                    <td className="p-2 border text-center">
+                      <button type="button" onClick={() => removeItem(item.ProdutoId)} className="bg-red-400 text-white p-1 rounded hover:bg-red-500 transition-colors">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+           </table>
+           <div className="relative w-fit">
+              <input 
+                type="text" 
+                placeholder="➕ Adicionar produto" 
+                className="bg-[#607d8b] hover:bg-[#455a64] text-white text-[11px] font-bold px-4 py-2 rounded-md transition-all outline-none cursor-pointer placeholder:text-white"
+                value={searchProd}
+                onChange={(e) => setSearchProd(e.target.value)}
+              />
+              {searchProd && (
+                <div className="absolute z-50 bg-white border border-gray-200 shadow-xl rounded mt-1 w-[300px] max-h-60 overflow-y-auto">
+                    {produtos.filter(p => p.Cod_Nome.toLowerCase().includes(searchProd.toLowerCase())).map(p => (
+                      <div key={p.Id} onClick={() => addItem(p)} className="p-2 hover:bg-emerald-50 cursor-pointer border-b text-sm font-bold">{p.Cod_Nome}</div>
+                    ))}
+                </div>
+              )}
+           </div>
+        </div>
+      </div>
+
+      {/* 4. Card: Serviços (Vazio similar à imagem) */}
+      <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-[#fcfcfc] px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+          <Truck className="w-4 h-4 text-gray-500" />
+          <h3 className="font-bold text-gray-700 text-sm uppercase tracking-tight">Serviços</h3>
+        </div>
+        <div className="p-4">
+           <table className="w-full border-collapse text-[11px] text-gray-600 mb-4 opacity-50">
+              <thead>
+                <tr className="border bg-gray-50 text-gray-500 uppercase font-black tracking-widest whitespace-nowrap">
+                   <th className="px-3 border text-left font-bold py-1">Serviço *</th>
+                   <th className="px-3 border text-left font-bold py-1">Detalhes</th>
+                   <th className="px-3 border text-center font-bold py-1 w-20">Quant.*</th>
+                   <th className="px-3 border text-center font-bold py-1 w-24">Valor*</th>
+                   <th className="px-3 border text-center font-bold py-1 w-32">Desconto</th>
+                   <th className="px-3 border text-center font-bold py-1 w-32">Subtotal</th>
+                   <th className="px-3 border text-center font-bold py-1 w-12">Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colSpan={7} className="text-center py-2 italic bg-gray-100/30">Nenhum serviço adicionado</td></tr>
+              </tbody>
+           </table>
+           <button type="button" className="bg-[#607d8b] text-white text-[11px] font-bold px-4 py-2 rounded-md opacity-70">➕ Adicionar serviço</button>
+        </div>
+      </div>
+
+      {/* 5. Card: Garantia */}
+      <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-[#fcfcfc] px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-gray-500" />
+          <h3 className="font-bold text-gray-700 text-sm uppercase tracking-tight">Termos de Garantia</h3>
+        </div>
+        <div className="p-4 flex flex-wrap items-center gap-3">
+          <span className="text-xs font-bold text-gray-500 mr-2 uppercase">Selecionar Prazo:</span>
+          {[30, 60, 90].map((dias) => (
+            <button
+              key={dias}
+              type="button"
+              onClick={() => setGarantia(`${dias} DIAS`)}
+              className={`px-6 py-2 rounded-md text-xs font-black transition-all border-2 ${
+                garantia === `${dias} DIAS`
+                  ? "bg-blue-600 text-white border-blue-700 shadow-md scale-105"
+                  : "bg-gray-50 text-gray-600 border-gray-200 hover:border-blue-300"
+              }`}
+            >
+              {dias} DIAS
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setGarantia("")}
+            className={`px-4 py-2 rounded-md text-xs font-bold transition-all border ${
+              garantia === "" ? "bg-gray-200 text-gray-700" : "bg-white text-red-500 border-red-100 hover:bg-red-50"
+            }`}
+          >
+            SEM GARANTIA
+          </button>
+          {garantia && (
+            <div className="ml-auto flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
+              <Check className="w-3.5 h-3.5 text-blue-600" />
+              <span className="text-[10px] font-black text-blue-700 uppercase">Selecionado: {garantia}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 6. Totais, Observações e Pagamento */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-5 space-y-4">
+           <div className="flex items-center justify-between border-b pb-2 mb-3">
+             <h3 className="font-bold text-gray-700 text-sm uppercase tracking-tight flex items-center gap-2">
+               <DollarSign className="w-4 h-4 text-gray-400" /> Totais & Pagamento
+             </h3>
+           </div>
+           
+           <div className="mb-4">
+             <label className="block text-xs font-bold text-gray-600 uppercase tracking-tight mb-2">Forma de Pagamento *</label>
+             <select 
+                value={selectedFormaPagamentoId || ""} 
+                onChange={(e) => setSelectedFormaPagamentoId(Number(e.target.value) || null)}
+                className="w-full text-sm border-2 border-gray-200 rounded-md p-2 bg-gray-50 focus:border-blue-400 focus:bg-white transition-all font-bold"
+                required
+             >
+                <option value="" disabled>-- Selecione a forma de pagamento --</option>
+                {formasPagamento.map(f => (
+                  <option key={f.Id} value={f.Id}>{f.Nome}</option>
+                ))}
+             </select>
+           </div>
+
+           <div className="grid grid-cols-5 gap-1 text-[11px] text-center border bg-gray-100 border-gray-200 uppercase font-black tracking-tighter text-gray-500">
+             <div className="py-1 border-r border-gray-200">Produtos</div>
+             <div className="py-1 border-r border-gray-200">Serviços</div>
+             <div className="py-1 border-r border-gray-200 text-red-500">Desc R$</div>
+             <div className="py-1 border-r border-gray-200">Desc %</div>
+             <div className="py-1">Valor Total *</div>
+           </div>
+           <div className="grid grid-cols-5 gap-1 mb-2">
+             <input readOnly value={totalProdutos.toFixed(2)} className="bg-gray-50 border rounded p-2 text-right text-xs" />
+             <input readOnly value="0,00" className="bg-gray-100 border rounded p-2 text-right text-xs" />
+             <input 
+              type="number" 
+              value={desconto} 
+              onChange={(e) => setDesconto(Number(e.target.value))}
+              className="bg-white border-2 border-orange-200 rounded p-2 text-right text-xs font-bold" 
+             />
+             <input readOnly value="0,00" className="bg-gray-100 border rounded p-2 text-right text-xs" />
+             <input readOnly value={totalGeral.toFixed(2)} className="bg-gray-200 border border-gray-400 rounded p-2 text-right text-sm font-black text-gray-900" />
+           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-4">
+             <h3 className="font-bold text-gray-700 text-xs uppercase mb-2 flex items-center gap-1"><FileText className="w-3 h-3" /> Observações</h3>
+             <textarea 
+              name="Observacoes"
+              defaultValue={initialData?.Observacoes || ""}
+              className="w-full border border-gray-300 rounded p-2 text-xs outline-none focus:ring-1 focus:ring-blue-400 h-24" 
+             />
+           </div>
+           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-4">
+             <h3 className="font-bold text-gray-700 text-xs uppercase mb-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Observações Internas</h3>
+             <textarea className="w-full border border-gray-300 rounded p-2 text-xs outline-none h-24 bg-gray-50" />
+           </div>
+        </div>
+      </div>
+
+      {/* 6. Footer Buttons */}
+      <div className="flex gap-3 bg-white p-4 rounded-md shadow-inner border border-gray-200">
+        <button 
+          type="submit" 
+          disabled={isPending}
+          className="flex items-center gap-1.5 bg-[#00b050] hover:bg-green-700 text-white px-6 py-2.5 rounded font-bold text-xs shadow-sm transition-all active:scale-95 disabled:opacity-50"
+        >
+          {isPending ? "PROCESSANDO..." : <><Check className="w-4 h-4" /> ATUALIZAR</>}
+        </button>
+        <Link 
+          href={`/vendas/${tipo}`}
+          className="flex items-center gap-1.5 bg-[#e74c3c] hover:bg-red-700 text-white px-6 py-2.5 rounded font-bold text-xs shadow-sm transition-all active:scale-95"
+        >
+          <X className="w-4 h-4" /> CANCELAR
+        </Link>
+      </div>
+
     </form>
   );
 }

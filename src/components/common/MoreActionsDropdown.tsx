@@ -8,6 +8,7 @@ export interface ActionItem {
   icon?: React.ReactNode;
   onClick?: () => void;
   href?: string;
+  target?: string;
   subItems?: ActionItem[];
   variant?: "danger" | "default";
 }
@@ -114,7 +115,14 @@ function DropdownItem({ action, closeParent }: { action: ActionItem; closeParent
         onMouseLeave={handleMouseLeave}
     >
       {action.href && !hasSubItems ? (
-        <a href={action.href} onClick={closeParent} className="block" role="menuitem">
+        <a 
+          href={action.href} 
+          target={action.target}
+          rel={action.target === "_blank" ? "noopener noreferrer" : undefined}
+          onClick={closeParent} 
+          className="block" 
+          role="menuitem"
+        >
           {content}
         </a>
       ) : (

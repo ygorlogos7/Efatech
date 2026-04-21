@@ -5,27 +5,41 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 // --- Orçamentos (Produtos) ---
-export async function getOrcamentosProdutos(searchQuery?: string) {
+export async function getOrcamentosProdutos(searchQuery?: string, page: number = 1, pageSize: number = 20) {
+  const skip = (page - 1) * pageSize;
+  
   try {
+    const whereClause = {
+      ...(searchQuery ? { Numero: { equals: parseInt(searchQuery) || undefined } } : {})
+    };
+
     const items = await prisma.orcamento.findMany({
-      where: {
-        ...(searchQuery ? { Numero: { equals: parseInt(searchQuery) || undefined } } : {})
-      },
+      where: whereClause,
       orderBy: { CreatedAt: "desc" },
+      take: pageSize,
+      skip: skip,
     });
-    return { success: true, data: items.map(i => ({ ...i, TotalProdutos: Number(i.TotalProdutos), TotalServicos: Number(i.TotalServicos), Desconto: Number(i.Desconto), Total: Number(i.Total) })) };
+    
+    const total = await prisma.orcamento.count({ where: whereClause });
+    return { success: true, data: items.map(i => ({ ...i, TotalProdutos: Number(i.TotalProdutos), TotalServicos: Number(i.TotalServicos), Desconto: Number(i.Desconto), Total: Number(i.Total) })), total };
   } catch (error) {
     return { success: false, error: "Falha ao buscar orçamentos de produtos." };
   }
 }
 
 // --- Orçamentos (Serviços) ---
-export async function getOrcamentosServicos(searchQuery?: string) {
+export async function getOrcamentosServicos(searchQuery?: string, page: number = 1, pageSize: number = 20) {
+  const skip = (page - 1) * pageSize;
+
   try {
     const items = await prisma.orcamento.findMany({
       orderBy: { CreatedAt: "desc" },
+      take: pageSize,
+      skip: skip,
     });
-    return { success: true, data: items.map(i => ({ ...i, TotalProdutos: Number(i.TotalProdutos), TotalServicos: Number(i.TotalServicos), Desconto: Number(i.Desconto), Total: Number(i.Total) })) };
+    
+    const total = await prisma.orcamento.count();
+    return { success: true, data: items.map(i => ({ ...i, TotalProdutos: Number(i.TotalProdutos), TotalServicos: Number(i.TotalServicos), Desconto: Number(i.Desconto), Total: Number(i.Total) })), total };
   } catch (error) {
     return { success: false, error: "Falha ao buscar orçamentos de serviços." };
   }

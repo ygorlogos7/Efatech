@@ -7,22 +7,35 @@ import { logAction } from "@/lib/logger";
 
 const MODULO = "VENDAS";
 
-const toNum = (v: any) => ({
-  ...v,
-  TotalProdutos: Number(v.TotalProdutos),
-  TotalServicos: Number(v.TotalServicos),
-  Desconto: Number(v.Desconto),
-  Total: Number(v.Total),
-});
+const toNum = (v: any) => {
+  if (!v) return null;
+  return {
+    ...v,
+    TotalProdutos: Number(v.TotalProdutos || 0),
+    TotalServicos: Number(v.TotalServicos || 0),
+    Desconto: Number(v.Desconto || 0),
+    Total: Number(v.Total || 0),
+    CaixaSessaoId: v.CaixaSessaoId || null,
+  };
+};
 
 // --- Vendas ---
-export async function getVendas(tipo?: string) {
+export async function getVendas(tipo?: string, page: number = 1, pageSize: number = 20) {
+  const skip = (page - 1) * pageSize;
+  
   try {
+    const whereClause = tipo ? { Tipo: tipo } : {};
+    
     const items = await prisma.vendas.findMany({
-      where: tipo ? { Tipo: tipo } : {},
+      where: whereClause,
       orderBy: { CreatedAt: "desc" },
+      take: pageSize,
+      skip: skip,
     });
-    return { success: true, data: items.map(toNum) };
+    
+    const total = await prisma.vendas.count({ where: whereClause });
+    
+    return { success: true, data: items.map(toNum), total };
   } catch (error) {
     return { success: false, error: "Falha ao buscar vendas." };
   }
@@ -42,7 +55,8 @@ export async function getVendaById(id: number) {
           include: {
             Produtos: true
           }
-        }
+        },
+        FormaPagamento: true
       }
     });
 
@@ -71,6 +85,14 @@ export async function createVenda(tipo: string, formData: FormData) {
     const itensJson = formData.get("Itens") as string;
     const itens = itensJson ? JSON.parse(itensJson) : [];
 
+    // Buscar caixa aberto para vincular
+    const caixaAberto = await prisma.caixaSessao.findFirst({
+      where: { Status: "Aberto" },
+      orderBy: { DataAbertura: "desc" }
+    });
+
+    console.log(">>> [VENDA] VINCULANDO AO CAIXA:", caixaAberto?.Id || "NENHUM CAIXA ABERTO");
+
     const venda = await prisma.vendas.create({
       data: {
         Tipo: tipo,
@@ -83,6 +105,8 @@ export async function createVenda(tipo: string, formData: FormData) {
         Vendedor: formData.get("Vendedor") as string | null,
         AssinaturaCliente: formData.get("AssinaturaCliente") as string | null,
         Ativo: true,
+        CaixaSessaoId: caixaAberto?.Id || null, // Vínculo com o caixa
+        FormaPagamentoId: formData.get("FormaPagamentoId") ? Number(formData.get("FormaPagamentoId")) : null,
         Itens: {
           create: itens.map((item: any) => ({
             ProdutoId: Number(item.ProdutoId),
@@ -93,13 +117,15 @@ export async function createVenda(tipo: string, formData: FormData) {
       },
     });
 
-    await logAction("Criar Venda", MODULO, `Nova venda #${venda.Numero} (${tipo}) registrada no valor de R$ ${total.toFixed(2)}.`);
-    revalidatePath(`/vendas/${tipo}`);
-    return { success: true, data: venda };
-  } catch (error) {
-    console.error("Erro ao criar venda:", error);
-    await logAction("Criar Venda", MODULO, `Falha ao registrar venda de ${tipo}: ${error}`, "ERRO");
-    return { success: false, error: "Falha ao criar venda." };
+    console.log(">>> [VENDA] CRIADA COM SUCESSO! ID:", venda.Id);
+
+    // Revalidação em background (opcional)
+    // revalidatePath("/vendas/balcao"); 
+
+    return { success: true, id: venda.Id };
+  } catch (error: any) {
+    console.error(">>> [VENDA] ERRO NO SERVIDOR:", error.message);
+    return { success: false, error: error.message };
   }
 }
 
@@ -114,6 +140,10 @@ export async function updateVenda(id: number, tipo: string, formData: FormData) 
         Desconto: Number(formData.get("Desconto") || 0),
         Total: total,
         Observacoes: formData.get("Observacoes") as string | null,
+        Vendedor: formData.get("Vendedor") as string | null,
+        Garantia: formData.get("Garantia") as string | null,
+        CanalId: formData.get("CanalId") ? Number(formData.get("CanalId")) : null,
+        FormaPagamentoId: formData.get("FormaPagamentoId") ? Number(formData.get("FormaPagamentoId")) : null,
         Ativo: formData.get("Ativo") !== "false",
       },
     });

@@ -9,15 +9,17 @@ import { logAction } from "@/lib/logger";
 
 const MODULO = "PRODUTOS";
 
-export async function getProdutos(searchQuery?: string, page: number = 1) {
-  const pageSize = 20; {/*limite de 20 itens por pagina*/ }
+export async function getProdutos(searchQuery?: string, page: number = 1, pageSize: number = 1000) {
+  // O pageSize padrão é 1000 para retrocompatibilidade com PDV, mas telas com paginação podem passar 20 explicitamente.
   const skip = (page - 1) * pageSize;
   try {
+    const isNumeric = /^\d+$/.test(searchQuery || "");
     const whereClause = searchQuery
       ? {
         OR: [
           { Cod_Nome: { contains: searchQuery, mode: "insensitive" as const } },
-          { Cod_CodigoBarras: { contains: searchQuery } }
+          { Cod_CodigoBarras: { contains: searchQuery } },
+          ...(isNumeric ? [{ Id: Number(searchQuery) }] : [])
         ]
       }
       : {};
@@ -29,12 +31,18 @@ export async function getProdutos(searchQuery?: string, page: number = 1) {
       skip: skip,
     });
 
-    const total = await prisma.produtos.count({ where: whereClause }); {/*total de itens*/ }
+    const total = await prisma.produtos.count({ where: whereClause });
 
-    return { success: true, data: items, total };
+    // Serialização: converter Decimal para Number
+    const serializedItems = items.map(p => ({
+      ...p,
+      Cod_Preco: Number(p.Cod_Preco)
+    }));
+
+    return { success: true, data: serializedItems, total };
   } catch (error) {
     console.error("Erro ao buscar produtos:", error);
-    return { success: false, error: "Falha ao buscar produtos do banco de dados." };
+    return { success: false, error: "Falha ao buscar produtos." };
   }
 }
 

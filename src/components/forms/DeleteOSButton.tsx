@@ -17,8 +17,12 @@ export function DeleteOSButton({ id, numero }: { id: number; numero: number }) {
 
   return (
     <>
-      <button onClick={() => setIsOpen(true)} className="p-1.5 text-red-500 hover:text-red-700 border border-red-200 rounded hover:bg-red-50 transition-colors" title="Excluir O.S.">
-        <Trash2 className="w-4 h-4" />
+      <button 
+        onClick={() => setIsOpen(true)} 
+        className="flex items-center justify-center w-[30px] h-[30px] bg-[#dd4b39] hover:bg-[#c13322] text-white rounded-[3px] transition-colors shadow-sm" 
+        title="Excluir O.S."
+      >
+        <X className="w-4 h-4" />
       </button>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">

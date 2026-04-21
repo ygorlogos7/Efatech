@@ -3,12 +3,13 @@
 import React, { useState, useEffect, useTransition } from "react";
 import { createOrdemServico, updateOrdemServico } from "@/actions/ordensServico";
 import { getClientes } from "@/actions/clientes";
+import { getProdutos } from "@/actions/produtos";
+import { getFormasPagamento } from "@/actions/financeiro";
 import { 
   ClipboardList, Wrench, FileText, DollarSign, Check, X, Edit, 
   Search, User, PenTool, Calendar, Package, AlertCircle
 } from "lucide-react";
 import Link from "next/link";
-import SignaturePad from "@/components/common/SignaturePad";
 import { useNotification } from "@/hooks/use-notification";
 
 interface OSFormProps {
@@ -21,20 +22,35 @@ export function OSForm({ initialData, isReadOnly = false }: OSFormProps) {
   const { success, error } = useNotification();
   const isEdit = !!initialData && !isReadOnly;
 
-  // States for search and selection
+  // States for general select options
+  const [formasPagamento, setFormasPagamento] = useState<any[]>([]);
+  const [selectedFormaPagamentoId, setSelectedFormaPagamentoId] = useState<number | null>(initialData?.FormaPagamentoId || null);
+
+  // States for client search
   const [clientes, setClientes] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(initialData?.Cliente?.Nome || "");
   const [selectedClienteId, setSelectedClienteId] = useState<number | null>(initialData?.ClienteId || null);
   const [isSearching, setIsSearching] = useState(false);
 
-  // States for signatures
-  const [sigCliente, setSigCliente] = useState<string | null>(initialData?.AssinaturaCliente || null);
-  const [sigTecnico, setSigTecnico] = useState<string | null>(initialData?.AssinaturaTecnico || null);
+  // States for equipment search (from products)
+  const [produtos, setProdutos] = useState<any[]>([]);
+  const [searchEquipamento, setSearchEquipamento] = useState(initialData?.Equipamento || "");
+  const [isSearchingEquipamento, setIsSearchingEquipamento] = useState(false);
+
+  // Load select options
+  useEffect(() => {
+    const loadOptions = async () => {
+      const formaRes = await getFormasPagamento();
+      if (formaRes.success) setFormasPagamento(formaRes.data || []);
+    };
+    loadOptions();
+  }, []);
 
   // Load clients on search
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
-      if (searchTerm.length >= 2) {
+      // Only search if not currently matching the selected client to prevent constant refetching after select
+      if (searchTerm.length >= 2 && searchTerm !== initialData?.Cliente?.Nome) {
         setIsSearching(true);
         const res = await getClientes(searchTerm);
         if (res.success && res.data) setClientes(res.data || []);
@@ -45,13 +61,33 @@ export function OSForm({ initialData, isReadOnly = false }: OSFormProps) {
     }, 400);
 
     return () => clearTimeout(delayDebounce);
-  }, [searchTerm]);
+  }, [searchTerm, initialData]);
+
+  // Load products (equipment/models) on search
+  useEffect(() => {
+    const delayDebounce = setTimeout(async () => {
+      if (searchEquipamento.length >= 2 && searchEquipamento !== initialData?.Equipamento) {
+        setIsSearchingEquipamento(true);
+        const res = await getProdutos(searchEquipamento);
+        if (res.success && res.data) setProdutos(res.data || []);
+        setIsSearchingEquipamento(false);
+      } else {
+        setProdutos([]);
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchEquipamento, initialData]);
 
   const handleSubmit = (formData: FormData) => {
+    if (!selectedFormaPagamentoId) {
+      error("Por favor, selecione uma Forma de Pagamento.");
+      return;
+    }
+
     // Add custom fields to formData
     if (selectedClienteId) formData.append("ClienteId", selectedClienteId.toString());
-    if (sigCliente) formData.append("AssinaturaCliente", sigCliente);
-    if (sigTecnico) formData.append("AssinaturaTecnico", sigTecnico);
+    if (selectedFormaPagamentoId) formData.append("FormaPagamentoId", selectedFormaPagamentoId.toString());
 
     startTransition(async () => {
       let r;
@@ -81,8 +117,8 @@ export function OSForm({ initialData, isReadOnly = false }: OSFormProps) {
     <form action={handleSubmit} className="space-y-6 max-w-6xl mx-auto pb-20">
       
       {/* 1. SEÇÃO: CLIENTE E DADOS BÁSICOS */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="bg-[#1a1c23] px-5 py-4 flex items-center justify-between">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="bg-[#1a1c23] rounded-t-xl px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5 text-white">
             <User className="w-5 h-5 text-[#38b473]" />
             <h3 className="font-bold text-base tracking-tight">Identificação do Cliente</h3>
@@ -119,7 +155,7 @@ export function OSForm({ initialData, isReadOnly = false }: OSFormProps) {
             
             {/* Lista de Resultados */}
             {clientes.length > 0 && !isReadOnly && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
                 {clientes.map((c) => (
                   <button
                     key={c.Id}
@@ -145,24 +181,56 @@ export function OSForm({ initialData, isReadOnly = false }: OSFormProps) {
       </div>
 
       {/* 2. SEÇÃO: DETALHES DO EQUIPAMENTO E PREVISÃO */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="bg-[#1a1c23] px-5 py-4 flex items-center gap-2.5 text-white">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="bg-[#1a1c23] rounded-t-xl px-5 py-4 flex items-center gap-2.5 text-white">
           <Package className="w-5 h-5 text-[#38b473]" />
           <h3 className="font-bold text-base tracking-tight">Informações Técnicas</h3>
         </div>
         
         <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-1">
+          <div className="md:col-span-1 relative">
             <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Equipamento / Modelo</label>
-            <input 
-              type="text" 
-              name="Equipamento" 
-              defaultValue={initialData?.Equipamento} 
-              disabled={isReadOnly} 
-              placeholder="Ex: iPhone 13 Pro" 
-              className="w-full text-sm border border-gray-200 rounded-lg px-4 py-2.5 bg-gray-50/30 focus:border-[#38b473] focus:ring-[#38b473] transition-all" 
-              required
-            />
+            <div className="relative">
+              <input 
+                type="text" 
+                name="Equipamento" 
+                value={searchEquipamento}
+                onChange={(e) => setSearchEquipamento(e.target.value)}
+                disabled={isReadOnly} 
+                placeholder="Ex: iPhone 13 Pro" 
+                className="w-full text-sm border border-gray-200 rounded-lg px-4 py-2.5 bg-gray-50/30 focus:border-[#38b473] focus:ring-[#38b473] transition-all" 
+                required
+                autoComplete="off"
+              />
+              {isSearchingEquipamento && (
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <div className="animate-spin h-4 w-4 border-2 border-[#38b473] border-t-transparent rounded-full"></div>
+                </div>
+              )}
+            </div>
+
+            {/* Lista de Resultados de Equipamentos (Produtos) */}
+            {produtos.length > 0 && !isReadOnly && (
+              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                {produtos.map((p) => (
+                  <button
+                    key={p.Id}
+                    type="button"
+                    onClick={() => {
+                      setSearchEquipamento(p.Cod_Nome);
+                      setProdutos([]);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 flex justify-between items-center transition-colors border-b border-gray-50 last:border-0"
+                  >
+                    <div>
+                      <p className="text-sm font-bold text-gray-800">{p.Cod_Nome}</p>
+                      <p className="text-[10px] text-gray-500">Código: {p.Cod_CodigoBarras || p.Id}</p>
+                    </div>
+                    {searchEquipamento === p.Cod_Nome && <Check className="w-4 h-4 text-[#38b473]" />}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           
           <div className="md:col-span-1">
@@ -231,7 +299,7 @@ export function OSForm({ initialData, isReadOnly = false }: OSFormProps) {
         </div>
       </div>
 
-      {/* 4. SEÇÃO: VALOR E OBSERVAÇÕES */}
+      {/* 4. SEÇÃO: VALOR, PAGAMENTO E OBSERVAÇÕES */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-6 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
           <div className="md:col-span-3">
@@ -250,48 +318,31 @@ export function OSForm({ initialData, isReadOnly = false }: OSFormProps) {
               />
             </div>
           </div>
+
+          <div className="md:col-span-3">
+            <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-2">Forma de Pag. *</label>
+            <select 
+              value={selectedFormaPagamentoId || ""} 
+              onChange={(e) => setSelectedFormaPagamentoId(Number(e.target.value) || null)}
+              disabled={isReadOnly}
+              className="w-full text-sm border-2 border-gray-200 rounded-md p-3.5 bg-gray-50 focus:border-blue-400 focus:bg-white transition-all font-bold"
+              required
+            >
+              <option value="" disabled>-- Selecionar --</option>
+              {formasPagamento.map(f => (
+                <option key={f.Id} value={f.Id}>{f.Nome}</option>
+              ))}
+            </select>
+          </div>
           
-          <div className="md:col-span-9">
+          <div className="md:col-span-6">
             <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Observações Internas (Não aparecem na impressão)</label>
             <input 
               name="Observacoes" 
               defaultValue={initialData?.Observacoes} 
               disabled={isReadOnly} 
-              placeholder="Ex: Equipamento com riscos na carcaça. Urgência." 
-              className="w-full text-sm border border-gray-200 rounded-lg px-4 py-3 bg-gray-50/30 focus:border-[#38b473] focus:ring-[#38b473] transition-all" 
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* 5. SEÇÃO: ASSINATURAS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Assinatura do Cliente */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="bg-[#1a1c23] px-5 py-4 flex items-center gap-2.5 text-white">
-            <PenTool className="w-5 h-5 text-[#38b473]" />
-            <h3 className="font-bold text-base tracking-tight">Assinatura do Cliente (Autorização)</h3>
-          </div>
-          <div className="p-6">
-            <SignaturePad 
-              onSave={setSigCliente} 
-              initialImage={initialData?.AssinaturaCliente} 
-              label="Assine para autorizar o serviço"
-            />
-          </div>
-        </div>
-
-        {/* Assinatura do Técnico */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="bg-[#1a1c23] px-5 py-4 flex items-center gap-2.5 text-white">
-            <PenTool className="w-5 h-5 text-[#38b473]" />
-            <h3 className="font-bold text-base tracking-tight">Responsável Técnico</h3>
-          </div>
-          <div className="p-6">
-            <SignaturePad 
-              onSave={setSigTecnico} 
-              initialImage={initialData?.AssinaturaTecnico} 
-              label="Assinatura do Técnico Responsável"
+              placeholder="Ex: Equipamento com riscos na carcaça." 
+              className="w-full text-sm border border-gray-200 rounded-xl px-4 py-3 bg-gray-50/30 focus:border-[#38b473] focus:ring-[#38b473] transition-all" 
             />
           </div>
         </div>

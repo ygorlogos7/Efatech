@@ -1,131 +1,187 @@
 import React from "react";
 import { getOrcamentoById } from "@/actions/orcamentos";
-import { 
-  FileText, User, Phone, Mail, MapPin, Calendar, 
-  Package, DollarSign, PenTool, Printer, ChevronLeft
-} from "lucide-react";
+import { getEmpresa } from "@/actions/configuracoes";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { PrintButton } from "@/components/common/PrintButton";
+import { auth } from "@/auth";
 
 export default async function PrintOrcamentoPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const resolvedParams = await params;
-  const id = parseInt(resolvedParams.id);
-  const { success, data: orcamento } = await getOrcamentoById(id);
+  const { id } = await params;
+  const orcamentoId = parseInt(id);
 
-  if (!success || !orcamento) {
+  // Auth Check
+  const session = await auth();
+  if (!session?.user) {
+      redirect("/login");
+  }
+
+  const [orcRes, empRes] = await Promise.all([
+    getOrcamentoById(orcamentoId),
+    getEmpresa()
+  ]);
+
+  if (!orcRes.success || !orcRes.data) {
     notFound();
   }
 
+  const orcamento = orcRes.data;
+  const empresa = empRes.data || {
+    RazaoSocial: "EFATECH ASSISTÊNCIA TÉCNICA E ACESSÓRIOS",
+    Cnpj: "41.092.084/0001-18",
+    Logradouro: "Praça Lauro Gomes, 20",
+    Bairro: "Centro",
+    Cidade: "S. Bernardo do Campo",
+    Telefone: "(11) 91091-8448",
+  };
+
   const client = orcamento.Clientes;
-  const address = client?.Endereco?.[0];
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 print:bg-white print:pb-0">
-      {/* Barra de Ações (Oculta na Impressão) */}
-      <div className="max-w-4xl mx-auto py-6 px-4 flex justify-between items-center print:hidden">
-        <Link href="/orcamentos/produtos" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
-          <ChevronLeft className="w-4 h-4" />
-          Voltar para Lista
-        </Link>
-        <PrintButton label="Imprimir Orçamento" />
-      </div>
-
-      {/* DOCUMENTO A4 */}
-      <div className="max-w-[210mm] mx-auto bg-white shadow-2xl print:shadow-none print:max-w-full p-10 font-sans text-gray-900 border border-gray-100 print:border-none rounded-xl print:rounded-none">
-        
-        {/* Cabeçalho */}
-        <div className="flex justify-between items-start border-b-2 border-[#1a1c23] pb-6 mb-8">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-[#1a1c23] rounded-xl flex items-center justify-center">
-              <FileText className="w-10 h-10 text-[#38b473]" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-black tracking-tighter text-gray-900 uppercase">Efatech PRO</h1>
-              <p className="text-xs font-bold text-[#38b473] tracking-widest uppercase">Soluções Corporativas</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <h2 className="text-xl font-black text-gray-900">ORÇAMENTO Nº {orcamento.Numero}</h2>
-            <p className="text-xs text-gray-500 font-medium">Emissão: {new Date(orcamento.DataEmissao).toLocaleDateString('pt-BR')}</p>
-            <p className="text-xs text-red-600 font-bold uppercase mt-1">Vencimento: {orcamento.DataValidade ? new Date(orcamento.DataValidade).toLocaleDateString('pt-BR') : 'N/D'}</p>
-          </div>
-        </div>
-
-        {/* Grade de Dados */}
-        <table className="w-full mb-8 border-collapse">
-            <thead>
-                <tr>
-                    <th colSpan={2} className="bg-gray-100 p-2 text-left text-[10px] font-black uppercase tracking-wider border border-gray-200">
-                        <div className="flex items-center gap-2">
-                            <User className="w-3 h-3 text-[#38b473]" /> Identificação do Cliente
-                        </div>
-                    </th>
-                </tr>
-            </thead>
-            <tbody className="text-xs border border-gray-200">
-                <tr className="border-b border-gray-100">
-                    <td className="p-3 border-r border-gray-100" width="60%"><label className="block text-[9px] uppercase text-gray-400 font-bold mb-1">Cliente / Razão Social</label><strong>{client?.Nome || "NÃO INFORMADO"}</strong></td>
-                    <td className="p-3"><label className="block text-[9px] uppercase text-gray-400 font-bold mb-1">CPF / CNPJ</label><strong>{client?.CPFCNPJ || "NÃO INFORMADO"}</strong></td>
-                </tr>
-                <tr>
-                    <td className="p-3 border-r border-gray-100"><label className="block text-[9px] uppercase text-gray-400 font-bold mb-1">Endereço</label>{address ? `${address.Logradouro}, ${address.Numero} - ${address.Bairro}` : "NÃO CADASTRADO"}</td>
-                    <td className="p-3"><label className="block text-[9px] uppercase text-gray-400 font-bold mb-1">Cidade / UF</label>{address ? `${address.Cidade} / ${address.UF}` : "N/D"}</td>
-                </tr>
-            </tbody>
-        </table>
-
-        {/* Seção Principal: Descrição */}
-        <div className="mb-8">
-            <div className="bg-[#1a1c23] text-white p-2 text-[10px] font-black uppercase tracking-wider rounded-t-lg flex items-center gap-2">
-                <Package className="w-3 h-3 text-[#38b473]" /> Detalhamento do Orçamento
-            </div>
-            <div className="border-2 border-[#1a1c23] p-6 rounded-b-lg min-h-[400px] whitespace-pre-wrap text-sm leading-relaxed text-gray-800">
-                {orcamento.Descricao || "Nenhuma descrição detalhada informada."}
-            </div>
-        </div>
-
-        {/* Resumo Financeiro Removido (Orçamento Gratuito) */}
-
-        {/* Termos e Assinaturas */}
-        <div className="grid grid-cols-2 gap-8 items-center mt-20">
-            <div className="text-center pt-8 border-t border-gray-300">
-                <p className="text-[10px] font-bold text-gray-400 uppercase mb-16">Aceite do Cliente</p>
-                <div className="h-0.5 w-full bg-gray-200 mb-2"></div>
-                <p className="text-[9px] font-black text-gray-900 uppercase">{client?.Nome || "Assinatura do Cliente"}</p>
-            </div>
-            <div className="text-center pt-8 border-t border-gray-300">
-                <p className="text-[10px] font-bold text-gray-400 uppercase mb-16">Responsável Efatech</p>
-                <div className="h-0.5 w-full bg-gray-200 mb-2"></div>
-                <p className="text-[9px] font-black text-gray-900 uppercase">Consultor de Vendas</p>
-            </div>
-        </div>
-
-        {/* Rodapé */}
-        <div className="mt-20 pt-6 border-t border-gray-100 text-center">
-            <p className="text-[8px] text-gray-400 uppercase font-black tracking-[0.2em]">Obrigado pela preferência! — Efatech Sistemas e Tecnologia</p>
-        </div>
-
-      </div>
-
+    <div className="w-full flex flex-col items-center overflow-hidden bg-gray-100 min-h-screen font-sans">
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
-          body { background: white !important; }
-          .print\\:hidden { display: none !important; }
-          @page { margin: 0; size: auto; }
-          .rounded-xl { border-radius: 0 !important; }
-          .shadow-2xl { box-shadow: none !important; }
-          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            @page { margin: 0; size: 80mm auto; }
+            body { margin: 0; padding: 0; width: 80mm; overflow: hidden !important; background: white !important; }
+            .print-hidden { display: none !important; }
         }
-        @page {
-            size: A4;
-            margin: 0;
+
+        /* REMOVER SCROLLBARS TOTAL */
+        ::-webkit-scrollbar { display: none; }
+        html, body { overflow: hidden !important; }
+
+        .receipt-professional {
+            width: 80mm;
+            background: #fff;
+            padding: 3.5mm;
+            box-sizing: border-box;
+            font-family: 'Inter', Arial, sans-serif;
+            line-height: 1.05;
+            overflow: hidden;
+        }
+
+        .dotted-divider { border-bottom: 2px dotted #000; margin: 3px 0; width: 100%; }
+        
+        .f-label-tiny { font-size: 10px; font-weight: 900; text-transform: uppercase; color: #333; }
+        .f-value-client { font-size: 12px; font-weight: 900; display: block; }
+        .f-title-main { font-size: 14px; font-weight: 900; text-align: center; display: block; padding: 1px 0; }
+        
+        .header-container { display: flex; align-items: start; gap: 8px; margin-bottom: 4px; }
+        .company-info { flex: 1; font-size: 10px; line-height: 1.1; }
+        .company-info b { font-size: 12px; font-weight: 900; }
+
+        .section-header-bar { 
+            text-align: center; 
+            font-size: 11px; 
+            font-weight: 900; 
+            text-transform: uppercase;
+            background: #f0f0f0;
+            padding: 3px;
+            border: 1px solid #000;
+            margin: 4px 0;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .validity-box {
+            text-align: center;
+            padding: 4px;
+            border: 2px dotted #000;
+            background: #fafafa;
+            margin: 5px 0;
         }
       `}} />
+
+      {/* BARRA DE AÇÕES (ESCONDIDA NA IMPRESSÃO) */}
+      <div className="max-w-md mx-auto mb-4 mt-6 p-4 print:hidden flex justify-between items-center bg-white shadow-2xl rounded-2xl border border-gray-100 w-full px-6">
+        <Link href="/orcamentos/produtos" className="px-4 py-1.5 bg-gray-50 text-sm font-bold border rounded-lg hover:bg-black hover:text-white transition-all flex items-center gap-2">
+            <ArrowLeft className="w-4 h-4" /> Voltar
+        </Link>
+        <PrintButton label="IMPRIMIR ORÇAMENTO" />
+      </div>
+
+      <div className="receipt-professional shadow-2xl print:shadow-none mb-10">
+          {/* CABEÇALHO */}
+          <div className="header-container">
+              <img src="/images/logo_efatech.png" alt="EFATECH" className="w-14 h-14 object-contain shrink-0" />
+              <div className="company-info leading-tight">
+                  <b>{empresa.RazaoSocial}</b><br />
+                  CNPJ: {empresa.Cnpj}<br />
+                  {empresa.Logradouro}, {empresa.Numero || '20'} - {empresa.Bairro}<br />
+                  {empresa.Cidade} - CEP: {empresa.Cep || '09710-040'}<br />
+                  {empresa.Telefone}
+              </div>
+          </div>
+
+          <div className="dotted-divider" />
+          <span className="f-title-main">ORÇAMENTO Nº {orcamento.Numero}</span>
+          <div className="dotted-divider" />
+
+          {/* INFO CLIENTE */}
+          <div className="my-2 space-y-1.5 px-1">
+              <div className="flex justify-between">
+                  <span className="f-label-tiny tracking-tighter text-[9px]">EMISSÃO: {new Date(orcamento.DataEmissao).toLocaleDateString('pt-BR')}</span>
+              </div>
+              <div>
+                  <span className="f-label-tiny">CLIENTE:</span>
+                  <span className="f-value-client uppercase">{client?.Nome || "AVULSO / BALCAO"}</span>
+              </div>
+              <div>
+                  <span className="f-label-tiny">TELEFONE:</span>
+                  <span className="f-value-client">{client?.Telefone || "(---) ---- ----"}</span>
+              </div>
+          </div>
+
+          {/* CONTEÚDO DO ORÇAMENTO */}
+          <div className="section-header-bar">DETALHAMENTO DO ORÇAMENTO</div>
+          <div className="p-2 border border-black min-h-[60px] bg-gray-50/50">
+             <p className="text-[12px] leading-relaxed font-bold uppercase whitespace-pre-wrap">
+                {orcamento.Descricao || "NENHUMA DESCRIÇÃO INFORMADA."}
+             </p>
+          </div>
+
+          {/* TOTAIS */}
+          <div className="flex justify-end gap-2 mt-4 bg-gray-100 p-1 border border-black items-center">
+              <span className="text-[11px] font-black uppercase">VALOR TOTAL:</span>
+              <span className="text-[22px] font-black tracking-tighter">R$ {Number(orcamento.Total).toFixed(2).replace(".", ",")}</span>
+          </div>
+
+          {/* VALIDADE */}
+          <div className="section-header-bar">VALIDADE E PRAZOS</div>
+          <div className="validity-box">
+              <span className="f-label-tiny block">Vencimento do Orçamento:</span>
+              <span className="text-[14px] font-black tracking-tight italic">
+                  {orcamento.DataValidade 
+                    ? new Date(orcamento.DataValidade).toLocaleDateString('pt-BR') 
+                    : 'CONSULTAR VENDEDOR'}
+              </span>
+              <p className="text-[8px] font-bold mt-1 uppercase text-blue-600 italic">Preços sujeitos a alteração após esta data.</p>
+          </div>
+
+          {/* OBSERVAÇÕES */}
+          <div className="dotted-divider" />
+          {orcamento.Observacoes && (
+            <p className="text-[11px] font-black italic mb-3 text-center uppercase tracking-tighter leading-tight">Obs: {orcamento.Observacoes}</p>
+          )}
+
+          <p className="text-center text-[10px] font-black border-y border-black py-1 mb-2">
+              *** DOCUMENTO DE ORÇAMENTO ***
+          </p>
+
+          {/* ASSINATURAS */}
+          <div className="flex justify-between gap-4 mt-10 pb-4">
+              <div className="flex-1 border-t border-black text-center pt-1 text-[9px] font-black uppercase">Cliente</div>
+              <div className="flex-1 border-t border-black text-center pt-1 text-[9px] font-black uppercase">Efatech</div>
+          </div>
+
+          <p className="text-center text-[8px] font-bold text-gray-400 mt-2">
+              Efatech ERP - Gestão Especialista
+          </p>
+      </div>
     </div>
   );
 }

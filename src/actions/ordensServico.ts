@@ -5,19 +5,27 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 // --- Ordens de Serviço ---
-export async function getOrdensServico(searchQuery?: string) {
+export async function getOrdensServico(searchQuery?: string, page: number = 1, pageSize: number = 20) {
+  const skip = (page - 1) * pageSize;
+  
   try {
+    const whereClause = searchQuery ? {
+      OR: [
+        { Equipamento: { contains: searchQuery, mode: "insensitive" as const } },
+        { Defeito: { contains: searchQuery, mode: "insensitive" as const } },
+      ]
+    } : {};
+
     const items = await prisma.ordensServico.findMany({
-      where: searchQuery ? {
-        OR: [
-          { Equipamento: { contains: searchQuery, mode: "insensitive" } },
-          { Defeito: { contains: searchQuery, mode: "insensitive" } },
-        ]
-      } : {},
+      where: whereClause,
       include: { Cliente: true },
       orderBy: { CreatedAt: "desc" },
+      take: pageSize,
+      skip: skip,
     });
-    return { success: true, data: items.map(i => ({ ...i, Total: Number(i.Total) })) };
+    
+    const total = await prisma.ordensServico.count({ where: whereClause });
+    return { success: true, data: items.map(i => ({ ...i, Total: Number(i.Total) })), total };
   } catch (error) {
     return { success: false, error: "Falha ao buscar ordens de serviço." };
   }
@@ -32,7 +40,8 @@ export async function getOrdemServicoById(id: number) {
           include: {
             Endereco: true
           }
-        }
+        },
+        FormaPagamento: true
       } 
     });
     if (item) {
@@ -64,6 +73,7 @@ export async function createOrdemServico(formData: FormData) {
         DataPrevisao: formData.get("DataPrevisao") ? new Date(formData.get("DataPrevisao") as string) : null,
         AssinaturaCliente: formData.get("AssinaturaCliente") as string | null,
         AssinaturaTecnico: formData.get("AssinaturaTecnico") as string | null,
+        FormaPagamentoId: formData.get("FormaPagamentoId") ? Number(formData.get("FormaPagamentoId")) : null,
         Ativo: true,
       }
     });
@@ -89,6 +99,7 @@ export async function updateOrdemServico(id: number, formData: FormData) {
         DataPrevisao: formData.get("DataPrevisao") ? new Date(formData.get("DataPrevisao") as string) : null,
         AssinaturaCliente: formData.get("AssinaturaCliente") as string | null,
         AssinaturaTecnico: formData.get("AssinaturaTecnico") as string | null,
+        FormaPagamentoId: formData.get("FormaPagamentoId") ? Number(formData.get("FormaPagamentoId")) : null,
         Ativo: formData.get("Ativo") === "true",
       }
     });

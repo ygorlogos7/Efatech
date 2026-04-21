@@ -26,10 +26,16 @@ export async function getClientes(searchQuery?: string) {
       orderBy: { Nome: "asc" },
     });
 
-    return { success: true, data: clientes };
+    // Serialização: converter Decimal para Number
+    const serializedClientes = clientes.map(c => ({
+      ...c,
+      LimiteCredito: c.LimiteCredito ? Number(c.LimiteCredito) : null
+    }));
+
+    return { success: true, data: serializedClientes };
   } catch (error) {
     console.error("Erro ao buscar clientes:", error);
-    return { success: false, error: "Falha ao buscar clientes do banco de dados." };
+    return { success: false, error: "Falha ao buscar clientes." };
   }
 }
 

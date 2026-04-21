@@ -1,9 +1,10 @@
 import { getVendaById } from "@/actions/vendas";
 import { getEmpresa } from "@/actions/configuracoes";
-import { notFound } from "next/navigation";
-import { Printer, ArrowLeft } from "lucide-react";
+import { notFound, redirect } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { PrintButton } from "@/components/common/PrintButton";
+import { auth } from "@/auth";
 
 export default async function PrintVendaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -13,263 +14,211 @@ export default async function PrintVendaPage({ params }: { params: Promise<{ id:
     notFound();
   }
 
-  const { data: venda } = await getVendaById(vendaId);
-  const { data: empresa } = await getEmpresa();
+  // Auth Check
+  const session = await auth();
+  if (!session?.user) {
+      redirect("/login");
+  }
 
-  if (!venda) notFound();
+  const [vendaRes, empRes] = await Promise.all([
+    getVendaById(vendaId),
+    getEmpresa()
+  ]);
+
+  if (!vendaRes.success || !vendaRes.data) {
+    notFound();
+  }
+
+  const venda = vendaRes.data;
+  const empresa = empRes.data || {
+    RazaoSocial: "EFATECH ASSISTÊNCIA TÉCNICA E ACESSÓRIOS",
+    Cnpj: "41.092.084/0001-18",
+    Logradouro: "Praça Lauro Gomes, 20",
+    Bairro: "Centro",
+    Cidade: "S. Bernardo do Campo",
+    Telefone: "(11) 91091-8448",
+  };
 
   const cliente = venda.Cliente;
-  const endereco = cliente?.Endereco?.[0]; // Pega o primeiro endereço do cliente
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      {/* ── BARRA DE AÇÕES (ESCONDIDA NA IMPRESSÃO) ── */}
-      <div className="max-w-4xl mx-auto mb-6 flex justify-between items-center print:hidden bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800">Comprovante de Venda</h2>
-          <p className="text-sm text-gray-500">Visualização de impressão para o cliente</p>
-        </div>
-        <div className="flex gap-3">
-          <Link 
-            href="/vendas/produtos" 
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 font-medium transition"
-          >
-            <ArrowLeft className="w-4 h-4" /> Voltar
-          </Link>
-          <PrintButton 
-            label="IMPRIMIR" 
-            className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 font-bold shadow-md transition"
-          />
-        </div>
-      </div>
-
+    <div className="w-full flex flex-col items-center overflow-hidden bg-gray-100 min-h-screen">
       <style dangerouslySetInnerHTML={{ __html: `
-        /* Estilos base para a área de impressão */
-        .print-container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 20px;
-            border: 1px solid #ddd;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            font-family: Arial, sans-serif;
-            color: #000;
-            font-size: 11px;
-        }
-
-        /* Cabeçalho superior (Logo e Informações) */
-        .os-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            align-items: center;
-        }
-        
-        .os-header-left {
-            width: 150px; height: 75px; 
-            background-color: #000; color: #fff; 
-            display: flex; align-items: center; justify-content: center; 
-            font-weight: bold; font-size: 18px;
-        }
-
-        .os-header-center {
-            flex-grow: 1;
-            padding-left: 20px;
-            line-height: 1.3;
-        }
-
-        .os-header-right {
-            text-align: right;
-            line-height: 1.3;
-            font-weight: bold;
-        }
-
-        /* Faixa título */
-        .os-title-bar {
-            background-color: #e9ecef;
-            padding: 8px 15px;
-            font-weight: bold;
-            text-align: center;
-            font-size: 14px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            border: 1px solid #ccc;
-        }
-
-        /* Seções e Tabelas */
-        .os-section-title {
-            background-color: #f1f3f5;
-            border: 1px solid #ccc;
-            border-bottom: none;
-            padding: 4px 8px;
-            font-size: 10px;
-            font-weight: bold;
-            text-transform: uppercase;
-            margin-top: 5px;
-        }
-
-        .os-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 11px;
-            margin-bottom: 15px;
-        }
-
-        .os-table th, .os-table td {
-            border: 1px solid #ccc;
-            padding: 6px 8px;
-            vertical-align: middle;
-        }
-
-        .os-table td label {
-            font-weight: bold;
-            margin-right: 5px;
-        }
-
-        .info-terms p {
-            margin: 2px 0;
-            font-size: 10px;
-        }
-
-        /* Tratamento exclusivo de impressão */
         @media print {
-            body { background: #fff; }
-            .no-print, nav, footer, .print-hidden { display: none !important; }
-            .print-container {
-                border: none;
-                box-shadow: none;
-                padding: 0;
-                width: 100%;
-                max-width: 100%;
-            }
-            
-            /* Força a cor de fundo cinza nos elementos em CSS para PDF/Impressão (Chrome/Edge) */
-            .os-title-bar, .os-section-title, .os-th-gray {
-                background-color: #f1f3f5 !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
+            @page { margin: 0; size: 80mm auto; }
+            body { margin: 0; padding: 0; width: 80mm; overflow: hidden !important; background: white !important; }
+            .print-hidden { display: none !important; }
+        }
 
-            .os-header-left {
-                background-color: #000 !important;
-                color: #fff !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
+        /* REMOVER SCROLLBARS TOTAL */
+        ::-webkit-scrollbar { display: none; }
+        html, body { overflow: hidden !important; }
 
-            @page { margin: 10mm; size: A4 portrait; }
+        .receipt-professional {
+            width: 80mm;
+            background: #fff;
+            padding: 3.5mm;
+            box-sizing: border-box;
+            font-family: 'Inter', Arial, sans-serif;
+            line-height: 1.05;
+            overflow: hidden;
+        }
+
+        .dotted-divider { border-bottom: 2px dotted #000; margin: 3px 0; width: 100%; }
+        
+        .os-table-mini { width: 100%; border-collapse: collapse; margin: 2px 0; }
+        .os-table-mini th { 
+            font-size: 9px; 
+            text-transform: uppercase; 
+            text-align: left; 
+            border-bottom: 1px solid #000;
+            padding: 1px 0;
+        }
+        .os-table-mini td { 
+            font-size: 13px; 
+            padding: 2.5px 0; 
+            font-weight: 700;
+        }
+
+        .f-label-tiny { font-size: 10px; font-weight: 900; text-transform: uppercase; color: #333; }
+        .f-value-client { font-size: 12px; font-weight: 900; display: inline; margin-left: 4px; }
+        .f-value-large { font-size: 18px; font-weight: 900; display: block; line-height: 1.0; }
+        .f-title-main { font-size: 15px; font-weight: 900; text-align: center; display: block; padding: 1px 0; }
+        
+        .header-container { display: flex; align-items: start; gap: 8px; margin-bottom: 2px; }
+        .company-info { flex: 1; font-size: 10px; line-height: 1.1; }
+        .company-info b { font-size: 12px; font-weight: 900; }
+
+        .section-header-bar { 
+            text-align: center; 
+            font-size: 11px; 
+            font-weight: 900; 
+            text-transform: uppercase;
+            background: #f0f0f0;
+            padding: 1px;
+            border: 1px solid #000;
+            margin: 2px 0;
+            line-height: 1.2;
+            -webkit-print-color-adjust: exact;
         }
       `}} />
 
-      <div className="print-container">
-          {/* Cabeçalho */}
-          <div className="os-header">
-              <div className="os-header-left">
-                  <span><span style={{color: "#00FFAA"}}>E</span>fatech</span>
-              </div>
-              <div className="os-header-center">
-                  <div style={{fontSize: "13px", fontWeight: "bold"}}>{empresa?.RazaoSocial || "EFATECH ASSISTÊNCIA TÉCNICA E ACESSÓRIOS"}</div>
-                  <div>CNPJ: {empresa?.Cnpj || "41.092.084/0001-18"}</div>
-                  <div>{empresa?.Logradouro || "Praça Lauro Gomes"}, {empresa?.Numero || "20"} - {empresa?.Bairro || "Centro"}</div>
-                  <div>{empresa?.Cidade || "São Bernardo do Campo"}/{empresa?.Uf || "SP"} - CEP: {empresa?.Cep || "09710-040"}</div>
-              </div>
-              <div className="os-header-right">
-                  <div>{empresa?.Telefone || "(11) 91091-8448"}</div>
-                  <div>{empresa?.Email || "efatechassistencia@gmail.com"}</div>
-                  <div>Responsável: {empresa?.RazaoSocial?.split(' ')[0] || "Johnny Andrade"}<br />Ferreira</div>
+      {/* BARRA DE AÇÕES (ESCONDIDA NA IMPRESSÃO) */}
+      <div className="max-w-md mx-auto mb-4 mt-6 p-4 print:hidden flex justify-between items-center bg-white shadow-2xl rounded-2xl border border-gray-100 w-full px-6">
+        <Link href="/vendas/produtos" className="px-4 py-1.5 bg-gray-50 text-sm font-bold border rounded-lg hover:bg-black hover:text-white transition-all flex items-center gap-2">
+            <ArrowLeft className="w-4 h-4" /> Voltar
+        </Link>
+        <PrintButton label="IMPRIMIR VENDA" />
+      </div>
+
+      <div className="receipt-professional shadow-2xl print:shadow-none mb-10">
+          {/* CABEÇALHO */}
+          <div className="header-container">
+              <img src="/images/logo_efatech.png" alt="EFATECH" className="w-14 h-14 object-contain shrink-0" />
+              <div className="company-info leading-tight">
+                  <b>{empresa.RazaoSocial}</b><br />
+                  CNPJ: {empresa.Cnpj}<br />
+                  {empresa.Logradouro}, {empresa.Numero || '20'} - {empresa.Bairro}<br />
+                  {empresa.Cidade} - CEP: {empresa.Cep || '09710-040'}<br />
+                  {empresa.Telefone}
               </div>
           </div>
 
-          {/* Barra Título */}
-          <div className="os-title-bar">
-              <span>COMPROVANTE DE VENDA Nº {venda.Numero}</span>
-              <span>{new Date(venda.DataVenda).toLocaleDateString('pt-BR')}</span>
+          <div className="dotted-divider" />
+          <span className="f-title-main">COMPROVANTE DE VENDA Nº {venda.Numero}</span>
+          <div className="dotted-divider" />
+
+          {/* INFO CLIENTE */}
+          <div className="my-1 space-y-0.5 px-0.5">
+              <div className="flex justify-between mb-1">
+                  <span className="f-label-tiny tracking-tighter text-[9px]">DATA: {new Date(venda.DataVenda).toLocaleDateString('pt-BR')}</span>
+                  <span className="f-label-tiny tracking-tighter text-[9px]">VENDEDOR: {venda.Vendedor || "SISTEMA"}</span>
+              </div>
+              <div className="flex flex-col gap-0.5 mt-1 border-t border-dotted border-gray-300 pt-1">
+                  <div>
+                      <span className="f-label-tiny">CLIENTE:</span>
+                      <span className="f-value-client uppercase">{cliente?.Nome || "AVULSO / BALCAO"}</span>
+                  </div>
+                  <div>
+                      <span className="f-label-tiny">TELEFONE:</span>
+                      <span className="f-value-client">{cliente?.Telefone || "(---) ---- ----"}</span>
+                  </div>
+              </div>
           </div>
 
-          {/* Período Execução */}
-          <div className="os-section-title">DETALHES DA VENDA</div>
-          <table className="os-table">
-              <tbody>
-                <tr>
-                    <td width="50%"><label>Data da Venda:</label> {new Date(venda.DataVenda).toLocaleString('pt-BR')}</td>
-                    <td width="50%"><label>Vendedor responsável:</label> {venda.Vendedor || ""}</td>
-                </tr>
-              </tbody>
-          </table>
-
-          {/* Dados do Cliente */}
-          <div className="os-section-title">DADOS DO CLIENTE</div>
-          <table className="os-table">
-              <tbody>
-                <tr>
-                    <td width="50%"><label>Cliente:</label> {cliente?.Nome || "CLIENTE PADRÃO"}</td>
-                    <td width="50%"><label>CNPJ/CPF:</label> {cliente?.CPFCNPJ || ""}</td>
-                </tr>
-                <tr>
-                    <td><label>Endereço:</label> {endereco ? `${endereco.Logradouro}, ${endereco.Numero} - ${endereco.Bairro}` : ""}</td>
-                    <td><label>CEP:</label> {endereco?.Cep || ""}</td>
-                </tr>
-                <tr>
-                    <td><label>Cidade:</label> {endereco?.Cidade || ""}</td>
-                    <td><label>Estado:</label> {endereco?.UF || ""}</td>
-                </tr>
-                <tr>
-                    <td><label>Telefone:</label> {cliente?.Telefone || cliente?.TelefoneCelular || ""}</td>
-                    <td><label>E-mail:</label> {cliente?.Email || ""}</td>
-                </tr>
-              </tbody>
-          </table>
-
-          {/* Serviços / Produtos */}
-          <div className="os-section-title">PRODUTOS DA VENDA</div>
-          <table className="os-table">
+          {/* PRODUTOS */}
+          <div className="section-header-bar">ITENS DA VENDA</div>
+          <table className="os-table-mini">
               <thead>
-                <tr className="os-th-gray" style={{textTransform: "uppercase"}}>
-                    <th style={{width: "10%"}} className="text-center">QTD</th>
-                    <th style={{width: "50%"}} className="text-left">DESCRIÇÃO DO PRODUTO</th>
-                    <th style={{width: "20%"}} className="text-center">V. UNIT (R$)</th>
-                    <th style={{width: "20%"}} className="text-right">VALOR TOTAL (R$)</th>
-                </tr>
+                  <tr>
+                      <th width="15%" className="text-center">QTD</th>
+                      <th width="45%">DESCRIÇÃO</th>
+                      <th width="40%" className="text-right">TOTAL</th>
+                  </tr>
               </thead>
               <tbody>
-                {venda.Itens?.map((item: any) => (
-                  <tr key={item.Id}>
-                      <td className="text-center">{Number(item.Quantidade)}</td>
-                      <td>
-                        {item.Produtos?.Cod_Nome} 
-                        <br />
-                        <span className="text-muted" style={{fontSize: "9px"}}>Código: {item.Produtos?.Cod_CodigoBarras || item.ProdutoId}</span>
-                      </td>
-                      <td className="text-center">{Number(item.Produtos?.Cod_Preco || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                      <td className="text-right font-bold">{Number(item.ValorTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                  </tr>
-                ))}
-                <tr>
-                    <td colSpan={3} className="text-right" style={{border: "none", borderRight: "1px solid #ccc"}}><strong>TOTAL (R$):</strong></td>
-                    <td className="text-right font-bold os-th-gray text-[13px]">
-                        {Number(venda.Total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </td>
-                </tr>
-                <tr>
-                    <td colSpan={4} className="info-terms" style={{padding: "10px"}}>
-                        <p><strong>Termos de garantia / Observações</strong></p>
-                        <p>NÃO GARANTIMOS APARELHOS QUE SOFRAM DANOS PELO CLIENTE COMO MAU USO, CONTATO COM ÁGUA, CONFIGURAÇÕES INDEVIDAS, INSTALAÇÕES DE SOFTWARE VÍRUS, AGENTES NATURAIS (RAIOS), TRANSPORTE INDEVIDO OU ACIDENTES. NÃO NOS RESPONSABILIZAMOS POR BACKUPS OU DANOS.</p>
-                        {venda.Observacoes && <p className="mt-2"><strong>Obs:</strong> {venda.Observacoes}</p>}
-                    </td>
-                </tr>
+                  {venda.Itens?.map((item: any) => (
+                    <tr key={item.Id}>
+                        <td className="text-[13px] text-center">{Number(item.Quantidade)}</td>
+                        <td className="text-[12px] leading-tight font-black uppercase">
+                          {item.Produtos?.Cod_Nome}
+                          <div className="text-[9px] font-medium leading-none text-gray-500">ID: {item.ProdutoId}</div>
+                        </td>
+                        <td className="text-right">R$ {Number(item.ValorTotal).toFixed(2).replace(".", ",")}</td>
+                    </tr>
+                  ))}
               </tbody>
           </table>
 
-          {/* Assinaturas */}
-          <div style={{display: "flex", justifyContent: "space-between", marginTop: "60px"}}>
-              <div style={{borderTop: "1px solid #000", width: "45%", textAlign: "center", paddingTop: "5px"}}>
-                  Assinatura do Cliente
-              </div>
-              <div style={{borderTop: "1px solid #000", width: "45%", textAlign: "center", paddingTop: "5px"}}>
-                  Efatech Assistência Técnica
-              </div>
+          {/* TOTAL E PAGAMENTO */}
+          <div className="flex justify-between gap-1 mt-3 bg-gray-100 p-1 border border-black items-center">
+              <span className="text-[12px] font-black uppercase">TOTAL:</span>
+              <span className="text-[16px] font-black tracking-tighter">R$ {Number(venda.Total).toFixed(2).replace(".", ",")}</span>
           </div>
+          
+          <div className="border border-black border-t-0 bg-white mb-2 pb-0.5">
+              <table className="w-full text-[9px] text-center font-bold uppercase leading-tight mt-0.5">
+                  <thead>
+                      <tr className="border-b border-gray-300 text-gray-500">
+                          <td width="33%">FORMA PAG.</td>
+                          <td width="33%">VENCIMENTO</td>
+                          <td width="34%">VALOR (R$)</td>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      <tr>
+                          <td className="pt-0.5">{venda.FormaPagamento?.Nome || "À VISTA"}</td>
+                          <td className="pt-0.5">{new Date(venda.DataVenda).toLocaleDateString('pt-BR')}</td>
+                          <td className="pt-0.5">{Number(venda.Total).toFixed(2).replace(".", ",")}</td>
+                      </tr>
+                  </tbody>
+              </table>
+          </div>
+
+          {/* GARANTIA */}
+          <div className="section-header-bar">
+            {venda.Garantia ? `GARANTIA: ${venda.Garantia}` : "TERMOS DE GARANTIA"}
+          </div>
+          <p className="text-[9px] text-justify leading-tight mb-2 font-bold uppercase border-l-2 border-black pl-2">
+              {venda.Garantia 
+                ? `ESTE PRODUTO POSSUI GARANTIA DE ${venda.Garantia} CONTRA DEFEITOS DE FABRICAÇÃO. `
+                : ""
+              }
+              NÃO GARANTIMOS APARELHOS QUE SOFRAM DANOS PELO CLIENTE COMO MAU USO, CONTATO COM ÁGUA/LÍQUIDOS, CONFIGURAÇÕES INDEVIDAS, INSTALAÇÕES DE SOFTWARE VÍRUS, AGENTES NATURAIS (RAIOS), TRANSPORTE INDEVIDO OU ACIDENTES.
+          </p>
+          
+          <div className="dotted-divider" />
+          {venda.Observacoes && (
+            <p className="text-[11px] font-black italic mb-3 text-center uppercase tracking-tighter">Obs: {venda.Observacoes}</p>
+          )}
+          
+          <p className="text-center text-[10px] font-black border-y border-black py-1 mb-2">
+              *** NÃO É DOCUMENTO FISCAL ***
+          </p>
+
+          <p className="text-center text-[8px] font-bold text-gray-400 mt-2">
+              Efatech ERP - Gestão Especialista
+          </p>
       </div>
     </div>
   );

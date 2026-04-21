@@ -132,6 +132,9 @@ model Produtos {
   Cod_Preco        Decimal      @db.Decimal(10, 2)
   Cod_Estoque      Int
   Ativo            Boolean
+  cod_venda        Float?
+  cod_ncm          String?      @db.VarChar(20)
+  dat_cadastro     DateTime?    @db.Timestamp(6)
   VendaItens       VendaItens[]
 }
 
@@ -407,6 +410,8 @@ model FormaPagamento {
   Id    Int     @id @default(autoincrement())
   Nome  String
   Ativo Boolean @default(true)
+  OrdensServico OrdensServico[]
+  Vendas Vendas[]
 }
 
 model PlanoConta {
@@ -695,7 +700,9 @@ model OrdensServico {
   Ativo             Boolean   @default(true)
   CreatedAt         DateTime  @default(now())
   UpdatedAt         DateTime  @updatedAt
+  FormaPagamentoId  Int?
   Cliente           Clientes? @relation(fields: [ClienteId], references: [Id])
+  FormaPagamento    FormaPagamento? @relation(fields: [FormaPagamentoId], references: [Id])
 }
 
 model OrdemServicoConfig {
@@ -739,8 +746,12 @@ model Vendas {
   CreatedAt         DateTime     @default(now())
   UpdatedAt         DateTime     @updatedAt
   Vendedor          String?
+  Garantia          String?
+  CaixaSessaoId     Int?
+  FormaPagamentoId  Int?
   Itens             VendaItens[]
   Cliente           Clientes?    @relation(fields: [ClienteId], references: [Id])
+  FormaPagamento    FormaPagamento? @relation(fields: [FormaPagamentoId], references: [Id])
 }
 
 model VendaItens {
@@ -789,4 +800,16 @@ model VendaSituacao {
   Nome  String
   Cor   String?
   Ativo Boolean @default(true)
+}
+
+model CaixaSessao {
+  Id              Int       @id @default(autoincrement())
+  CaixaId         Int?
+  UsuarioId       Int?
+  DataAbertura    DateTime? @default(now()) @db.Timestamptz(6)
+  DataFechamento  DateTime? @db.Timestamptz(6)
+  ValorAbertura   Decimal   @default(0.00) @db.Decimal(18, 2)
+  ValorFechamento Decimal?  @db.Decimal(18, 2)
+  Status          String?   @default("Aberto") @db.VarChar(20)
+  Observacoes     String?
 }

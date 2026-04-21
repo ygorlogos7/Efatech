@@ -18,7 +18,7 @@ export default async function ProdutosPage({
   const resolvedParams = await searchParams;
   const pesquisa = resolvedParams?.pesquisa || "";
   const page = Number(resolvedParams?.page) || 1; {/* 19/04/26 - pagina atual*/ }
-  const { success, data: items, total = 0 } = await getProdutos(pesquisa, page); {/* 19/04/26 - total de itens*/ }
+  const { success, data: items, total = 0 } = await getProdutos(pesquisa, page, 20); {/* 19/04/26 - total de itens limitados a 20 */ }
   const from = total === 0 ? 0 : (page - 1) * 20 + 1; {/* 19/04/26 - total de itens*/ }
   const to = total === 0 ? 0 : Math.min(page * 20, total); {/* 19/04/26 - total de itens*/ }
 
