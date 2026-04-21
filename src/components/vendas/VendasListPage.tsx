@@ -82,8 +82,10 @@ export async function VendasListPage({ tipo, title, page = 1 }: VendasListPagePr
                           { 
                             label: "Imprimir", 
                             icon: <Printer className="w-4 h-4" />,
-                            href: `/vendas/${tipo}/print/${item.Id}`,
-                            target: "_blank"
+                            subItems: [
+                              { label: "Formato A4", href: `/vendas/${tipo}/print-a4/${item.Id}` },
+                              { label: "Cupom Térmico", href: `/vendas/${tipo}/print/${item.Id}` },
+                            ]
                           },
                           { label: "Alterar situação", icon: <CheckSquare className="w-4 h-4" /> },
                           { 

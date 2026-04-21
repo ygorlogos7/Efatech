@@ -65,39 +65,43 @@ export default async function PrintOSPage({ params }: PageProps) {
                     font-family: 'Inter', Arial, sans-serif;
                     line-height: 1.05;
                     overflow: hidden;
+                    color: #000;
                 }
 
                 .dotted-divider { border-bottom: 2px dotted #000; margin: 3px 0; width: 100%; }
                 
-                .os-table-mini { width: 100%; border-collapse: collapse; margin: 2px 0; }
+                .os-table-mini { width: 100%; border-collapse: collapse; margin: 2px 0; color: #000; }
                 .os-table-mini th { 
                     font-size: 9px; 
                     text-transform: uppercase; 
                     text-align: left; 
                     border-bottom: 1px solid #000;
                     padding: 1px 0;
+                    color: #000;
                 }
                 .os-table-mini td { 
                     font-size: 13px; 
                     padding: 2.5px 0; 
                     font-weight: 700;
+                    color: #000;
                 }
 
-                .f-label-tiny { font-size: 10px; font-weight: 900; text-transform: uppercase; color: #333; }
-                .f-value-client { font-size: 12px; font-weight: 900; display: block; }
-                .f-value-large { font-size: 18px; font-weight: 900; display: block; line-height: 1.0; }
-                .f-title-main { font-size: 15px; font-weight: 900; text-align: center; display: block; padding: 1px 0; }
+                .f-label-tiny { font-size: 10px; font-weight: 900; text-transform: uppercase; color: #000; }
+                .f-value-client { font-size: 12px; font-weight: 900; display: block; color: #000; }
+                .f-value-large { font-size: 18px; font-weight: 900; display: block; line-height: 1.0; color: #000; }
+                .f-title-main { font-size: 15px; font-weight: 900; text-align: center; display: block; padding: 1px 0; color: #000; }
                 
-                .header-container { display: flex; align-items: start; gap: 8px; margin-bottom: 4px; }
-                .company-info { flex: 1; font-size: 10px; line-height: 1.1; }
-                .company-info b { font-size: 12px; font-weight: 900; }
+                .header-container { display: flex; align-items: start; gap: 8px; margin-bottom: 4px; color: #000; }
+                .company-info { flex: 1; font-size: 10px; line-height: 1.1; color: #000; }
+                .company-info b { font-size: 12px; font-weight: 900; color: #000; }
 
                 .section-header-bar { 
                     text-align: center; 
                     font-size: 11px; 
                     font-weight: 900; 
                     text-transform: uppercase;
-                    background: #f0f0f0;
+                    background: #eee;
+                    color: #000;
                     padding: 3px;
                     border: 1px solid #000;
                     margin: 4px 0;
@@ -108,8 +112,9 @@ export default async function PrintOSPage({ params }: PageProps) {
                     text-align: center;
                     padding: 3px;
                     border: 2px dotted #000;
-                    background: #fafafa;
+                    background: #fff;
                     margin: 5px 0;
+                    color: #000;
                 }
             `}} />
 

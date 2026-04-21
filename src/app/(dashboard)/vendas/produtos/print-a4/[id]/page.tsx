@@ -1,4 +1,4 @@
-import { getOrdemServicoById } from "@/actions/ordensServico";
+import { getVendaById } from "@/actions/vendas";
 import { getEmpresa } from "@/actions/configuracoes";
 import { notFound } from "next/navigation";
 import { Printer, ArrowLeft } from "lucide-react";
@@ -6,26 +6,21 @@ import Link from "next/link";
 import { PrintButton } from "@/components/forms/PrintButton";
 import { FloatingPrintActions } from "@/components/common/FloatingPrintActions";
 
-export default async function PrintOSA4Page({ params }: { params: Promise<{ id: string }> }) {
+export default async function PrintVendaA4Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const osId = Number(id);
+  const vendaId = Number(id);
   
-  if (isNaN(osId)) {
+  if (isNaN(vendaId)) {
     notFound();
   }
 
-  const { data: os } = await getOrdemServicoById(osId);
+  const { data: venda } = await getVendaById(vendaId);
   const { data: empresa } = await getEmpresa();
 
-  if (!os) notFound();
+  if (!venda) notFound();
 
-  const cliente = os.Cliente;
+  const cliente = venda.Cliente;
   const endereco = cliente?.Endereco?.[0]; // Pega o primeiro endereço do cliente
-
-  // Cálculo de 90 dias para garantia (opcional exibir no A4 tbm)
-  const dataEntrada = new Date(os.DataAbertura);
-  const dataVencimento = new Date(dataEntrada);
-  dataVencimento.setDate(dataVencimento.getDate() + 90);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -109,11 +104,13 @@ export default async function PrintOSA4Page({ params }: { params: Promise<{ id: 
             border: 1px solid #ccc;
             padding: 6px 8px;
             vertical-align: middle;
+            color: #000;
         }
 
         .os-table td label {
             font-weight: bold;
             margin-right: 5px;
+            color: #000;
         }
 
         .info-terms p {
@@ -153,10 +150,10 @@ export default async function PrintOSA4Page({ params }: { params: Promise<{ id: 
 
       {/* BARRA DE AÇÕES (ESCONDIDA NA IMPRESSÃO) */}
       <div className="max-w-[900px] mx-auto mb-4 mt-6 p-4 print:hidden flex justify-between items-center bg-white shadow-2xl rounded-2xl border border-gray-100">
-          <Link href="/ordens-servico" className="px-4 py-1.5 bg-gray-50 text-sm font-bold border rounded-lg hover:bg-black hover:text-white transition-all flex items-center gap-2">
+          <Link href="/vendas/produtos" className="px-4 py-1.5 bg-gray-50 text-sm font-bold border rounded-lg hover:bg-black hover:text-white transition-all flex items-center gap-2">
               <ArrowLeft className="w-4 h-4" /> Voltar
           </Link>
-          <PrintButton label="IMPRIMIR O.S." />
+          <PrintButton label="IMPRIMIR VENDA" />
       </div>
 
       <div className="print-container">
@@ -180,8 +177,8 @@ export default async function PrintOSA4Page({ params }: { params: Promise<{ id: 
 
           {/* Barra Título */}
           <div className="os-title-bar">
-              <span>ORDEM DE SERVIÇO Nº {os.Numero}</span>
-              <span>DATA: {new Date(os.DataAbertura).toLocaleDateString('pt-BR')}</span>
+              <span>COMPROVANTE DE VENDA Nº {venda.Numero}</span>
+              <span>DATA: {new Date(venda.DataVenda).toLocaleDateString('pt-BR')}</span>
           </div>
 
           {/* Dados do Cliente */}
@@ -207,59 +204,45 @@ export default async function PrintOSA4Page({ params }: { params: Promise<{ id: 
               </tbody>
           </table>
 
-          {/* Equipamento */}
-          <div className="os-section-title">DADOS DO EQUIPAMENTO</div>
-          <table className="os-table">
-              <tbody>
-                <tr>
-                    <td width="33%"><label>Equipamento:</label> {os.Equipamento || "-"}</td>
-                    <td width="33%"><label>Previsão:</label> {os.DataPrevisao ? new Date(os.DataPrevisao).toLocaleDateString('pt-BR') : "A COMBINAR"}</td>
-                    <td width="34%"><label>Situação:</label> {os.Ativo ? "ABERTA" : "FINALIZADA"}</td>
-                </tr>
-                <tr>
-                    <td colSpan={3}>
-                        <label>Defeito Reclamado:</label> 
-                        <span className="uppercase text-gray-700">{os.Defeito || "NÃO INFORMADO"}</span>
-                    </td>
-                </tr>
-              </tbody>
-          </table>
-
-          {/* Detalhes do Serviço */}
-          <div className="os-section-title">DETALHAMENTO DO SERVIÇO / SOLUÇÃO</div>
+          {/* ITENS */}
+          <div className="os-section-title">ITENS DA VENDA</div>
           <table className="os-table">
               <thead>
                 <tr className="os-th-gray" style={{textTransform: "uppercase"}}>
-                    <th style={{width: "80%"}} className="text-left">DESCRIÇÃO DA SOLUÇÃO / SERVIÇOS EXECUTADOS</th>
-                    <th style={{width: "20%"}} className="text-right">VALOR TOTAL (R$)</th>
+                    <th style={{width: "10%"}} className="text-center">QTD</th>
+                    <th style={{width: "60%"}} className="text-left">DESCRIÇÃO DO PRODUTO / SERVIÇO</th>
+                    <th style={{width: "15%"}} className="text-right">VALOR UNIT.</th>
+                    <th style={{width: "15%"}} className="text-right">VALOR TOTAL</th>
                 </tr>
               </thead>
               <tbody>
+                {venda.Itens?.map((item: any) => (
+                  <tr key={item.Id}>
+                      <td className="text-center">{Number(item.Quantidade)}</td>
+                      <td>
+                        <div className="font-bold uppercase">{item.Produtos?.Cod_Nome}</div>
+                        <div style={{fontSize: "9px", color: "#666"}}>Código: {item.Produtos?.Cod_CodigoBarras || item.ProdutoId}</div>
+                      </td>
+                      <td className="text-right">R$ {Number(item.Produtos?.Cod_Preco || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                      <td className="text-right font-bold">R$ {Number(item.ValorTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                  </tr>
+                ))}
                 <tr>
-                    <td className="min-h-[60px] vertical-top h-[80px]">
-                        <div className="font-bold uppercase leading-relaxed p-2">
-                           {os.Solucao || "AGUARDANDO DIAGNÓSTICO / EXECUÇÃO"}
-                        </div>
-                    </td>
-                    <td className="text-right font-black text-[14px]">
-                        {Number(os.Total).toLocaleString('pt-BR', { minimumFractionDigits: 2, style: 'currency', currency: 'BRL' })}
-                    </td>
-                </tr>
-                <tr>
-                    <td className="text-right" style={{border: "none", borderRight: "1px solid #ccc"}}><strong>TOTAL OS (R$):</strong></td>
+                    <td colSpan={3} className="text-right" style={{border: "none", borderRight: "1px solid #ccc"}}><strong>TOTAL DA VENDA (R$):</strong></td>
                     <td className="text-right font-bold os-th-gray text-[15px]">
-                        {Number(os.Total).toLocaleString('pt-BR', { minimumFractionDigits: 2, style: 'currency', currency: 'BRL' })}
+                        {Number(venda.Total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </td>
                 </tr>
                 <tr>
-                    <td colSpan={2} className="info-terms" style={{padding: "15px"}}>
-                        <p><strong>Termos de garantia / Observações</strong></p>
-                        <p className="text-justify leading-tight opacity-70">
-                            NÃO GARANTIMOS APARELHOS QUE SOFRAM DANOS PELO CLIENTE COMO MAU USO, CONTATO COM ÁGUA/LÍQUIDOS, CONFIGURAÇÕES INDEVIDAS, INSTALAÇÕES DE SOFTWARE VÍRUS, AGENTES NATURAIS (RAIOS), TRANSPORTE INDEVIDO OU ACIDENTES. NÃO NOS RESPONSABILIZAMOS POR BACKUPS OU DADOS.
+                    <td colSpan={4} className="info-terms" style={{padding: "15px"}}>
+                        <p><strong>Forma de Pagamento / Observações</strong></p>
+                        <p className="text-justify leading-tight text-black font-medium">
+                            <span className="uppercase font-bold">FORMA DE PAGAMENTO: {venda.FormaPagamento?.Nome || "DINHEIRO"}</span>
                             <br />
-                            <strong>VALIDADE DA GARANTIA:</strong> 90 DIAS A PARTIR DE {new Date(os.DataAbertura).toLocaleDateString('pt-BR')}.
+                            NÃO GARANTIMOS PRODUTOS QUE SOFRAM DANOS PELO CLIENTE COMO MAU USO, CONTATO COM ÁGUA/LÍQUIDOS, QUEDAS, AGENTES NATURAIS OU ACIDENTES. 
+                            {venda.Garantia && <><br/><strong>PRAZO DE GARANTIA:</strong> {venda.Garantia}</>}
                         </p>
-                        {os.Observacoes && <p className="mt-4 p-2 bg-gray-50 border-l-4 border-black"><strong>Obs:</strong> {os.Observacoes}</p>}
+                        {venda.Observacoes && <p className="mt-4 p-2 bg-gray-50 border-l-4 border-black"><strong>Obs:</strong> {venda.Observacoes}</p>}
                     </td>
                 </tr>
               </tbody>
@@ -271,7 +254,7 @@ export default async function PrintOSA4Page({ params }: { params: Promise<{ id: 
                   Assinatura do Cliente
               </div>
               <div style={{borderTop: "1px solid #000", width: "45%", textAlign: "center", paddingTop: "8px", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase"}}>
-                  Efatech - Técnico Responsável
+                  Efatech Assistência
               </div>
           </div>
 
