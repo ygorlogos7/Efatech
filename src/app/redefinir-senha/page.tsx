@@ -1,10 +1,10 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-export default function RedefinirSenhaPage() {
+function RedefinirSenhaContent() {
   const searchParams = useSearchParams();
   const token = useMemo(() => searchParams.get("token") ?? "", [searchParams]);
   const [senha, setSenha] = useState("");
@@ -108,5 +108,13 @@ export default function RedefinirSenhaPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function RedefinirSenhaPage() {
+  return (
+    <Suspense fallback={<main className="flex min-h-screen items-center justify-center bg-[var(--color-bg-page)] p-4 text-sm text-gray-500">Carregando...</main>}>
+      <RedefinirSenhaContent />
+    </Suspense>
   );
 }
