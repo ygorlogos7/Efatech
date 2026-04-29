@@ -15,6 +15,7 @@ export default function CadastroPage() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -36,6 +37,21 @@ export default function CadastroPage() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setFieldErrors({});
+
+    const validationResponse = await fetch("/api/auth/validate-register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome, telefone, email, senha }),
+    });
+
+    if (!validationResponse.ok) {
+      const validationData = await validationResponse.json();
+      setError(validationData?.error || "Dados de cadastro invalidos.");
+      setFieldErrors(validationData?.fieldErrors || {});
+      setIsLoading(false);
+      return;
+    }
 
     const formData = new FormData();
     formData.append("nome", nome);
@@ -102,6 +118,9 @@ export default function CadastroPage() {
                 onChange={(e) => setNome(e.target.value)}
                 className="w-full py-[12px] px-[16px] border border-[var(--color-border-color)] rounded-[10px] text-[15px] text-black bg-[#fcfcfc] focus:outline-none focus:border-[var(--color-primary-green)] transition-colors"
               />
+              {fieldErrors.nome && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.nome}</p>
+              )}
             </div>
 
             <div className="flex flex-wrap -mx-2 mb-[15px]">
@@ -117,6 +136,9 @@ export default function CadastroPage() {
                   onChange={(e) => setTelefone(e.target.value)}
                   className="w-full py-[12px] px-[16px] border border-[var(--color-border-color)] rounded-[10px] text-[15px] text-black bg-[#fcfcfc] focus:outline-none focus:border-[var(--color-primary-green)] transition-colors"
                 />
+                {fieldErrors.telefone && (
+                  <p className="mt-1 text-xs text-red-600">{fieldErrors.telefone}</p>
+                )}
               </div>
               <div className="w-full md:w-1/2 px-2">
                 <label className="block text-[14px] text-[var(--color-text-gray)] mb-[5px]">
@@ -144,6 +166,9 @@ export default function CadastroPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full py-[12px] px-[16px] border border-[var(--color-border-color)] rounded-[10px] text-[15px] text-black bg-[#fcfcfc] focus:outline-none focus:border-[var(--color-primary-green)] transition-colors"
               />
+              {fieldErrors.email && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div className="mb-[10px] text-left">
@@ -171,6 +196,9 @@ export default function CadastroPage() {
                   )}
                 </button>
               </div>
+              {fieldErrors.senha && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.senha}</p>
+              )}
             </div>
 
             <div className="text-left mt-[10px] mb-6">

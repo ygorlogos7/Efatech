@@ -14,9 +14,11 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
           return null;
         }
 
+        const normalizedEmail = String(credentials.email).trim().toLowerCase();
+
         // Busca o usuário pelo e-mail com E maiusculo no banco do C#
         const user = await prisma.usuarios.findFirst({
-          where: { Email: credentials.email as string }
+          where: { Email: normalizedEmail }
         });
 
         if (!user) return null;

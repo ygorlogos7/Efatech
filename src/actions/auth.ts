@@ -4,10 +4,11 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
+import { validateRegisterInput } from "@/lib/auth-validation";
 
 export async function loginAction(formData: FormData) {
   try {
-    const email = formData.get("email");
+    const email = String(formData.get("email") ?? "").trim().toLowerCase();
     const senha = formData.get("senha");
     
     // Isso vai tentar logar e jogar um throw Redirect (se sucesso) ou AuthError (se falha)
@@ -26,22 +27,20 @@ export async function loginAction(formData: FormData) {
 export async function registerUser(formData: FormData) {
   try {
     const nome = formData.get("nome") as string;
-    const email = formData.get("email") as string;
+    const email = String(formData.get("email") as string).trim().toLowerCase();
     const senha = formData.get("senha") as string;
     const telefoneStr = formData.get("telefone") as string;
     const celularStr = formData.get("celular") as string;
 
-    if (!nome || !email || !senha || !telefoneStr) {
-      return { success: false, error: "Preencha todos os campos obrigatórios." };
-    }
-
-    // Verifica se e-mail já existe (Note que a tabela usa "Email" com E maiúsculo - do C#)
-    const existingUser = await prisma.usuarios.findFirst({
-      where: { Email: email }
+    const validation = await validateRegisterInput({
+      nome,
+      email,
+      senha,
+      telefone: telefoneStr,
     });
 
-    if (existingUser) {
-      return { success: false, error: "Este e-mail já está em uso." };
+    if (!validation.success) {
+      return { success: false, error: validation.error };
     }
 
     // Limpa a formatação de telefone (remove parênteses, traços, espaços)

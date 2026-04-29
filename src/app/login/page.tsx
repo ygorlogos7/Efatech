@@ -11,12 +11,28 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setFieldErrors({});
+
+    const validationResponse = await fetch("/api/auth/validate-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, senha }),
+    });
+
+    if (!validationResponse.ok) {
+      const validationData = await validationResponse.json();
+      setError(validationData?.error || "Dados de login invalidos.");
+      setFieldErrors(validationData?.fieldErrors || {});
+      setIsLoading(false);
+      return;
+    }
 
     const formData = new FormData();
     formData.append("email", email);
@@ -73,6 +89,9 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full py-[12px] px-[16px] border border-[var(--color-border-color)] rounded-[10px] text-[15px] text-black bg-[#fcfcfc] focus:outline-none focus:border-[var(--color-primary-green)] transition-colors"
               />
+              {fieldErrors.email && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div className="mb-[15px] text-left">
@@ -101,10 +120,13 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
+              {fieldErrors.senha && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.senha}</p>
+              )}
             </div>
 
             <div className="flex justify-end mb-2">
-              <Link href="#" className="flex justify-end text-[12px] text-gray-500 hover:text-[var(--color-primary-green)] hover:underline">
+              <Link href="/esqueci-senha" className="flex justify-end text-[12px] text-gray-500 hover:text-[var(--color-primary-green)] hover:underline">
                 Esqueci minha senha
               </Link>
             </div>
