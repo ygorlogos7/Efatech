@@ -21,12 +21,14 @@ import {
 } from "lucide-react";
 import { getCaixaSessoes } from "@/actions/caixa";
 import { getFuncionarios } from "@/actions/funcionarios";
+import { CloseCashierModal } from "@/components/vendas/CloseCashierModal";
 
 export default function CaixasPage() {
   const router = useRouter();
   const [sessions, setSessions] = useState<any[]>([]);
   const [isPending, startTransition] = useTransition();
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
+  const [closeCaixaId, setCloseCaixaId] = useState<number | null>(null);
   
   // Estados para Busca Avançada
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
@@ -258,7 +260,11 @@ export default function CaixasPage() {
                       </button>
                       
                       {/* Vermelho: Fechar/Derrubar */}
-                      <button className="w-7 h-7 flex items-center justify-center bg-[#dd4b39] hover:bg-red-700 text-white rounded transition-colors shadow-sm">
+                      <button 
+                        onClick={() => setCloseCaixaId(session.Id)}
+                        title="Fechar Caixa"
+                        className="w-7 h-7 flex items-center justify-center bg-[#dd4b39] hover:bg-red-700 text-white rounded transition-colors shadow-sm"
+                      >
                         <Power className="w-3.5 h-3.5" />
                       </button>
                       
@@ -314,6 +320,15 @@ export default function CaixasPage() {
             </tbody>
           </table>
         </div>
+        
+        <CloseCashierModal
+          isOpen={closeCaixaId !== null}
+          onClose={() => setCloseCaixaId(null)}
+          caixaId={closeCaixaId || 0}
+          onSuccess={() => {
+            loadSessions();
+          }}
+        />
       </div>
     </div>
   );

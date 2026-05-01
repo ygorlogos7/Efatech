@@ -141,10 +141,6 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
   const endereco = selectedCliente?.Endereco?.[0];
 
   const handleSubmit = (formData: FormData) => {
-    if (!selectedClienteId && tipo === "balcao") {
-      error("Por favor, selecione um cliente.");
-      return;
-    }
     if (items.length === 0) {
       error("Adicione ao menos um produto.");
       return;
@@ -214,7 +210,7 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
             </div>
 
             <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500">Cliente *</label>
+              <label className="font-semibold text-gray-500">Cliente</label>
               <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-blue-400 focus-within:border-blue-400 transition-all">
                 <input 
                   type="text" 

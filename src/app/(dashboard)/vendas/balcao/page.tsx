@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { VendasListPage } from "@/components/vendas/VendasListPage";
 
 export default async function VendasBalcaoPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {

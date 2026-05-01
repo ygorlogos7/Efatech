@@ -31,6 +31,10 @@ export function VendasHeader({ tipo, title }: VendasHeaderProps) {
 
   React.useEffect(() => {
     checkCaixa();
+    
+    // Refresh status when window gains focus
+    window.addEventListener("focus", checkCaixa);
+    return () => window.removeEventListener("focus", checkCaixa);
   }, []);
 
   const handleVenderClick = async () => {

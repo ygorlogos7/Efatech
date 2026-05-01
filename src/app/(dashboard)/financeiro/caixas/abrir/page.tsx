@@ -27,7 +27,6 @@ export default function AbrirCaixaPage() {
   // Data
   const [funcionarios, setFuncionarios] = useState<any[]>([]);
   const [formasPgto, setFormasPgto] = useState<any[]>([]);
-  const [planosContas, setPlanosContas] = useState<any[]>([]);
 
   // Form State
   const [gerarRecebimento, setGerarRecebimento] = useState(true);
@@ -36,7 +35,7 @@ export default function AbrirCaixaPage() {
     valorAbertura: "0,00",
     descricao: "Abertura de caixa",
     formaPgtoId: "",
-    planoContaId: "",
+    formaPgtoId: "",
     vencimento: new Date().toISOString().split("T")[0]
   });
 
@@ -48,8 +47,7 @@ export default function AbrirCaixaPage() {
       const respPgto = await getFormasPagamento();
       if (respPgto.success) setFormasPgto(respPgto.data || []);
 
-      const respPlano = await getPlanoContas();
-      if (respPlano.success) setPlanosContas(respPlano.data || []);
+
     };
     loadData();
   }, []);
@@ -72,7 +70,7 @@ export default function AbrirCaixaPage() {
         if (gerarRecebimento) {
             data.append("descricao", formData.descricao);
             data.append("formaPgtoId", formData.formaPgtoId);
-            data.append("planoContaId", formData.planoContaId);
+
             data.append("vencimento", formData.vencimento);
         }
 
@@ -215,28 +213,7 @@ export default function AbrirCaixaPage() {
                   </div>
                 </div>
 
-                {/* Plano de Contas */}
-                <div>
-                  <label className="block text-[13px] font-bold text-gray-800 mb-1.5">Plano de contas<span className="text-red-500 ml-0.5">*</span></label>
-                  <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <select 
-                        value={formData.planoContaId}
-                        onChange={(e) => setFormData({...formData, planoContaId: e.target.value})}
-                        className="w-full h-10 border border-gray-300 rounded px-3 text-[13px] bg-white outline-none focus:border-blue-400 transition-colors appearance-none text-gray-600"
-                      >
-                        <option value="">Selecione</option>
-                        {planosContas.map(p => (
-                          <option key={p.Id} value={p.Id}>{p.Nome}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
-                    </div>
-                    <button className="h-10 w-10 flex items-center justify-center border border-gray-300 rounded bg-gray-50 hover:bg-gray-100 transition-colors">
-                      <Trash2 className="w-4 h-4 text-gray-500" />
-                    </button>
-                  </div>
-                </div>
+
 
                 {/* Vencimento */}
                 <div>
