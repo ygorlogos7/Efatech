@@ -45,24 +45,24 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(56, 180, 115, 0.2); /* Verde Efatech transparente */
+  background: rgba(0, 0, 0, 0.2); /* Preto transparente */
   border-radius: 10px;
   transition: all 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 180, 115, 0.8); /* Verde Efatech mais sólido no hover */
+  background: rgba(0, 0, 0, 0.6); /* Preto mais sólido no hover */
 }
 
 /* Áreas específicas com scrollbars mais visíveis ao passar o mouse */
 .overflow-y-auto:hover::-webkit-scrollbar-thumb {
-  background: rgba(56, 180, 115, 0.4);
+  background: rgba(0, 0, 0, 0.3);
 }
 
 /* Para navegadores Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #38b473 transparent;
+  scrollbar-color: #333333 transparent;
 }
 
 html, body {
