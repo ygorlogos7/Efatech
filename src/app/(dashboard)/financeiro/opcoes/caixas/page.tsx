@@ -238,7 +238,7 @@ export default function CaixasPage() {
                   <td className="px-4 py-3.5 text-gray-700">{session.FuncionarioNome}</td>
                   <td className="px-4 py-3.5 text-gray-700 font-medium">{formatDate(session.DataAbertura)}</td>
                   <td className="px-4 py-3.5 text-gray-500">{formatDate(session.DataFechamento)}</td>
-                  <td className="px-4 py-3.5 text-gray-800 font-bold">{session.ValorAbertura.toFixed(2).replace(".", ",")}</td>
+                  <td className="px-4 py-3.5 text-gray-800 font-bold">{session.Saldo.toFixed(2).replace(".", ",")}</td>
                   <td className="px-4 py-3.5 relative overflow-visible">
                     <div className="flex items-center justify-center gap-1">
                       {/* Azul: Ver */}

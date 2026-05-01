@@ -83,6 +83,12 @@ export async function createOrdemServico(formData: FormData) {
       clienteId = novoCliente.Id;
     }
 
+    // Buscar caixa aberto para vincular
+    const caixaAberto = await prisma.caixaSessao.findFirst({
+      where: { Status: "Aberto" },
+      orderBy: { DataAbertura: "desc" }
+    });
+
     const res = await prisma.ordensServico.create({
       data: {
         ClienteId: clienteId,
@@ -95,6 +101,7 @@ export async function createOrdemServico(formData: FormData) {
         AssinaturaCliente: formData.get("AssinaturaCliente") as string | null,
         AssinaturaTecnico: formData.get("AssinaturaTecnico") as string | null,
         FormaPagamentoId: formData.get("FormaPagamentoId") ? Number(formData.get("FormaPagamentoId")) : null,
+        CaixaSessaoId: caixaAberto?.Id || null,
         Ativo: true,
       }
     });
@@ -108,6 +115,17 @@ export async function createOrdemServico(formData: FormData) {
 
 export async function updateOrdemServico(id: number, formData: FormData) {
   try {
+    const isFinalizing = formData.get("Ativo") === "false";
+    let caixaSessaoId = undefined;
+
+    if (isFinalizing) {
+      const caixaAberto = await prisma.caixaSessao.findFirst({
+        where: { Status: "Aberto" },
+        orderBy: { DataAbertura: "desc" }
+      });
+      caixaSessaoId = caixaAberto?.Id;
+    }
+
     const res = await prisma.ordensServico.update({
       where: { Id: id },
       data: {
@@ -121,7 +139,8 @@ export async function updateOrdemServico(id: number, formData: FormData) {
         AssinaturaCliente: formData.get("AssinaturaCliente") as string | null,
         AssinaturaTecnico: formData.get("AssinaturaTecnico") as string | null,
         FormaPagamentoId: formData.get("FormaPagamentoId") ? Number(formData.get("FormaPagamentoId")) : null,
-        Ativo: formData.get("Ativo") === "true",
+        CaixaSessaoId: caixaSessaoId,
+        Ativo: !isFinalizing,
       }
     });
     revalidatePath("/ordens-servico");

@@ -137,15 +137,29 @@ export async function getCaixaSessoes(filters?: { atendenteId?: number, dataInic
       where: { Id: { in: userIds as number[] } }
     });
 
-    const data = sessions.map(s => {
+    const data = await Promise.all(sessions.map(async s => {
       const user = users.find(u => u.Id === s.UsuarioId);
+      
+      // Calcular saldo dinâmico da sessão
+      const vendasSessao = await prisma.vendas.findMany({
+        where: { CaixaSessaoId: s.Id, Ativo: true }
+      });
+      const osSessao = await prisma.ordensServico.findMany({
+        where: { CaixaSessaoId: s.Id, Ativo: false }
+      });
+
+      const totalVendas = vendasSessao.reduce((acc, curr) => acc + Number(curr.Total), 0);
+      const totalOS = osSessao.reduce((acc, curr) => acc + Number(curr.Total), 0);
+      const saldoAtual = Number(s.ValorAbertura) + totalVendas + totalOS;
+
       return {
         ...s,
         FuncionarioNome: user?.Nome || "Sistema",
         ValorAbertura: Number(s.ValorAbertura),
         ValorFechamento: s.ValorFechamento ? Number(s.ValorFechamento) : null,
+        Saldo: saldoAtual,
       };
-    });
+    }));
 
     return { success: true, data };
   } catch (error) {
@@ -168,23 +182,37 @@ export async function getCaixaSessaoDetalhes(id: number) {
 
     // Buscar Vendas desta sessão
     const vendas = await prisma.vendas.findMany({
-      where: { CaixaSessaoId: id },
+      where: { CaixaSessaoId: id, Ativo: true }, // Apenas vendas concretizadas
       include: { FormaPagamento: true }
     });
 
-    // Agrupar vendas por forma de pagamento
-    const resumoVendas: any[] = [];
-    const formasIds = [...new Set(vendas.map(v => v.FormaPagamentoId).filter(Boolean))];
-    
-    for (const fId of formasIds) {
-        const vendasDaForma = vendas.filter(v => v.FormaPagamentoId === fId);
-        const total = vendasDaForma.reduce((acc, curr) => acc + Number(curr.Total), 0);
-        resumoVendas.push({
-            Forma: vendasDaForma[0].FormaPagamento?.Nome || "Outros",
-            Recebido: total, // Simplificação: tratando total como recebido
-            AReceber: 0,
-            Total: total
-        });
+    // Buscar O.S. desta sessão (Finalizadas)
+    const os = await prisma.ordensServico.findMany({
+      where: { CaixaSessaoId: id, Ativo: false },
+      include: { FormaPagamento: true }
+    });
+
+    // Agrupar tudo por forma de pagamento
+    const resumoFinal: any[] = [];
+    const consolidado: Record<string, number> = {};
+
+    vendas.forEach(v => {
+      const forma = v.FormaPagamento?.Nome || "Outros";
+      consolidado[forma] = (consolidado[forma] || 0) + Number(v.Total);
+    });
+
+    os.forEach(o => {
+      const forma = o.FormaPagamento?.Nome || "Outros";
+      consolidado[forma] = (consolidado[forma] || 0) + Number(o.Total);
+    });
+
+    for (const [forma, total] of Object.entries(consolidado)) {
+      resumoFinal.push({
+        Forma: forma,
+        Recebido: total,
+        AReceber: 0,
+        Total: total
+      });
     }
 
     return { 
@@ -196,10 +224,13 @@ export async function getCaixaSessaoDetalhes(id: number) {
             ValorFechamento: session.ValorFechamento ? Number(session.ValorFechamento) : null,
             FuncionarioNome: funcionario?.Nome || "Sistema",
         },
-        vendas: resumoVendas,
-        vendasRaw: vendas.map(v => ({ ...v, Total: Number(v.Total) })),
+        vendas: resumoFinal,
+        vendasRaw: [
+          ...vendas.map(v => ({ ...v, Total: Number(v.Total), _type: 'VENDA' })),
+          ...os.map(o => ({ ...o, Total: Number(o.Total), _type: 'OS' }))
+        ],
         totaisGerais: {
-            SaldoReal: Number(session.ValorAbertura) + resumoVendas.reduce((acc, curr) => acc + curr.Total, 0)
+            SaldoReal: Number(session.ValorAbertura) + resumoFinal.reduce((acc, curr) => acc + curr.Total, 0)
         }
       } 
     };
@@ -273,8 +304,8 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
     if (type === 'os' || type === 'completo') {
       const os = await prisma.ordensServico.findMany({
         where: {
-          CreatedAt: { gte: dataAbertura, lte: dataFechamento },
-          Ativo: true
+          CaixaSessaoId: id,
+          Ativo: false // Apenas as Finalizadas entram no caixa
         },
         include: { FormaPagamento: true }
       });
