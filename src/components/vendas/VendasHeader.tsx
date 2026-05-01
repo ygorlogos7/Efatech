@@ -12,6 +12,7 @@ import { Lock } from "lucide-react";
 interface VendasHeaderProps {
   tipo: "produtos" | "balcao" | "servicos";
   title: string;
+  items: any[];
 }
 
 export function VendasHeader({ tipo, title }: VendasHeaderProps) {

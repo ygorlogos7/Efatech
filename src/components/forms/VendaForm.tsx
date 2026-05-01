@@ -104,6 +104,26 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
     loadData();
   }, []);
 
+  // Validação automática: Se houver produto "DIVERSOS", define cliente como "AVULSO"
+  useEffect(() => {
+    const hasDiversos = items.some(item => 
+      item.Nome.toUpperCase().includes("DIVERSOS")
+    );
+
+    if (hasDiversos && clientes.length > 0) {
+      const clienteAvulso = clientes.find(c => 
+        c.Nome.toUpperCase().includes("AVULSO") || 
+        c.Nome.toUpperCase().includes("PADRÃO") ||
+        c.Nome.toUpperCase().includes("PADRAO")
+      );
+
+      if (clienteAvulso && selectedClienteId !== clienteAvulso.Id) {
+        setSelectedClienteId(clienteAvulso.Id);
+        setSearchCli(clienteAvulso.Nome);
+      }
+    }
+  }, [items, clientes, selectedClienteId]);
+
   const addItem = (produto: any) => {
     const existing = items.find(i => i.ProdutoId === produto.Id);
     if (existing) {

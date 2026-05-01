@@ -18,7 +18,17 @@ export function ProdutoForm({ initialData, isReadOnly = false, isClone = false }
 
   const isEdit = !!initialData && !isReadOnly && !isClone;
   
+  const [barcode, setBarcode] = React.useState(initialData?.Cod_CodigoBarras || "");
+
+  const generateBarcode = () => {
+    // Gerar um código de barras aleatório de 13 dígitos
+    const random = Math.floor(Math.random() * 9000000000000) + 1000000000000;
+    setBarcode(random.toString());
+  };
+
   const handleSubmit = (formData: FormData) => {
+    // Se estiver editando, o campo desabilitado não vai no formData, então adicionamos manualmente se necessário
+    // Mas o formulário já tem o hidden input se estiver editando.
     startTransition(async () => {
       let r;
       if (isEdit) {
@@ -57,7 +67,27 @@ export function ProdutoForm({ initialData, isReadOnly = false, isClone = false }
 
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1">Código de Barras *</label>
-            <input type="text" name="Cod_CodigoBarras" defaultValue={initialData?.Cod_CodigoBarras} disabled={isReadOnly} required className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed" />
+            <div className="flex gap-2">
+              <input 
+                type="text" 
+                name={isEdit ? "" : "Cod_CodigoBarras"} 
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value)}
+                disabled={isReadOnly || isEdit} 
+                required 
+                className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed" 
+              />
+              {isEdit && <input type="hidden" name="Cod_CodigoBarras" value={barcode} />}
+              {!isEdit && !isReadOnly && (
+                <button 
+                  type="button" 
+                  onClick={generateBarcode}
+                  className="bg-gray-800 hover:bg-black text-white text-[10px] font-bold px-3 py-1 rounded transition-colors uppercase whitespace-nowrap"
+                >
+                  Gerar
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -62,9 +62,30 @@ export async function getOrdemServicoById(id: number) {
 
 export async function createOrdemServico(formData: FormData) {
   try {
+    let clienteId = formData.get("ClienteId") ? Number(formData.get("ClienteId")) : null;
+    const clienteNome = formData.get("ClienteNome") as string;
+    const clienteTelefone = formData.get("ClienteTelefone") as string;
+    const clienteCPF = formData.get("ClienteCPF") as string;
+
+    // Se não tiver ID mas tiver Nome, cria um novo cliente
+    if (!clienteId && clienteNome) {
+      const novoCliente = await prisma.clientes.create({
+        data: {
+          Nome: clienteNome,
+          Telefone: clienteTelefone || null,
+          CPFCNPJ: clienteCPF || null,
+          TipoCliente: "F", // Padrão
+          Ativo: true,
+          VendedorResponsavel: "Johnny Andrade Ferreira",
+          PermitirExcederLimite: false
+        }
+      });
+      clienteId = novoCliente.Id;
+    }
+
     const res = await prisma.ordensServico.create({
       data: {
-        ClienteId: formData.get("ClienteId") ? Number(formData.get("ClienteId")) : null,
+        ClienteId: clienteId,
         Equipamento: formData.get("Equipamento") as string | null,
         Defeito: formData.get("Defeito") as string | null,
         Solucao: formData.get("Solucao") as string | null,
@@ -80,14 +101,14 @@ export async function createOrdemServico(formData: FormData) {
     revalidatePath("/ordens-servico");
     return { success: true, data: res };
   } catch (error) {
+    console.error("Erro ao criar OS:", error);
     return { success: false, error: "Falha ao criar OS." };
   }
-  redirect("/ordens-servico");
 }
 
 export async function updateOrdemServico(id: number, formData: FormData) {
   try {
-    await prisma.ordensServico.update({
+    const res = await prisma.ordensServico.update({
       where: { Id: id },
       data: {
         ClienteId: formData.get("ClienteId") ? Number(formData.get("ClienteId")) : null,
@@ -104,11 +125,10 @@ export async function updateOrdemServico(id: number, formData: FormData) {
       }
     });
     revalidatePath("/ordens-servico");
-    return { success: true };
+    return { success: true, data: res };
   } catch (error) {
     return { success: false, error: "Falha ao atualizar OS." };
   }
-  redirect("/ordens-servico");
 }
 
 export async function deleteOrdemServico(id: number) {

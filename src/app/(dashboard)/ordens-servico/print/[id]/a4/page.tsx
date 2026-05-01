@@ -147,6 +147,15 @@ export default async function PrintOSA4Page({ params }: { params: Promise<{ id: 
                 print-color-adjust: exact !important;
             }
 
+            .validity-box {
+                text-align: center;
+                padding: 10px;
+                border: 2px dotted #000;
+                background: #fff;
+                margin: 10px 0;
+                color: #000;
+            }
+
             @page { margin: 10mm; size: A4 portrait; }
         }
       `}} />
@@ -264,6 +273,16 @@ export default async function PrintOSA4Page({ params }: { params: Promise<{ id: 
                 </tr>
               </tbody>
           </table>
+
+          {/* Validade da O.S. (Igual ao Cupom) */}
+          <div className="os-section-title">VALIDADE DA O.S.</div>
+          <div className="validity-box">
+              <span className="block font-bold text-[10px]">Válida por 90 dias:</span>
+              <span className="text-[16px] font-black tracking-tight italic">
+                  {new Date(os.DataAbertura).toLocaleDateString('pt-BR')} até {dataVencimento.toLocaleDateString('pt-BR')}
+              </span>
+              <p className="text-[10px] font-bold mt-1 uppercase text-red-600">Aparelhos não retirados em 90 dias serão vendidos.</p>
+          </div>
 
           {/* Assinaturas */}
           <div style={{display: "flex", justifyContent: "space-between", marginTop: "80px"}}>

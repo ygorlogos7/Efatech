@@ -2,10 +2,14 @@ import React from "react";
 import Link from "next/link";
 import { PlusCircle, Edit2, Eye, ShoppingBasket, Printer, Share2, FileText, RefreshCw, Coins, DollarSign, CheckSquare, MessageCircle, Mail } from "lucide-react";
 import { getVendas } from "@/actions/vendas";
-import { DeleteVendaButton } from "@/components/forms/DeleteVendaButton";
+
 import { MoreActionsDropdown } from "@/components/common/MoreActionsDropdown";
+import { DeleteVendaButton } from "@/components/forms/DeleteVendaButton";
+
 
 import { VendasHeader } from "./VendasHeader";
+
+
 
 interface VendasListPageProps {
   tipo: "produtos" | "balcao" | "servicos";
@@ -20,7 +24,7 @@ export async function VendasListPage({ tipo, title, page = 1 }: VendasListPagePr
 
   return (
     <div className="space-y-6">
-      <VendasHeader tipo={tipo} title={title} />
+      <VendasHeader tipo={tipo} title={title} items={items} />
 
       <div className="bg-white rounded-md shadow-sm border border-gray-100">
         <table className="w-full text-sm text-left border-collapse min-w-[750px]">
