@@ -420,7 +420,7 @@ export function Sidebar() {
 
   return (
     <aside className={cn(
-      "bg-white border-r border-gray-200 flex flex-col h-full shadow-sm shrink-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] transition-all duration-300 ease-in-out z-20",
+      "bg-white border-r border-gray-200 flex flex-col h-full shadow-sm shrink-0 overflow-y-auto transition-all duration-300 ease-in-out z-20",
       isOpen ? "w-64 translate-x-0 opacity-100" : "w-0 -translate-x-full opacity-0 pointer-events-none"
     )}>
       {/* Sidebar specific top box */}
