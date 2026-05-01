@@ -140,12 +140,37 @@ export async function getCaixaSessoes(filters?: { atendenteId?: number, dataInic
     const data = await Promise.all(sessions.map(async s => {
       const user = users.find(u => u.Id === s.UsuarioId);
       
-      // Calcular saldo dinâmico da sessão
+      // Calcular saldo dinâmico da sessão com fallback para datas (caso o ID de sessão não esteja preenchido)
+      const dataFim = s.DataFechamento || new Date();
+      
       const vendasSessao = await prisma.vendas.findMany({
-        where: { CaixaSessaoId: s.Id, Ativo: true }
+        where: { 
+          OR: [
+            { CaixaSessaoId: s.Id },
+            { 
+              AND: [
+                { CaixaSessaoId: null },
+                { CreatedAt: { gte: s.DataAbertura as Date, lte: dataFim } }
+              ]
+            }
+          ],
+          Ativo: true 
+        }
       });
+
       const osSessao = await prisma.ordensServico.findMany({
-        where: { CaixaSessaoId: s.Id, Ativo: false }
+        where: { 
+          OR: [
+            { CaixaSessaoId: s.Id },
+            { 
+              AND: [
+                { CaixaSessaoId: null },
+                { CreatedAt: { gte: s.DataAbertura as Date, lte: dataFim } }
+              ]
+            }
+          ],
+          Ativo: false 
+        }
       });
 
       const totalVendas = vendasSessao.reduce((acc, curr) => acc + Number(curr.Total), 0);
@@ -180,15 +205,40 @@ export async function getCaixaSessaoDetalhes(id: number) {
       ? await prisma.funcionario.findUnique({ where: { Id: session.UsuarioId } })
       : null;
 
-    // Buscar Vendas desta sessão
+    const dataAbertura = session.DataAbertura || new Date();
+    const dataFechamento = session.DataFechamento || new Date();
+
+    // Buscar Vendas desta sessão com fallback
     const vendas = await prisma.vendas.findMany({
-      where: { CaixaSessaoId: id, Ativo: true }, // Apenas vendas concretizadas
+      where: { 
+        OR: [
+          { CaixaSessaoId: id },
+          { 
+            AND: [
+              { CaixaSessaoId: null },
+              { CreatedAt: { gte: dataAbertura, lte: dataFechamento } }
+            ]
+          }
+        ],
+        Ativo: true 
+      },
       include: { FormaPagamento: true }
     });
 
-    // Buscar O.S. desta sessão (Finalizadas)
+    // Buscar O.S. desta sessão com fallback
     const os = await prisma.ordensServico.findMany({
-      where: { CaixaSessaoId: id, Ativo: false },
+      where: { 
+        OR: [
+          { CaixaSessaoId: id },
+          { 
+            AND: [
+              { CaixaSessaoId: null },
+              { CreatedAt: { gte: dataAbertura, lte: dataFechamento } }
+            ]
+          }
+        ],
+        Ativo: false 
+      },
       include: { FormaPagamento: true }
     });
 
@@ -282,7 +332,18 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
     // 2. Vendas
     if (type === 'vendas' || type === 'completo') {
       const vendas = await prisma.vendas.findMany({
-        where: { CaixaSessaoId: id },
+        where: { 
+          OR: [
+            { CaixaSessaoId: id },
+            { 
+              AND: [
+                { CaixaSessaoId: null },
+                { CreatedAt: { gte: dataAbertura, lte: dataFechamento } }
+              ]
+            }
+          ],
+          Ativo: true 
+        },
         include: { FormaPagamento: true }
       });
       result.vendasRaw = vendas.map(v => ({ ...v, Total: Number(v.Total) }));
@@ -304,7 +365,15 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
     if (type === 'os' || type === 'completo') {
       const os = await prisma.ordensServico.findMany({
         where: {
-          CaixaSessaoId: id,
+          OR: [
+            { CaixaSessaoId: id },
+            { 
+              AND: [
+                { CaixaSessaoId: null },
+                { CreatedAt: { gte: dataAbertura, lte: dataFechamento } }
+              ]
+            }
+          ],
           Ativo: false // Apenas as Finalizadas entram no caixa
         },
         include: { FormaPagamento: true }
