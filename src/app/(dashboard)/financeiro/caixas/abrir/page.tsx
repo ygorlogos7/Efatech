@@ -35,7 +35,6 @@ export default function AbrirCaixaPage() {
     valorAbertura: "0,00",
     descricao: "Abertura de caixa",
     formaPgtoId: "",
-    formaPgtoId: "",
     vencimento: new Date().toISOString().split("T")[0]
   });
 

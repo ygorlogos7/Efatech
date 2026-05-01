@@ -86,16 +86,51 @@ export async function abrirCaixa(formData: FormData) {
 
 export async function fecharCaixa(id: number, valorFechamento: number) {
   try {
+    // 1. Buscar a sessão para saber as datas
+    const session = await prisma.caixaSessao.findUnique({ where: { Id: id } });
+    if (!session) return { success: false, error: "Sessão não encontrada." };
+
+    const dataAbertura = session.DataAbertura || new Date();
+    const dataFechamento = new Date();
+
+    // 2. Vincular movimentos que aconteceram no período e estão sem ID de sessão
+    // Isso garante que mesmo que o vínculo tenha falhado na criação, ele seja corrigido no fechamento.
+    
+    // Vendas
+    await prisma.vendas.updateMany({
+      where: {
+        CaixaSessaoId: null,
+        CreatedAt: { gte: dataAbertura, lte: dataFechamento },
+        Ativo: true
+      },
+      data: { CaixaSessaoId: id }
+    });
+
+    // O.S. (Apenas as finalizadas/encerradas entram no caixa)
+    await prisma.ordensServico.updateMany({
+      where: {
+        CaixaSessaoId: null,
+        CreatedAt: { gte: dataAbertura, lte: dataFechamento },
+        Ativo: false
+      },
+      data: { CaixaSessaoId: id }
+    });
+
+    // Contas a Pagar (Sangrias) - Se tivermos campo CaixaSessaoId ou similar no futuro.
+    // Por enquanto usamos a data como critério de busca, mas vamos registrar o fechamento.
+
+    // 3. Atualizar a sessão
     const caixa = await prisma.caixaSessao.update({
       where: { Id: id },
       data: {
         Status: "Fechado",
-        DataFechamento: new Date(),
+        DataFechamento: dataFechamento,
         ValorFechamento: valorFechamento,
       },
     });
 
     revalidatePath("/vendas/balcao");
+    revalidatePath("/financeiro/opcoes/caixas");
     return { success: true, data: serializeCaixa(caixa) };
   } catch (error) {
     console.error("Erro ao fechar caixa:", error);
@@ -103,25 +138,31 @@ export async function fecharCaixa(id: number, valorFechamento: number) {
   }
 }
 
-export async function getCaixaSessoes(filters?: { atendenteId?: number, dataInicio?: string, dataFim?: string, situacao?: string }) {
+import { unstable_noStore as noStore } from 'next/cache';
+
+export async function getCaixaSessoes(filters?: { usuarioId?: string | number, dataInicio?: string, dataFim?: string, status?: string }) {
+  noStore();
+  console.log("[DEBUG] getCaixaSessoes called with:", JSON.stringify(filters));
   try {
     const where: any = {};
 
-    if (filters?.atendenteId) {
-      where.UsuarioId = filters.atendenteId;
+    if (filters?.usuarioId && filters.usuarioId !== "" && filters.usuarioId !== "0") {
+      where.UsuarioId = Number(filters.usuarioId);
     }
 
-    if (filters?.situacao && filters.situacao !== "Todos") {
-      where.Status = filters.situacao;
+    if (filters?.status && filters.status !== "" && filters.status !== "Todos") {
+      where.Status = filters.status;
     }
 
     if (filters?.dataInicio || filters?.dataFim) {
       where.DataAbertura = {};
       if (filters.dataInicio) {
-        where.DataAbertura.gte = new Date(`${filters.dataInicio}T00:00:00`);
+        const dStart = new Date(`${filters.dataInicio}T00:00:00`);
+        if (!isNaN(dStart.getTime())) where.DataAbertura.gte = dStart;
       }
       if (filters.dataFim) {
-        where.DataAbertura.lte = new Date(`${filters.dataFim}T23:59:59`);
+        const dEnd = new Date(`${filters.dataFim}T23:59:59`);
+        if (!isNaN(dEnd.getTime())) where.DataAbertura.lte = dEnd;
       }
     }
 
@@ -131,65 +172,94 @@ export async function getCaixaSessoes(filters?: { atendenteId?: number, dataInic
       take: 50,
     });
 
-    // Como não há relação formal no Prisma (usuário ID direto), buscamos os usuários manually
-    const userIds = [...new Set(sessions.map(s => s.UsuarioId).filter(Boolean))];
-    const users = await prisma.funcionario.findMany({
-      where: { Id: { in: userIds as number[] } }
-    });
+    console.log(`[DEBUG] Found ${sessions.length} sessions`);
+
+    // Busca rápida de funcionários
+    const userIds = [...new Set(sessions.map(s => s.UsuarioId).filter(Boolean))] as number[];
+    const users = userIds.length > 0 ? await prisma.funcionario.findMany({
+      where: { Id: { in: userIds } },
+      select: { Id: true, Nome: true }
+    }) : [];
 
     const data = await Promise.all(sessions.map(async s => {
-      const user = users.find(u => u.Id === s.UsuarioId);
-      
-      // Calcular saldo dinâmico da sessão com fallback para datas (caso o ID de sessão não esteja preenchido)
-      const dataFim = s.DataFechamento || new Date();
-      
-      const vendasSessao = await prisma.vendas.findMany({
-        where: { 
-          OR: [
-            { CaixaSessaoId: s.Id },
-            { 
-              AND: [
-                { CaixaSessaoId: null },
-                { CreatedAt: { gte: s.DataAbertura as Date, lte: dataFim } }
-              ]
-            }
-          ],
-          Ativo: true 
-        }
-      });
+      try {
+        const user = users.find(u => u.Id === s.UsuarioId);
+        
+        // Data limite para busca de movimentos
+        const dataAbertura = s.DataAbertura || new Date(0);
+        const dataFim = s.DataFechamento || new Date();
+        const startOfDay = new Date(dataAbertura);
+        startOfDay.setHours(0, 0, 0, 0);
+        
+        // Busca paralela para agilizar
+        const [vendas, oss, sangrias, suprimentos] = await Promise.all([
+          prisma.vendas.aggregate({
+            where: { 
+              OR: [
+                { CaixaSessaoId: s.Id }, 
+                { AND: [{ CaixaSessaoId: null }, { OR: [{ CreatedAt: { gte: startOfDay, lte: dataFim } }, { DataVenda: { gte: startOfDay, lte: dataFim } }] }] }
+              ],
+            },
+            _sum: { Total: true }
+          }),
+          prisma.ordensServico.aggregate({
+            where: { 
+              OR: [
+                { CaixaSessaoId: s.Id }, 
+                { AND: [{ CaixaSessaoId: null }, { OR: [{ CreatedAt: { gte: startOfDay, lte: dataFim } }, { DataFechamento: { gte: startOfDay, lte: dataFim } }] }] }
+              ],
+              Ativo: false 
+            },
+            _sum: { Total: true }
+          }),
+          prisma.contaPagar.aggregate({
+            where: { CreatedAt: { gte: startOfDay, lte: dataFim } },
+            _sum: { Valor: true }
+          }),
+          prisma.contaReceber.aggregate({
+            where: { 
+              CreatedAt: { gte: startOfDay, lte: dataFim },
+              NOT: { Descricao: { contains: "Abertura de caixa" } }
+            },
+            _sum: { Valor: true }
+          })
+        ]);
 
-      const osSessao = await prisma.ordensServico.findMany({
-        where: { 
-          OR: [
-            { CaixaSessaoId: s.Id },
-            { 
-              AND: [
-                { CaixaSessaoId: null },
-                { CreatedAt: { gte: s.DataAbertura as Date, lte: dataFim } }
-              ]
-            }
-          ],
-          Ativo: false 
-        }
-      });
+        const totalEntradas = Number(vendas._sum.Total || 0) + Number(oss._sum.Total || 0) + Number(suprimentos._sum.Valor || 0);
+        const totalSaidas = Number(sangrias._sum.Valor || 0);
+        const saldoAtual = Number(s.ValorAbertura) + totalEntradas - totalSaidas;
 
-      const totalVendas = vendasSessao.reduce((acc, curr) => acc + Number(curr.Total), 0);
-      const totalOS = osSessao.reduce((acc, curr) => acc + Number(curr.Total), 0);
-      const saldoAtual = Number(s.ValorAbertura) + totalVendas + totalOS;
-
-      return {
-        ...s,
-        FuncionarioNome: user?.Nome || "Sistema",
-        ValorAbertura: Number(s.ValorAbertura),
-        ValorFechamento: s.ValorFechamento ? Number(s.ValorFechamento) : null,
-        Saldo: saldoAtual,
-      };
+        return {
+          Id: s.Id,
+          UsuarioId: s.UsuarioId,
+          FuncionarioNome: user?.Nome || "Sistema",
+          DataAbertura: s.DataAbertura?.toISOString() || null,
+          DataFechamento: s.DataFechamento?.toISOString() || null,
+          ValorAbertura: Number(s.ValorAbertura),
+          ValorFechamento: s.ValorFechamento ? Number(s.ValorFechamento) : null,
+          Status: s.Status,
+          Observacoes: s.Observacoes,
+          Saldo: saldoAtual,
+        };
+      } catch (err: any) {
+        console.error(`[DEBUG] Error session ${s.Id}:`, err.message);
+        return {
+          Id: s.Id,
+          FuncionarioNome: `ERRO: ${err.message}`, // Exibe o erro real na tela
+          DataAbertura: s.DataAbertura?.toISOString() || null,
+          DataFechamento: s.DataFechamento?.toISOString() || null,
+          ValorAbertura: Number(s.ValorAbertura),
+          ValorFechamento: s.ValorFechamento ? Number(s.ValorFechamento) : null,
+          Status: s.Status,
+          Saldo: 0
+        };
+      }
     }));
 
     return { success: true, data };
-  } catch (error) {
-    console.error("Erro ao buscar histórico de caixas:", error);
-    return { success: false, error: "Falha ao buscar histórico." };
+  } catch (error: any) {
+    console.error("[DEBUG] FATAL getCaixaSessoes:", error.message);
+    return { success: false, error: "Erro ao carregar dados do banco." };
   }
 }
 
@@ -208,7 +278,7 @@ export async function getCaixaSessaoDetalhes(id: number) {
     const dataAbertura = session.DataAbertura || new Date();
     const dataFechamento = session.DataFechamento || new Date();
 
-    // Buscar Vendas desta sessão com fallback
+    // 1. Buscar Vendas
     const vendas = await prisma.vendas.findMany({
       where: { 
         OR: [
@@ -225,7 +295,7 @@ export async function getCaixaSessaoDetalhes(id: number) {
       include: { FormaPagamento: true }
     });
 
-    // Buscar O.S. desta sessão com fallback
+    // 2. Buscar O.S.
     const os = await prisma.ordensServico.findMany({
       where: { 
         OR: [
@@ -242,28 +312,57 @@ export async function getCaixaSessaoDetalhes(id: number) {
       include: { FormaPagamento: true }
     });
 
-    // Agrupar tudo por forma de pagamento
-    const resumoFinal: any[] = [];
-    const consolidado: Record<string, number> = {};
+    // 3. Buscar Sangrias (Contas a Pagar no período)
+    const sangrias = await prisma.contaPagar.findMany({
+      where: {
+        CreatedAt: { gte: dataAbertura, lte: dataFechamento }
+      }
+    });
+
+    // 4. Buscar Suprimentos/Recebimentos (Contas a Receber no período, exceto as automáticas de abertura para não duplicar)
+    const suprimentos = await prisma.contaReceber.findMany({
+      where: {
+        CreatedAt: { gte: dataAbertura, lte: dataFechamento },
+        NOT: { Descricao: { contains: "Abertura de caixa" } }
+      }
+    });
+
+    // Agrupar tudo por forma de pagamento para o resumo
+    const consolidado: Record<string, { Recebido: number, Pago: number }> = {};
 
     vendas.forEach(v => {
       const forma = v.FormaPagamento?.Nome || "Outros";
-      consolidado[forma] = (consolidado[forma] || 0) + Number(v.Total);
+      if (!consolidado[forma]) consolidado[forma] = { Recebido: 0, Pago: 0 };
+      consolidado[forma].Recebido += Number(v.Total);
     });
 
     os.forEach(o => {
       const forma = o.FormaPagamento?.Nome || "Outros";
-      consolidado[forma] = (consolidado[forma] || 0) + Number(o.Total);
+      if (!consolidado[forma]) consolidado[forma] = { Recebido: 0, Pago: 0 };
+      consolidado[forma].Recebido += Number(o.Total);
     });
 
-    for (const [forma, total] of Object.entries(consolidado)) {
-      resumoFinal.push({
-        Forma: forma,
-        Recebido: total,
-        AReceber: 0,
-        Total: total
-      });
-    }
+    suprimentos.forEach(s => {
+      const forma = "Dinheiro à Vista"; // Simplificação ou buscar forma real se houver vínculo
+      if (!consolidado[forma]) consolidado[forma] = { Recebido: 0, Pago: 0 };
+      consolidado[forma].Recebido += Number(s.Valor);
+    });
+
+    sangrias.forEach(s => {
+      const forma = "Dinheiro à Vista";
+      if (!consolidado[forma]) consolidado[forma] = { Recebido: 0, Pago: 0 };
+      consolidado[forma].Pago += Number(s.Valor);
+    });
+
+    const resumoFinal = Object.entries(consolidado).map(([forma, valores]) => ({
+      Forma: forma,
+      Recebido: valores.Recebido,
+      Pago: valores.Pago,
+      Total: valores.Recebido - valores.Pago
+    }));
+
+    const totalEntradas = resumoFinal.reduce((acc, curr) => acc + curr.Recebido, 0) + Number(session.ValorAbertura);
+    const totalSaidas = resumoFinal.reduce((acc, curr) => acc + curr.Pago, 0);
 
     return { 
       success: true, 
@@ -279,8 +378,12 @@ export async function getCaixaSessaoDetalhes(id: number) {
           ...vendas.map(v => ({ ...v, Total: Number(v.Total), _type: 'VENDA' })),
           ...os.map(o => ({ ...o, Total: Number(o.Total), _type: 'OS' }))
         ],
+        sangrias: sangrias.map(s => ({ ...s, Valor: Number(s.Valor) })),
+        suprimentos: suprimentos.map(s => ({ ...s, Valor: Number(s.Valor) })),
         totaisGerais: {
-            SaldoReal: Number(session.ValorAbertura) + resumoFinal.reduce((acc, curr) => acc + curr.Total, 0)
+            Entradas: totalEntradas,
+            Saidas: totalSaidas,
+            SaldoReal: totalEntradas - totalSaidas
         }
       } 
     };
@@ -305,7 +408,7 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
       } 
     };
 
-    // 1. Abertura (Tratamos como uma movimentação de entrada em Dinheiro)
+    // 1. Abertura
     result.abertura = {
       Forma: "Dinheiro à Vista",
       Recebido: Number(session.ValorAbertura),
@@ -313,23 +416,24 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
       Total: Number(session.ValorAbertura)
     };
 
-    // 1.1 Sangrias (Contas a Pagar registradas no período)
+    // 1.1 Sangrias e Suprimentos
     const sangrias = await prisma.contaPagar.findMany({
-      where: {
-        CreatedAt: { gte: dataAbertura, lte: dataFechamento }
+      where: { CreatedAt: { gte: dataAbertura, lte: dataFechamento } }
+    });
+    const suprimentos = await prisma.contaReceber.findMany({
+      where: { 
+        CreatedAt: { gte: dataAbertura, lte: dataFechamento },
+        NOT: { Descricao: { contains: "Abertura de caixa" } }
       }
     });
     
-    const consolidadoSangrias: any = {};
-    sangrias.forEach(s => {
-      const forma = "Dinheiro à Vista"; // Por padrão, sangria de caixa é dinheiro
-      if (!consolidadoSangrias[forma]) consolidadoSangrias[forma] = { Forma: forma, Pago: 0, APagar: 0, Total: 0 };
-      consolidadoSangrias[forma].Pago += Number(s.Valor);
-      consolidadoSangrias[forma].Total += Number(s.Valor);
-    });
-    result.sangrias = Object.values(consolidadoSangrias);
+    result.sangrias = sangrias.map(s => ({ Forma: "Dinheiro à Vista", Pago: Number(s.Valor), Total: Number(s.Valor) }));
+    result.suprimentos = suprimentos.map(s => ({ Forma: "Dinheiro à Vista", Recebido: Number(s.Valor), Total: Number(s.Valor) }));
 
     // 2. Vendas
+    const startOfDay = new Date(dataAbertura);
+    startOfDay.setHours(0, 0, 0, 0);
+
     if (type === 'vendas' || type === 'completo') {
       const vendas = await prisma.vendas.findMany({
         where: { 
@@ -338,17 +442,20 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
             { 
               AND: [
                 { CaixaSessaoId: null },
-                { CreatedAt: { gte: dataAbertura, lte: dataFechamento } }
+                { 
+                  OR: [
+                    { CreatedAt: { gte: startOfDay, lte: dataFechamento } },
+                    { DataVenda: { gte: startOfDay, lte: dataFechamento } }
+                  ]
+                }
               ]
             }
           ],
-          Ativo: true 
+          // Removido Ativo: true para garantir que vendas concluídas apareçam
         },
         include: { FormaPagamento: true }
       });
-      result.vendasRaw = vendas.map(v => ({ ...v, Total: Number(v.Total) }));
       
-      // Consolidar Vendas por Forma
       const consolidadoVendas: any = {};
       vendas.forEach(v => {
         const forma = v.FormaPagamento?.Nome || "Diversos";
@@ -356,9 +463,12 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
         consolidadoVendas[forma].Recebido += Number(v.Total);
         consolidadoVendas[forma].Total += Number(v.Total);
       });
+
       result.vendas = Object.values(consolidadoVendas);
+      result.vendasRaw = vendas.map(v => ({ ...v, Total: Number(v.Total) }));
     } else {
       result.vendas = [];
+      result.vendasRaw = [];
     }
 
     // 3. Ordens de Serviço
@@ -370,17 +480,21 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
             { 
               AND: [
                 { CaixaSessaoId: null },
-                { CreatedAt: { gte: dataAbertura, lte: dataFechamento } }
+                { 
+                  OR: [
+                    { DataFechamento: { gte: startOfDay, lte: dataFechamento } },
+                    { CreatedAt: { gte: startOfDay, lte: dataFechamento } }
+                  ]
+                }
               ]
             }
           ],
-          Ativo: false // Apenas as Finalizadas entram no caixa
+          Ativo: false 
         },
         include: { FormaPagamento: true }
       });
       result.osRaw = os.map(o => ({ ...o, Total: Number(o.Total) }));
 
-      // Consolidar OS por Forma
       const consolidadoOS: any = {};
       os.forEach(o => {
         const forma = o.FormaPagamento?.Nome || "Não informado";
@@ -389,38 +503,137 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
         consolidadoOS[forma].Total += Number(o.Total);
       });
       result.os = Object.values(consolidadoOS);
+      result.osRaw = os.map(o => ({ ...o, Total: Number(o.Total) }));
     } else {
       result.os = [];
+      result.osRaw = [];
     }
 
     // 4. Formas de Pagamento (Consolidado Final)
     const formasFinal: any = {};
-    const addValues = (arr: any[]) => {
+    const addValues = (arr: any[], mode: 'entrada' | 'saida') => {
       arr.forEach(item => {
-        if (!formasFinal[item.Forma]) formasFinal[item.Forma] = { Nome: item.Forma, NaoRecebido: 0, Recebido: 0, Total: 0 };
-        formasFinal[item.Forma].Recebido += item.Recebido;
-        formasFinal[item.Forma].NaoRecebido += item.AReceber;
-        formasFinal[item.Forma].Total += item.Total;
+        const nome = item.Forma || item.Nome;
+        if (!formasFinal[nome]) formasFinal[nome] = { Nome: nome, NaoRecebido: 0, Recebido: 0, Pago: 0, Total: 0 };
+        if (mode === 'entrada') {
+           formasFinal[nome].Recebido += (item.Recebido || item.Total || 0);
+           formasFinal[nome].Total += (item.Total || 0);
+        } else {
+           formasFinal[nome].Pago += (item.Pago || item.Total || 0);
+           formasFinal[nome].Total -= (item.Total || 0);
+        }
       });
     };
 
-    // Agregar da Abertura, Vendas e OS
-    if (type === 'completo') {
-       addValues([result.abertura]);
-    }
-    addValues(result.vendas);
-    addValues(result.os);
+    addValues([result.abertura], 'entrada');
+    addValues(result.vendas, 'entrada');
+    addValues(result.os, 'entrada');
+    addValues(result.suprimentos, 'entrada');
+    addValues(result.sangrias, 'saida');
 
     result.consolidadoGeral = Object.values(formasFinal);
     
-    // Saldo Real: Entradas - Saídas
+    // Saldo Real
     const totalEntradas = result.consolidadoGeral.reduce((acc: number, curr: any) => acc + curr.Recebido, 0);
-    const totalSaidas = result.sangrias.reduce((acc: number, curr: any) => acc + curr.Pago, 0);
+    const totalSaidas = result.consolidadoGeral.reduce((acc: number, curr: any) => acc + curr.Pago, 0);
     result.saldoReal = totalEntradas - totalSaidas;
 
     return { success: true, data: result };
   } catch (error) {
     console.error("Erro ao preparar dados de impressão:", error);
     return { success: false, error: "Falha ao preparar relatório." };
+  }
+}
+
+export async function getCaixaResumoSimples(id: number) {
+  try {
+    const details = await getCaixaSessaoDetalhes(id);
+    if (!details.success) return details;
+
+    const data = details.data;
+    
+    // Filtra apenas o que é dinheiro para ajudar na conferência física
+    const dinheiroEntry = data.vendas.find((f: any) => f.Forma.toUpperCase() === "DINHEIRO" || f.Forma.toUpperCase().includes("DINHEIRO"));
+    const totalEmDinheiro = (dinheiroEntry?.Recebido || 0) + (data.session.ValorAbertura || 0);
+    const totalSangrias = data.sangrias.reduce((acc: number, curr: any) => acc + curr.Valor, 0);
+    const totalSuprimentos = data.suprimentos.reduce((acc: number, curr: any) => acc + curr.Valor, 0);
+
+    return {
+      success: true,
+      data: {
+        saldoEsperado: data.totaisGerais.SaldoReal,
+        saldoEmDinheiro: totalEmDinheiro + totalSuprimentos - totalSangrias, // O que deve ter na gaveta
+        vendasCount: data.vendasRaw.filter((v: any) => v._type === 'VENDA').length,
+        osCount: data.vendasRaw.filter((v: any) => v._type === 'OS').length,
+        sangriasCount: data.sangrias.length,
+        suprimentosCount: data.suprimentos.length,
+        totalSangrias,
+        totalSuprimentos
+      }
+    };
+  } catch (error) {
+    return { success: false, error: "Erro ao calcular resumo." };
+  }
+}
+
+export async function lancarSangria(formData: FormData) {
+  try {
+    const valor = Number(formData.get("valor"));
+    const descricao = formData.get("descricao") as string || "Sangria de caixa";
+    const sessionId = formData.get("sessionId") ? Number(formData.get("sessionId")) : null;
+
+    if (isNaN(valor) || valor <= 0) return { success: false, error: "Valor inválido." };
+
+    await prisma.contaPagar.create({
+      data: {
+        Descricao: descricao,
+        Valor: valor,
+        Vencimento: new Date(),
+        Pagamento: new Date(),
+        SituacaoId: 1, // Liquidado
+        PlanoContaId: 1, // Geral
+        FormaPgtoId: 1,  // Dinheiro
+        Observacoes: sessionId ? `Sangria vinculada ao caixa #${sessionId}` : "Sangria manual",
+      }
+    });
+
+    revalidatePath("/financeiro/opcoes/caixas");
+    revalidatePath("/financeiro/fluxo-caixa");
+    
+    return { success: true, message: "Sangria realizada com sucesso!" };
+  } catch (error) {
+    console.error("Erro ao lançar sangria:", error);
+    return { success: false, error: "Falha técnica ao lançar sangria." };
+  }
+}
+
+export async function lancarSuprimento(formData: FormData) {
+  try {
+    const valor = Number(formData.get("valor"));
+    const descricao = formData.get("descricao") as string || "Suprimento de caixa";
+    const sessionId = formData.get("sessionId") ? Number(formData.get("sessionId")) : null;
+
+    if (isNaN(valor) || valor <= 0) return { success: false, error: "Valor inválido." };
+
+    await prisma.contaReceber.create({
+      data: {
+        Descricao: descricao,
+        Valor: valor,
+        Vencimento: new Date(),
+        Recebimento: new Date(),
+        SituacaoId: 1, // Liquidado
+        PlanoContaId: 1, // Geral
+        FormaPgtoId: 1,  // Dinheiro
+        Observacoes: sessionId ? `Suprimento vinculado ao caixa #${sessionId}` : "Suprimento manual",
+      }
+    });
+
+    revalidatePath("/financeiro/opcoes/caixas");
+    revalidatePath("/financeiro/fluxo-caixa");
+
+    return { success: true, message: "Suprimento realizado com sucesso!" };
+  } catch (error) {
+    console.error("Erro ao lançar suprimento:", error);
+    return { success: false, error: "Falha técnica ao lançar suprimento." };
   }
 }

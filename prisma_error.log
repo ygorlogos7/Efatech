@@ -1,0 +1,774 @@
+
+[2026-05-01T21:32:51.580Z] 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 15
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-05-01T17:10:26.905Z"),
+              lte: new Date("2026-05-01T20:58:20.896Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+PrismaClientValidationError: 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 15
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-05-01T17:10:26.905Z"),
+              lte: new Date("2026-05-01T20:58:20.896Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+    at wn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:3793:11)
+    at $n.handleRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6908:13)
+    at $n.handleAndLogRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6895:18)
+    at $n.request (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6875:18)
+    at async l (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:7543:25)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:260:30
+    at async Promise.all (index 2)
+    at async getCaixaSessoes (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:230:22)
+    at async executeActionAndPrepareForRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:5248)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:1986
+    at async handleAction (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:62:25378)
+    at async renderToHTMLOrFlightImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:69:55630)
+    at async doRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4052:28)
+    at async AppPageRouteModule.handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:71:63567)
+    at async handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4327:32)
+    at async Module.handler (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4730:20)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:253:21)
+    at async handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:452:24)
+    at async requestHandlerImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:501:13)
+    at async Server.requestListener (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\start-server.js:225:13)
+
+[2026-05-01T21:32:53.492Z] 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 10
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-04-29T16:04:09.824Z"),
+              lte: new Date("2026-04-29T16:04:17.769Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+PrismaClientValidationError: 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 10
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-04-29T16:04:09.824Z"),
+              lte: new Date("2026-04-29T16:04:17.769Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+    at wn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:3793:11)
+    at $n.handleRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6908:13)
+    at $n.handleAndLogRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6895:18)
+    at $n.request (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6875:18)
+    at async l (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:7543:25)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:260:30
+    at async Promise.all (index 7)
+    at async getCaixaSessoes (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:230:22)
+    at async executeActionAndPrepareForRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:5248)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:1986
+    at async handleAction (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:62:25378)
+    at async renderToHTMLOrFlightImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:69:55630)
+    at async doRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4052:28)
+    at async AppPageRouteModule.handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:71:63567)
+    at async handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4327:32)
+    at async Module.handler (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4730:20)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:253:21)
+    at async handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:452:24)
+    at async requestHandlerImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:501:13)
+    at async Server.requestListener (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\start-server.js:225:13)
+
+[2026-05-01T21:33:32.162Z] 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 17
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-05-01T20:51:47.100Z"),
+              lte: new Date("2026-05-01T21:33:31.282Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+PrismaClientValidationError: 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 17
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-05-01T20:51:47.100Z"),
+              lte: new Date("2026-05-01T21:33:31.282Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+    at wn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:3793:11)
+    at $n.handleRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6908:13)
+    at $n.handleAndLogRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6895:18)
+    at $n.request (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6875:18)
+    at async l (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:7543:25)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:260:30
+    at async Promise.all (index 0)
+    at async getCaixaSessoes (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:230:22)
+    at async executeActionAndPrepareForRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:5248)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:1986
+    at async handleAction (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:62:25378)
+    at async renderToHTMLOrFlightImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:69:55630)
+    at async doRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4052:28)
+    at async AppPageRouteModule.handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:71:63567)
+    at async handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4327:32)
+    at async Module.handler (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4730:20)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:253:21)
+    at async handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:452:24)
+    at async requestHandlerImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:501:13)
+    at async Server.requestListener (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\start-server.js:225:13)
+
+[2026-05-01T21:40:50.016Z] 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 17
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-05-01T20:51:47.100Z"),
+              lte: new Date("2026-05-01T21:40:48.915Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+PrismaClientValidationError: 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 17
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-05-01T20:51:47.100Z"),
+              lte: new Date("2026-05-01T21:40:48.915Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+    at wn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:3793:11)
+    at $n.handleRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6908:13)
+    at $n.handleAndLogRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6895:18)
+    at $n.request (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6875:18)
+    at async l (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:7543:25)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:260:30
+    at async Promise.all (index 0)
+    at async getCaixaSessoes (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:230:22)
+    at async executeActionAndPrepareForRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:5248)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:1986
+    at async handleAction (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:62:25378)
+    at async renderToHTMLOrFlightImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:69:55630)
+    at async doRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4052:28)
+    at async AppPageRouteModule.handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:71:63567)
+    at async handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4327:32)
+    at async Module.handler (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4730:20)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:253:21)
+    at async handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:452:24)
+    at async requestHandlerImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:501:13)
+    at async Server.requestListener (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\start-server.js:225:13)
+
+[2026-05-01T21:41:12.406Z] 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 17
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-05-01T20:51:47.100Z"),
+              lte: new Date("2026-05-01T21:41:11.517Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+PrismaClientValidationError: 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 17
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-05-01T20:51:47.100Z"),
+              lte: new Date("2026-05-01T21:41:11.517Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+    at wn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:3793:11)
+    at $n.handleRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6908:13)
+    at $n.handleAndLogRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6895:18)
+    at $n.request (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6875:18)
+    at async l (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:7543:25)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:260:30
+    at async Promise.all (index 0)
+    at async getCaixaSessoes (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:230:22)
+    at async executeActionAndPrepareForRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:5248)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:1986
+    at async handleAction (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:62:25378)
+    at async renderToHTMLOrFlightImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:69:55630)
+    at async doRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4052:28)
+    at async AppPageRouteModule.handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:71:63567)
+    at async handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4327:32)
+    at async Module.handler (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4730:20)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:253:21)
+    at async handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:452:24)
+    at async requestHandlerImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:501:13)
+    at async Server.requestListener (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\start-server.js:225:13)
+
+[2026-05-01T21:41:42.887Z] 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 17
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-05-01T20:51:47.100Z"),
+              lte: new Date("2026-05-01T21:41:42.094Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+PrismaClientValidationError: 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 17
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-05-01T20:51:47.100Z"),
+              lte: new Date("2026-05-01T21:41:42.094Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+    at wn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:3793:11)
+    at $n.handleRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6908:13)
+    at $n.handleAndLogRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6895:18)
+    at $n.request (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6875:18)
+    at async l (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:7543:25)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:260:30
+    at async Promise.all (index 0)
+    at async getCaixaSessoes (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:230:22)
+    at async executeActionAndPrepareForRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:5248)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:1986
+    at async handleAction (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:62:25378)
+    at async renderToHTMLOrFlightImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:69:55630)
+    at async doRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4052:28)
+    at async AppPageRouteModule.handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:71:63567)
+    at async handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4327:32)
+    at async Module.handler (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4730:20)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:253:21)
+    at async handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:452:24)
+    at async requestHandlerImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:501:13)
+    at async Server.requestListener (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\start-server.js:225:13)
+
+[2026-05-01T21:41:54.328Z] 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 16
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-05-01T20:51:12.151Z"),
+              lte: new Date("2026-05-01T21:41:53.598Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+PrismaClientValidationError: 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 16
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-05-01T20:51:12.151Z"),
+              lte: new Date("2026-05-01T21:41:53.598Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+    at wn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:3793:11)
+    at $n.handleRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6908:13)
+    at $n.handleAndLogRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6895:18)
+    at $n.request (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6875:18)
+    at async l (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:7543:25)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:260:30
+    at async Promise.all (index 1)
+    at async getCaixaSessoes (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:230:22)
+    at async executeActionAndPrepareForRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:5248)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:1986
+    at async handleAction (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:62:25378)
+    at async renderToHTMLOrFlightImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:69:55630)
+    at async doRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4052:28)
+    at async AppPageRouteModule.handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:71:63567)
+    at async handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4327:32)
+    at async Module.handler (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4730:20)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:253:21)
+    at async handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:452:24)
+    at async requestHandlerImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:501:13)
+    at async Server.requestListener (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\start-server.js:225:13)
+
+[2026-05-01T21:43:08.780Z] 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 17
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-05-01T20:51:47.100Z"),
+              lte: new Date("2026-05-01T21:43:07.613Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+PrismaClientValidationError: 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 17
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-05-01T20:51:47.100Z"),
+              lte: new Date("2026-05-01T21:43:07.613Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+    at wn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:3793:11)
+    at $n.handleRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6908:13)
+    at $n.handleAndLogRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6895:18)
+    at $n.request (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6875:18)
+    at async l (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:7543:25)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:263:30
+    at async Promise.all (index 0)
+    at async getCaixaSessoes (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:233:22)
+    at async executeActionAndPrepareForRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:5248)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:1986
+    at async handleAction (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:62:25378)
+    at async renderToHTMLOrFlightImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:69:55630)
+    at async doRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4052:28)
+    at async AppPageRouteModule.handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:71:63567)
+    at async handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4327:32)
+    at async Module.handler (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4730:20)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:253:21)
+    at async handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:452:24)
+    at async requestHandlerImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:501:13)
+    at async Server.requestListener (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\start-server.js:225:13)
+
+[2026-05-01T21:43:10.905Z] 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 16
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-05-01T20:51:12.151Z"),
+              lte: new Date("2026-05-01T21:43:10.042Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+PrismaClientValidationError: 
+Invalid `prisma.ordensServico.findMany()` invocation:
+
+{
+  where: {
+    OR: [
+      {
+        CaixaSessaoId: 16
+      },
+      {
+        AND: [
+          {
+            CaixaSessaoId: null
+          },
+          {
+            CreatedAt: {
+              gte: new Date("2026-05-01T20:51:12.151Z"),
+              lte: new Date("2026-05-01T21:43:10.042Z")
+            }
+          }
+        ]
+      }
+    ],
+    Ativo: false
+  }
+}
+
+Unknown argument `CaixaSessaoId`. Available options are marked with ?.
+    at wn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:3793:11)
+    at $n.handleRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6908:13)
+    at $n.handleAndLogRequestError (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6895:18)
+    at $n.request (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:6875:18)
+    at async l (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\[root-of-the-server]__0glfafa._.js:7543:25)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:263:30
+    at async Promise.all (index 1)
+    at async getCaixaSessoes (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\_0nsacib._.js:233:22)
+    at async executeActionAndPrepareForRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:5248)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:64:1986
+    at async handleAction (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:62:25378)
+    at async renderToHTMLOrFlightImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:69:55630)
+    at async doRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4052:28)
+    at async AppPageRouteModule.handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.dev.js:71:63567)
+    at async handleResponse (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4327:32)
+    at async Module.handler (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\.next\dev\server\chunks\ssr\node_modules_0uv6acg._.js:4730:20)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:253:21)
+    at async handleRequest (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:452:24)
+    at async requestHandlerImpl (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\router-server.js:501:13)
+    at async Server.requestListener (C:\Users\ygorn\OneDrive\Desktop\Efatech-main\node_modules\next\dist\server\lib\start-server.js:225:13)

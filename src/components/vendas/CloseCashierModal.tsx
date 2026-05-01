@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
-import { X, Lock, AlertCircle, CheckCircle } from "lucide-react";
-import { fecharCaixa } from "@/actions/caixa";
+import React, { useState, useEffect } from "react";
+import { X, Lock, AlertCircle, DollarSign, TrendingUp } from "lucide-react";
+import { fecharCaixa, getCaixaResumoSimples } from "@/actions/caixa";
 import { useNotification } from "@/hooks/use-notification";
 
 interface CloseCashierModalProps {
@@ -15,7 +15,30 @@ interface CloseCashierModalProps {
 export function CloseCashierModal({ isOpen, onClose, caixaId, onSuccess }: CloseCashierModalProps) {
   const [valorFechamento, setValorFechamento] = useState<string>("");
   const [isPending, setIsPending] = useState(false);
+  const [resumo, setResumo] = useState<{ 
+    saldoEsperado: number, 
+    saldoEmDinheiro: number,
+    vendasCount: number, 
+    osCount: number,
+    sangriasCount: number,
+    suprimentosCount: number,
+    totalSangrias: number,
+    totalSuprimentos: number
+  } | null>(null);
+  const [isLoadingResumo, setIsLoadingResumo] = useState(false);
   const { success, error } = useNotification();
+
+  useEffect(() => {
+    if (isOpen && caixaId) {
+      setIsLoadingResumo(true);
+      getCaixaResumoSimples(caixaId).then(res => {
+        if (res.success) setResumo(res.data);
+      }).finally(() => setIsLoadingResumo(false));
+    } else {
+      setResumo(null);
+      setValorFechamento("");
+    }
+  }, [isOpen, caixaId]);
 
   if (!isOpen) return null;
 
@@ -40,6 +63,10 @@ export function CloseCashierModal({ isOpen, onClose, caixaId, onSuccess }: Close
     }
   };
 
+  const formatCurrency = (val: number) => {
+    return val.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  };
+
   return (
     <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 p-4 font-sans">
       <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-gray-200">
@@ -57,17 +84,47 @@ export function CloseCashierModal({ isOpen, onClose, caixaId, onSuccess }: Close
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          
+          {/* Resumo Parcial */}
+          {isLoadingResumo ? (
+             <div className="text-center py-4 text-gray-400 animate-pulse text-sm font-bold uppercase tracking-widest">Calculando saldo esperado...</div>
+          ) : resumo && (
+            <div className="bg-gray-50 border border-gray-100 rounded-xl p-5 space-y-4">
+               <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Saldo Total (Sistêmico)</span>
+                    <span className="text-md font-black text-blue-600">{formatCurrency(resumo.saldoEsperado)}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Dinheiro na Gaveta</span>
+                    <span className="text-md font-black text-green-600">{formatCurrency(resumo.saldoEmDinheiro)}</span>
+                  </div>
+               </div>
+
+               <div className="pt-3 border-t border-gray-200/60 flex flex-wrap gap-x-4 gap-y-2">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase">
+                     <TrendingUp className="w-3.5 h-3.5 text-blue-400" /> {resumo.vendasCount} Vendas / {resumo.osCount} O.S.
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-red-500 uppercase">
+                     <DollarSign className="w-3.5 h-3.5" /> - {formatCurrency(resumo.totalSangrias)} Retiradas
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-green-600 uppercase">
+                     <TrendingUp className="w-3.5 h-3.5" /> + {formatCurrency(resumo.totalSuprimentos)} Entradas
+                  </div>
+               </div>
+            </div>
+          )}
+
           <div className="bg-red-50 border-l-4 border-red-500 p-4 flex gap-3 text-red-700">
-            <AlertCircle className="w-8 h-8 shrink-0" />
-            <p className="text-sm font-medium">
-              Atenção: Ao fechar o caixa, você não poderá mais realizar vendas neste turno. 
-              Confira o valor físico antes de confirmar.
+            <AlertCircle className="w-6 h-6 shrink-0" />
+            <p className="text-[12px] font-bold">
+              Atenção: Confira o valor físico antes de confirmar. Esta ação é irreversível.
             </p>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-black text-black uppercase tracking-wide">
-              Valor de Fechamento (Físico na Gaveta)
+            <label className="text-[11px] font-black text-gray-700 uppercase tracking-wider">
+              Valor Físico (Na Gaveta)
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">R$</span>
@@ -87,7 +144,7 @@ export function CloseCashierModal({ isOpen, onClose, caixaId, onSuccess }: Close
           <div className="pt-4 flex flex-col gap-3">
             <button 
               type="submit"
-              disabled={isPending}
+              disabled={isPending || isLoadingResumo}
               className="w-full bg-[#e74c3c] hover:bg-red-700 text-white py-4 rounded-lg font-black text-lg uppercase tracking-widest shadow-lg active:scale-95 transition-all disabled:opacity-50"
             >
               {isPending ? "PROCESSANDO..." : "CONFIRMAR FECHAMENTO"}
@@ -95,9 +152,9 @@ export function CloseCashierModal({ isOpen, onClose, caixaId, onSuccess }: Close
             <button 
               type="button" 
               onClick={onClose}
-              className="w-full py-3 text-gray-500 hover:text-black font-bold uppercase text-xs transition-colors"
+              className="w-full py-3 text-gray-500 hover:text-black font-bold uppercase text-[11px] transition-colors"
             >
-              CANCELAR E CONTINUAR VENDENDO
+              CANCELAR E CONTINUAR TRABALHANDO
             </button>
           </div>
         </form>

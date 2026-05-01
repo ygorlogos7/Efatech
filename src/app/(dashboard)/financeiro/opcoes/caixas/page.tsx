@@ -22,6 +22,8 @@ import {
 import { getCaixaSessoes } from "@/actions/caixa";
 import { getFuncionarios } from "@/actions/funcionarios";
 import { CloseCashierModal } from "@/components/vendas/CloseCashierModal";
+import { MovimentacaoCaixaModal } from "@/components/financeiro/MovimentacaoCaixaModal";
+import { ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 
 export default function CaixasPage() {
   const router = useRouter();
@@ -29,6 +31,7 @@ export default function CaixasPage() {
   const [isPending, startTransition] = useTransition();
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
   const [closeCaixaId, setCloseCaixaId] = useState<number | null>(null);
+  const [movimentacao, setMovimentacao] = useState<{ id: number; type: "sangria" | "suprimento" } | null>(null);
   
   // Estados para Busca Avançada
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
@@ -220,25 +223,29 @@ export default function CaixasPage() {
         <div className="border border-gray-200 rounded overflow-visible shadow-sm bg-white">
           <table className="w-full text-left text-[13px] border-collapse">
             <thead className="bg-[#f9f9f9] border-b border-gray-200">
-              <tr className="text-gray-800 font-bold uppercase tracking-tight">
+              <tr className="text-gray-800 font-bold uppercase tracking-tight text-[11px]">
                 <th className="px-4 py-3 font-bold">Funcionário</th>
-                <th className="px-4 py-3 font-bold">Aberto em</th>
-                <th className="px-4 py-3 font-bold">Fechado em</th>
-                <th className="px-4 py-3 font-bold">Saldo</th>
+                <th className="px-4 py-3 font-bold">Abertura</th>
+                <th className="px-4 py-3 font-bold text-right">Vl. Inicial</th>
+                <th className="px-4 py-3 font-bold">Fechamento</th>
+                <th className="px-4 py-3 font-bold text-right">Vl. Final</th>
+                <th className="px-4 py-3 font-bold text-right">Saldo Sist.</th>
                 <th className="px-4 py-3 font-bold text-center">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {sessions.length === 0 ? (
                 <tr>
-                   <td colSpan={5} className="text-center py-10 text-gray-400 italic">Nenhum histórico encontrado.</td>
+                   <td colSpan={7} className="text-center py-10 text-gray-400 italic">Nenhum histórico encontrado.</td>
                 </tr>
               ) : sessions.map((session) => (
                 <tr key={session.Id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3.5 text-gray-700">{session.FuncionarioNome}</td>
-                  <td className="px-4 py-3.5 text-gray-700 font-medium">{formatDate(session.DataAbertura)}</td>
+                  <td className="px-4 py-3.5 text-gray-700 font-medium">{session.FuncionarioNome}</td>
+                  <td className="px-4 py-3.5 text-gray-600">{formatDate(session.DataAbertura)}</td>
+                  <td className="px-4 py-3.5 text-right text-gray-600">R$ {session.ValorAbertura.toFixed(2).replace(".", ",")}</td>
                   <td className="px-4 py-3.5 text-gray-500">{formatDate(session.DataFechamento)}</td>
-                  <td className="px-4 py-3.5 text-gray-800 font-bold">{(session.Saldo ?? 0).toFixed(2).replace(".", ",")}</td>
+                  <td className="px-4 py-3.5 text-right text-gray-600 font-medium">{session.ValorFechamento !== null ? `R$ ${session.ValorFechamento.toFixed(2).replace(".", ",")}` : "---"}</td>
+                  <td className="px-4 py-3.5 text-right text-gray-900 font-black">R$ {(session.Saldo ?? 0).toFixed(2).replace(".", ",")}</td>
                   <td className="px-4 py-3.5 relative overflow-visible">
                     <div className="flex items-center justify-center gap-1">
                       {/* Azul: Ver */}
@@ -266,6 +273,23 @@ export default function CaixasPage() {
                         className="w-7 h-7 flex items-center justify-center bg-[#dd4b39] hover:bg-red-700 text-white rounded transition-colors shadow-sm"
                       >
                         <Power className="w-3.5 h-3.5" />
+                      </button>
+
+                      {/* Sangria e Suprimento Rápidos */}
+                      <button 
+                        onClick={() => setMovimentacao({ id: session.Id, type: "sangria" })}
+                        title="Fazer Sangria"
+                        className="w-7 h-7 flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-700 rounded transition-colors border border-red-200"
+                      >
+                        <ArrowDownCircle className="w-3.5 h-3.5" />
+                      </button>
+
+                      <button 
+                        onClick={() => setMovimentacao({ id: session.Id, type: "suprimento" })}
+                        title="Fazer Suprimento"
+                        className="w-7 h-7 flex items-center justify-center bg-green-100 hover:bg-green-200 text-green-700 rounded transition-colors border border-green-200"
+                      >
+                        <ArrowUpCircle className="w-3.5 h-3.5" />
                       </button>
                       
                       {/* Verde: Dropdown para parciais */}
@@ -328,6 +352,16 @@ export default function CaixasPage() {
           onSuccess={() => {
             loadSessions();
           }}
+        />
+
+        <MovimentacaoCaixaModal
+          isOpen={movimentacao !== null}
+          onClose={() => {
+            setMovimentacao(null);
+            loadSessions();
+          }}
+          sessionId={movimentacao?.id || 0}
+          type={movimentacao?.type || "sangria"}
         />
       </div>
     </div>
