@@ -16,7 +16,8 @@ import {
   ChevronRight,
   Monitor,
   CheckCircle2,
-  QrCode
+  QrCode,
+  ArrowLeft
 } from "lucide-react";
 import Link from "next/link";
 
@@ -33,24 +34,37 @@ export function VendaView({ venda, tipo }: VendaViewProps) {
   return (
     <div className="space-y-6 font-sans text-gray-700">
       
-      {/* 1. Header Area */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-             <Monitor className="w-5 h-5 text-gray-400" />
-             <h2 className="text-xl font-bold text-gray-800">Vendas de Balcão #{venda.Numero}</h2>
-             <span className="bg-[#5cb85c] text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">Concretizada</span>
+      {/* 1. Header Area Premium */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-md shadow-sm border border-gray-100">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-gray-100 rounded-lg">
+            <Monitor className="w-8 h-8 text-gray-500" />
           </div>
-          <p className="text-xs text-gray-400 mt-1">
-            Criado em {new Date(venda.CreatedAt).toLocaleString("pt-BR")} por <span className="text-blue-500 hover:underline cursor-pointer font-medium">{venda.Vendedor || "Sistema"}</span>
-          </p>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-800">Venda de Balcão #{venda.Numero}</h1>
+              <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Concretizada</span>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              Finalizada em {new Date(venda.CreatedAt).toLocaleString("pt-BR")} por <span className="font-medium text-gray-600">{venda.Vendedor || "Sistema"}</span>
+            </p>
+          </div>
         </div>
-        <Link 
-          href={`/vendas/${tipo}/edit/${venda.Id}`}
-          className="bg-[#f0ad4e] hover:bg-orange-600 text-white px-4 py-2 rounded shadow-sm text-sm font-bold flex items-center gap-2 transition-all active:scale-95"
-        >
-          <Pencil className="w-4 h-4" /> EDITAR VENDA
-        </Link>
+        
+        <div className="flex items-center gap-2">
+           <Link 
+              href={`/vendas/balcao`}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 text-sm font-medium rounded-md border border-gray-200 transition-colors"
+           >
+              <ArrowLeft className="w-4 h-4" /> Voltar
+           </Link>
+           <Link 
+              href={`/vendas/${tipo}/edit/${venda.Id}`}
+              className="flex items-center gap-2 px-4 py-2 bg-[#f39c12] hover:bg-[#db8b0b] text-white text-sm font-medium rounded-md shadow-sm transition-colors"
+           >
+              <Pencil className="w-4 h-4" /> Editar venda
+           </Link>
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">

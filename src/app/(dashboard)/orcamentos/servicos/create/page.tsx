@@ -1,24 +1,24 @@
 import React from "react";
-import { OrcamentoProdutosForm } from "@/components/forms/OrcamentoProdutosForm";
+import { OrcamentoServicosForm } from "@/components/forms/OrcamentoServicosForm";
 import { Home } from "lucide-react";
 import Link from "next/link";
 
-export default function CreateOrcamentoProdutoPage() {
+export default function CreateOrcamentoServicoPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-2xl font-bold text-gray-900">Novo Orçamento de Produtos</h3>
+        <h3 className="text-2xl font-bold text-gray-900">Novo Orçamento de Serviços</h3>
         <div className="text-gray-500 text-sm flex items-center gap-1">
           <Home className="w-4 h-4 mr-1" />
           <Link href="/home" className="hover:underline">Início</Link>
           <span>&gt;</span>
-          <Link href="/orcamentos/produtos" className="hover:underline">Orçamentos</Link>
+          <Link href="/orcamentos/servicos" className="hover:underline">Orçamentos</Link>
           <span>&gt;</span>
           <span className="text-gray-400">Novo</span>
         </div>
       </div>
 
-      <OrcamentoProdutosForm />
+      <OrcamentoServicosForm />
     </div>
   );
 }

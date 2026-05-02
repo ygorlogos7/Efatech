@@ -6,7 +6,7 @@ import { getClientes } from "@/actions/clientes";
 import { useRouter } from "next/navigation";
 import { 
   ClipboardList, Check, X, Edit, 
-  Search, User, Calendar, Package, DollarSign
+  Search, User, Calendar, Package, DollarSign, Wrench
 } from "lucide-react";
 import Link from "next/link";
 import { useNotification } from "@/hooks/use-notification";
@@ -16,7 +16,7 @@ interface OrcamentoFormProps {
   isReadOnly?: boolean;
 }
 
-export function OrcamentoProdutosForm({ initialData, isReadOnly = false }: OrcamentoFormProps) {
+export function OrcamentoServicosForm({ initialData, isReadOnly = false }: OrcamentoFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { success, error } = useNotification();
@@ -60,7 +60,7 @@ export function OrcamentoProdutosForm({ initialData, isReadOnly = false }: Orcam
       if (r?.success && (r as any).data?.Id) {
         success(isEdit ? "Orçamento atualizado!" : "Orçamento criado com sucesso!");
         if (!isEdit) {
-          router.push(`/orcamentos/produtos/print/${(r as any).data.Id}`);
+          router.push(`/orcamentos/servicos/print/${(r as any).data.Id}`);
         }
       } else {
         error((r as any)?.error || "Erro ao processar orçamento.");
@@ -189,11 +189,11 @@ export function OrcamentoProdutosForm({ initialData, isReadOnly = false }: Orcam
         </div>
       </div>
 
-      {/* 3. SEÇÃO: DESCRIÇÃO DOS PRODUTOS */}
+      {/* 3. SEÇÃO: DESCRIÇÃO DOS SERVIÇOS */}
       <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
           <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center gap-2">
-            <Package className="w-4 h-4 text-gray-700" />
-            <h3 className="font-semibold text-gray-800 text-sm">Descrição dos Produtos / Serviços</h3>
+            <Wrench className="w-4 h-4 text-gray-700" />
+            <h3 className="font-semibold text-gray-800 text-sm">Descrição dos Serviços</h3>
           </div>
           <div className="p-5">
             <textarea 
@@ -201,7 +201,7 @@ export function OrcamentoProdutosForm({ initialData, isReadOnly = false }: Orcam
               rows={10} 
               defaultValue={initialData?.Descricao} 
               disabled={isReadOnly} 
-              placeholder="Descreva detalhadamente os produtos ou serviços deste orçamento..." 
+              placeholder="Descreva detalhadamente os serviços deste orçamento..." 
               className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed resize-none"
             ></textarea>
           </div>
@@ -223,7 +223,7 @@ export function OrcamentoProdutosForm({ initialData, isReadOnly = false }: Orcam
               {isPending ? "Salvando..." : (isEdit ? "Salvar Alterações" : "Salvar Orçamento")}
             </button>
             <Link 
-              href="/orcamentos/produtos" 
+              href="/orcamentos/servicos" 
               className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-5 rounded shadow-sm text-sm transition-colors"
             >
               <X className="w-4 h-4" />
@@ -233,14 +233,14 @@ export function OrcamentoProdutosForm({ initialData, isReadOnly = false }: Orcam
         ) : (
           <>
             <Link 
-              href={`/orcamentos/produtos/edit/${initialData.Id}`} 
+              href={`/orcamentos/servicos/edit/${initialData.Id}`} 
               className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-5 rounded shadow-sm text-sm transition-colors"
             >
               <Edit className="w-4 h-4" />
               Editar Orçamento
             </Link>
             <Link 
-              href="/orcamentos/produtos" 
+              href="/orcamentos/servicos" 
               className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-5 rounded shadow-sm text-sm transition-colors"
             >
               <X className="w-4 h-4" />

@@ -83,18 +83,7 @@ const MENU_ITEMS = [
       { href: "/cadastros/fornecedores", label: "Fornecedores", icon: Building2 },
       { href: "/cadastros/funcionarios", label: "Funcionários", icon: Briefcase },
       { href: "/cadastros/transportadoras", label: "Transportadoras", icon: Truck },
-      { 
-        id: "opcoes_auxiliares",
-        href: "#", 
-        label: "Opções auxiliares", 
-        icon: Copy, 
-        hasSubmenu: true,
-        subItems: [
-          { href: "/cadastros/opcoes/tipos-contato", label: "Tipos de contatos", icon: Smartphone },
-          { href: "/cadastros/opcoes/tipos-endereco", label: "Tipos de endereços", icon: MapPin },
-          { href: "/cadastros/opcoes/campos-extras", label: "Campos extras", icon: FileText },
-        ]
-      },
+      { href: "/cadastros/opcoes/empresas", label: "Empresas", icon: Store },
     ]
   },
   { 
@@ -107,19 +96,6 @@ const MENU_ITEMS = [
       { href: "/produtos", label: "Gerenciar produtos", icon: Box },
       { href: "/produtos/valores-venda", label: "Valores de venda", icon: HandCoins },
       { href: "/produtos/etiquetas", label: "Etiquetas", icon: Tag },
-      { 
-        id: "produtos_opcoes_auxiliares",
-        href: "#", 
-        label: "Opções auxiliares", 
-        icon: Copy, 
-        hasSubmenu: true,
-        subItems: [
-          { href: "/produtos/opcoes/grupos", label: "Grupos de produtos", icon: Network },
-          { href: "/produtos/opcoes/unidades", label: "Unidades de produtos", icon: FlaskConical },
-          { href: "/produtos/opcoes/grades", label: "Grades/variações", icon: GitBranch },
-          { href: "/produtos/opcoes/campos-extras", label: "Campos extras", icon: FileText },
-        ]
-      },
     ]
   },
   { 
@@ -141,19 +117,10 @@ const MENU_ITEMS = [
     subItems: [
       { href: "/orcamentos/produtos", label: "Produtos", icon: Box },
       { href: "/orcamentos/servicos", label: "Serviços", icon: Wrench },
-      { 
-        id: "orcamentos_opcoes",
-        href: "#", 
-        label: "Opções auxiliares", 
-        icon: Copy, 
-        hasSubmenu: true,
-        subItems: [
-          { href: "/orcamentos/opcoes/situacoes", label: "Situações", icon: ClipboardList },
-          { href: "/orcamentos/opcoes/campos-extras", label: "Campos extras", icon: FileText },
-          { href: "/orcamentos/opcoes/modelos-email", label: "Modelos de e-mail", icon: Receipt },
-          { href: "/orcamentos/opcoes/configuracoes", label: "Configurações", icon: Settings },
-        ]
-      },
+      { href: "/orcamentos/opcoes/situacoes", label: "Situações", icon: ClipboardList },
+      { href: "/orcamentos/opcoes/campos-extras", label: "Campos extras", icon: FileText },
+      { href: "/orcamentos/opcoes/modelos-email", label: "Modelos de e-mail", icon: Receipt },
+      { href: "/orcamentos/opcoes/configuracoes", label: "Configurações", icon: Settings },
     ]
   },
   { 
@@ -165,19 +132,10 @@ const MENU_ITEMS = [
     subItems: [
       { href: "/ordens-servico", label: "Gerenciar O.S.", icon: ClipboardList },
       { href: "/ordens-servico/painel", label: "Painel", icon: LineChart },
-      { 
-        id: "os_opcoes",
-        href: "#", 
-        label: "Opções auxiliares", 
-        icon: Copy, 
-        hasSubmenu: true,
-        subItems: [
-          { href: "/ordens-servico/opcoes/situacoes", label: "Situações", icon: ClipboardList },
-          { href: "/ordens-servico/opcoes/campos-extras", label: "Campos extras", icon: FileText },
-          { href: "/ordens-servico/opcoes/modelos-email", label: "Modelos de e-mail", icon: Receipt },
-          { href: "/ordens-servico/opcoes/configuracoes", label: "Configurações", icon: Settings },
-        ]
-      },
+      { href: "/ordens-servico/opcoes/situacoes", label: "Situações", icon: ClipboardList },
+      { href: "/ordens-servico/opcoes/campos-extras", label: "Campos extras", icon: FileText },
+      { href: "/ordens-servico/opcoes/modelos-email", label: "Modelos de e-mail", icon: Receipt },
+      { href: "/ordens-servico/opcoes/configuracoes", label: "Configurações", icon: Settings },
     ]
   },
   { 
@@ -190,21 +148,12 @@ const MENU_ITEMS = [
       { href: "/vendas/produtos", label: "Produtos", icon: Box },
       { href: "/vendas/balcao", label: "Balcão", icon: Package },
       { href: "/vendas/servicos", label: "Serviços", icon: Wrench },
-      { 
-        id: "vendas_opcoes",
-        href: "#", 
-        label: "Opções auxiliares", 
-        icon: Copy, 
-        hasSubmenu: true,
-        subItems: [
-          { href: "/vendas/opcoes/situacoes", label: "Situações", icon: ClipboardList },
-          { href: "/vendas/opcoes/canais", label: "Canais", icon: Megaphone },
-          { href: "/vendas/opcoes/campos-extras", label: "Campos extras", icon: FileText },
-          { href: "/vendas/opcoes/modelos-email", label: "Modelos de e-mail", icon: Receipt },
-          { href: "/vendas/opcoes/balancas", label: "Balanças", icon: Scale },
-          { href: "/vendas/opcoes/configuracoes", label: "Configurações", icon: Settings },
-        ]
-      },
+      { href: "/vendas/opcoes/situacoes", label: "Situações", icon: ClipboardList },
+      { href: "/vendas/opcoes/canais", label: "Canais", icon: Megaphone },
+      { href: "/vendas/opcoes/campos-extras", label: "Campos extras", icon: FileText },
+      { href: "/vendas/opcoes/modelos-email", label: "Modelos de e-mail", icon: Receipt },
+      { href: "/vendas/opcoes/balancas", label: "Balanças", icon: Scale },
+      { href: "/vendas/opcoes/configuracoes", label: "Configurações", icon: Settings },
     ]
   },
   {
@@ -230,18 +179,9 @@ const MENU_ITEMS = [
         ]
       },
       { href: "/estoque/trocas-devolucoes", label: "Trocas e devoluções", icon: RotateCcw },
-      {
-        id: "estoque_opcoes",
-        href: "#",
-        label: "Opções auxiliares",
-        icon: Copy,
-        hasSubmenu: true,
-        subItems: [
-          { href: "/estoque/opcoes/situacoes", label: "Situações", icon: ClipboardList },
-          { href: "/estoque/opcoes/locais", label: "Locais de estoque", icon: MapPin },
-          { href: "/estoque/opcoes/campos-extras", label: "Campos extras", icon: FileText },
-        ]
-      },
+      { href: "/estoque/opcoes/situacoes", label: "Situações", icon: ClipboardList },
+      { href: "/estoque/opcoes/locais", label: "Locais de estoque", icon: MapPin },
+      { href: "/estoque/opcoes/campos-extras", label: "Campos extras", icon: FileText },
     ]
   },
   {
@@ -267,27 +207,18 @@ const MENU_ITEMS = [
           { href: "/financeiro/boletos/importar-retorno", label: "Importar retorno", icon: Download },
         ]
       },
-      {
-        id: "financeiro_opcoes",
-        href: "#",
-        label: "Opções auxiliares",
-        icon: Copy,
-        hasSubmenu: true,
-        subItems: [
-          { href: "/financeiro/opcoes/caixas", label: "Caixas", icon: PiggyBank },
-          { href: "/financeiro/opcoes/contas-bancarias", label: "Contas bancárias", icon: Landmark },
-          { href: "/financeiro/opcoes/formas-pagamento", label: "Formas de pagamento", icon: CreditCard },
-          { href: "/financeiro/opcoes/plano-contas", label: "Plano de contas", icon: TreePine },
-          { href: "/financeiro/opcoes/situacoes", label: "Situações", icon: ClipboardList },
-          { href: "/financeiro/opcoes/centros-custo", label: "Centros de custos", icon: Network },
-          { href: "/financeiro/opcoes/conciliacao", label: "Conciliação bancária", icon: RefreshCw },
-          { href: "/financeiro/opcoes/transferencias", label: "Transferências", icon: ArrowLeftRight },
-          { href: "/financeiro/opcoes/campos-extras", label: "Campos extras", icon: FileText },
-          { href: "/financeiro/opcoes/modelos-email", label: "Modelos de e-mails", icon: Receipt },
-          { href: "/financeiro/opcoes/tabelas-rateio", label: "Tabelas de rateios", icon: Percent },
-          { href: "/financeiro/opcoes/configuracoes", label: "Configurações", icon: Settings },
-        ]
-      },
+      { href: "/financeiro/opcoes/caixas", label: "Caixas", icon: PiggyBank },
+      { href: "/financeiro/opcoes/contas-bancarias", label: "Contas bancárias", icon: Landmark },
+      { href: "/financeiro/opcoes/formas-pagamento", label: "Formas de pagamento", icon: CreditCard },
+      { href: "/financeiro/opcoes/plano-contas", label: "Plano de contas", icon: TreePine },
+      { href: "/financeiro/opcoes/situacoes", label: "Situações", icon: ClipboardList },
+      { href: "/financeiro/opcoes/centros-custo", label: "Centros de custos", icon: Network },
+      { href: "/financeiro/opcoes/conciliacao", label: "Conciliação bancária", icon: RefreshCw },
+      { href: "/financeiro/opcoes/transferencias", label: "Transferências", icon: ArrowLeftRight },
+      { href: "/financeiro/opcoes/campos-extras", label: "Campos extras", icon: FileText },
+      { href: "/financeiro/opcoes/modelos-email", label: "Modelos de e-mails", icon: Receipt },
+      { href: "/financeiro/opcoes/tabelas-rateio", label: "Tabelas de rateios", icon: Percent },
+      { href: "/financeiro/opcoes/configuracoes", label: "Configurações", icon: Settings },
     ]
   },
   {
@@ -301,23 +232,14 @@ const MENU_ITEMS = [
       { href: "/notas/servicos", label: "Notas de serviços", icon: FileText },
       { href: "/notas/consumidor", label: "Notas do consumidor", icon: LayoutGrid },
       { href: "/notas/compras", label: "Notas de compras", icon: ShoppingBasket },
-      {
-        id: "notas_opcoes",
-        href: "#",
-        label: "Opções auxiliares",
-        icon: Copy,
-        hasSubmenu: true,
-        subItems: [
-          { href: "/notas/opcoes/importar-xml", label: "Importar XML", icon: Code },
-          { href: "/notas/opcoes/certificado", label: "Certificado digital", icon: Award },
-          { href: "/notas/opcoes/naturezas", label: "Naturezas de operações", icon: ArrowLeftRight },
-          { href: "/notas/opcoes/tributacoes", label: "Tributações", icon: Banknote },
-          { href: "/notas/opcoes/atividades", label: "Atividades de serviços", icon: Wrench },
-          { href: "/notas/opcoes/modelos-email", label: "Modelos de e-mails", icon: Mail },
-          { href: "/notas/opcoes/intermediadores", label: "Intermediadores", icon: UserPlus },
-          { href: "/notas/opcoes/configuracoes", label: "Configurações", icon: Settings },
-        ]
-      },
+      { href: "/notas/opcoes/importar-xml", label: "Importar XML", icon: Code },
+      { href: "/notas/opcoes/certificado", label: "Certificado digital", icon: Award },
+      { href: "/notas/opcoes/naturezas", label: "Naturezas de operações", icon: ArrowLeftRight },
+      { href: "/notas/opcoes/tributacoes", label: "Tributações", icon: Banknote },
+      { href: "/notas/opcoes/atividades", label: "Atividades de serviços", icon: Wrench },
+      { href: "/notas/opcoes/modelos-email", label: "Modelos de e-mails", icon: Mail },
+      { href: "/notas/opcoes/intermediadores", label: "Intermediadores", icon: UserPlus },
+      { href: "/notas/opcoes/configuracoes", label: "Configurações", icon: Settings },
     ]
   },
   {
@@ -330,19 +252,10 @@ const MENU_ITEMS = [
       { href: "/contratos/servicos", label: "Serviços", icon: Wrench },
       { href: "/contratos/locacoes", label: "Locações", icon: ArrowLeftRight },
       { href: "/contratos/assinaturas", label: "Assinaturas", icon: RefreshCw },
-      {
-        id: "contratos_opcoes",
-        href: "#",
-        label: "Opções auxiliares",
-        icon: Copy,
-        hasSubmenu: true,
-        subItems: [
-          { href: "/contratos/opcoes/situacoes-contratos", label: "Situações de contratos", icon: List },
-          { href: "/contratos/opcoes/situacoes-locacoes", label: "Situações de locações", icon: List },
-          { href: "/contratos/opcoes/campos-extras", label: "Campos extras", icon: FileText },
-          { href: "/contratos/opcoes/configuracoes", label: "Configurações", icon: Settings },
-        ]
-      },
+      { href: "/contratos/opcoes/situacoes-contratos", label: "Situações de contratos", icon: List },
+      { href: "/contratos/opcoes/situacoes-locacoes", label: "Situações de locações", icon: List },
+      { href: "/contratos/opcoes/campos-extras", label: "Campos extras", icon: FileText },
+      { href: "/contratos/opcoes/configuracoes", label: "Configurações", icon: Settings },
     ]
   },
   {
@@ -354,20 +267,11 @@ const MENU_ITEMS = [
     subItems: [
       { href: "/atendimentos/central", label: "Central de atendimentos", icon: Headset },
       { href: "/atendimentos/historico", label: "Histórico", icon: History },
-      {
-        id: "atendimentos_opcoes",
-        href: "#",
-        label: "Opções auxiliares",
-        icon: Copy,
-        hasSubmenu: true,
-        subItems: [
-          { href: "/atendimentos/opcoes/categorias", label: "Categorias", icon: List },
-          { href: "/atendimentos/opcoes/canais", label: "Canais", icon: MessageSquare },
-          { href: "/atendimentos/opcoes/situacoes", label: "Situações", icon: List },
-          { href: "/atendimentos/opcoes/campos-extras", label: "Campos extras", icon: FileText },
-          { href: "/atendimentos/opcoes/configuracoes", label: "Configurações", icon: Settings },
-        ]
-      },
+      { href: "/atendimentos/opcoes/categorias", label: "Categorias", icon: List },
+      { href: "/atendimentos/opcoes/canais", label: "Canais", icon: MessageSquare },
+      { href: "/atendimentos/opcoes/situacoes", label: "Situações", icon: List },
+      { href: "/atendimentos/opcoes/campos-extras", label: "Campos extras", icon: FileText },
+      { href: "/atendimentos/opcoes/configuracoes", label: "Configurações", icon: Settings },
     ]
   },
   {

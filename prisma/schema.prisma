@@ -589,7 +589,7 @@ model AtendimentoMensagem {
 }
 
 model Empresa {
-  Id                Int      @id @default(1)
+  Id                Int      @id @default(autoincrement())
   RazaoSocial       String
   NomeFantasia      String?
   Cnpj              String   @unique
@@ -604,6 +604,7 @@ model Empresa {
   Email             String?
   LogoPath          String?
   Cores             String?
+  Ativo             Boolean  @default(true)
   CreatedAt         DateTime @default(now())
 }
 

@@ -72,7 +72,7 @@ export default async function OrcamentosServicosPage({
                   <td className="py-3 px-6 text-right">
                     <div className="flex justify-end gap-1 items-center">
                       <Link
-                        href={`/orcamentos/servicos/edit/${item.Id}`}
+                        href={`/orcamentos/servicos/preview/${item.Id}`}
                         className="flex items-center justify-center w-[30px] h-[30px] bg-[#00c0ef] hover:bg-[#00a7d0] text-white rounded-[3px] transition-colors shadow-sm"
                         title="Visualizar"
                       >

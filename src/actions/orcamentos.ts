@@ -179,6 +179,7 @@ export async function createOrcamento(formData: FormData) {
     const item = await prisma.orcamento.create({ data });
     
     revalidatePath("/orcamentos/produtos");
+    revalidatePath("/orcamentos/servicos");
     return { success: true, data: { Id: item.Id } };
   } catch (error) {
     console.error("Erro ao criar orçamento:", error);
@@ -206,6 +207,7 @@ export async function updateOrcamento(id: number, formData: FormData) {
       await prisma.orcamento.update({ where: { Id: id }, data });
       
       revalidatePath("/orcamentos/produtos");
+      revalidatePath("/orcamentos/servicos");
       return { success: true };
     } catch (error) {
       return { success: false, error: "Falha ao atualizar orçamento." };
