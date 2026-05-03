@@ -20,11 +20,10 @@
   --color-border-color: #dcdcdc;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Force Light Theme */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
 }
 
 body {
@@ -65,9 +64,9 @@ body {
 }
 
 html, body {
-  height: 100%;
   margin: 0;
   padding: 0;
+  background: #f9fafb; /* Gray-50 fallback */
 }
 
 /* ── PRINT STYLES ── */
