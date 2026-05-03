@@ -54,7 +54,7 @@ export async function VendasListPage({ tipo, title, page = 1, pesquisa = "" }: V
             ) : (
               (items as any[]).map((item) => (
                 <tr key={item.Id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="py-3 px-4 font-bold text-gray-900">#{item.Numero}</td>
+                  <td className="py-3 px-4 font-bold text-gray-900">{item.Numero}</td>
                   <td className="py-3 px-4 text-gray-600">{new Date(item.DataVenda).toLocaleDateString("pt-BR")}</td>
                   <td className="py-3 px-4 text-right text-gray-600 font-medium">R$ {item.TotalProdutos.toFixed(2).replace(".", ",")}</td>
                   {tipo !== "balcao" && <td className="py-3 px-4 text-right text-gray-600">R$ {item.TotalServicos.toFixed(2).replace(".", ",")}</td>}

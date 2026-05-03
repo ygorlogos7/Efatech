@@ -18,7 +18,7 @@ export default async function EditOSPage({ params }: { params: Promise<{ id: str
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-2xl font-bold text-gray-900">Editar O.S. #{data.Numero}</h3>
+        <h3 className="text-2xl font-bold text-gray-900">Editar O.S. {data.Numero}</h3>
         <div className="text-gray-500 text-sm flex items-center gap-1">
           <Home className="w-4 h-4 mr-1" />
           <Link href="/home" className="hover:underline">Início</Link>

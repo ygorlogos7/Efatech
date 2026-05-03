@@ -67,7 +67,7 @@ export default async function OSPainelPage() {
               <tr><td colSpan={5} className="text-center py-8 text-gray-400">Nenhuma O.S. em aberto. 🎉</td></tr>
             ) : items.filter(i => i.Ativo).slice(0, 10).map((item) => (
               <tr key={item.Id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="py-2 px-4 font-bold">#{item.Numero}</td>
+                <td className="py-2 px-4 font-bold">{item.Numero}</td>
                 <td className="py-2 px-4">{item.Equipamento || "-"}</td>
                 <td className="py-2 px-4 text-gray-500">{new Date(item.DataAbertura).toLocaleDateString("pt-BR")}</td>
                 <td className="py-2 px-4 text-gray-500">{item.DataPrevisao ? new Date(item.DataPrevisao).toLocaleDateString("pt-BR") : "-"}</td>

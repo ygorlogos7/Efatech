@@ -19,13 +19,13 @@ export default async function PreviewVendaServicosPage({ params }: { params: Pro
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4 print:hidden">
-        <h3 className="text-2xl font-bold text-gray-900">Venda #{data.Numero} — Serviços</h3>
+        <h3 className="text-2xl font-bold text-gray-900">Venda {data.Numero} — Serviços</h3>
         <div className="flex items-center gap-3">
           <PrintButton label="Imprimir Recibo" />
           <div className="text-gray-500 text-sm flex items-center gap-1">
             <Home className="w-4 h-4 mr-1" /><Link href="/home" className="hover:underline">Início</Link>
             <span>&gt;</span><Link href="/vendas/servicos" className="hover:underline">Vendas Serviços</Link>
-            <span>&gt;</span><span className="text-gray-400">#{data.Numero}</span>
+            <span>&gt;</span><span className="text-gray-400">{data.Numero}</span>
           </div>
         </div>
       </div>

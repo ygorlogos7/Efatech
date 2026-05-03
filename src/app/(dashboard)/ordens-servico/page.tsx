@@ -3,9 +3,9 @@ import Link from "next/link";
 import { SearchIcon, PlusCircle, Edit2, ClipboardList, Printer, Eye, Share2, FileText, DollarSign, CheckSquare, Coins, MessageCircle, Mail, Home } from "lucide-react";
 import { getOrdensServico } from "@/actions/ordensServico";
 import { DeleteOSButton } from "@/components/forms/DeleteOSButton";
-import { OSActions } from "@/components/ordens-servico/OSActions";
-import { getWhatsAppLink, getBaseUrl } from "@/lib/whatsapp";
 import { headers } from "next/headers";
+import { prisma } from "@/lib/prisma";
+import { OSActions } from "@/components/ordens-servico/OSActions";
 
 export default async function OrdensServicoPage({
   searchParams,
@@ -93,7 +93,7 @@ export default async function OrdensServicoPage({
             ) : (
               items.map((item) => (
                 <tr key={item.Id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="py-3 px-4 font-bold text-gray-900">#{item.Numero}</td>
+                  <td className="py-3 px-4 font-bold text-gray-900">{item.Numero}</td>
                   <td className="py-3 px-4 text-gray-700">{item.Equipamento || "-"}</td>
                   <td className="py-3 px-6 text-gray-600 max-w-[200px] truncate">{item.Defeito || "-"}</td>
                   <td className="py-3 px-4 text-gray-500" suppressHydrationWarning>{new Date(item.DataAbertura).toLocaleDateString("pt-BR")}</td>

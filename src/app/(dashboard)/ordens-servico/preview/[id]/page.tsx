@@ -38,7 +38,7 @@ export default async function PreviewOSPage({ params }: { params: Promise<{ id: 
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-800">Ordem de Serviço #{os.Numero}</h1>
+              <h1 className="text-2xl font-bold text-gray-800">Ordem de Serviço {os.Numero}</h1>
               <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${os.Ativo ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
                 {os.Ativo ? 'Em Andamento' : 'Finalizada'}
               </span>

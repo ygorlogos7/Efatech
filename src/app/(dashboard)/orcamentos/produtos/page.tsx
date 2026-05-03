@@ -7,6 +7,7 @@ import { DeleteOrcamentoButton } from "@/components/forms/DeleteOrcamentoButton"
 import { getWhatsAppLink } from "@/lib/whatsapp";
 import { headers } from "next/headers";
 import { OrcamentoActions } from "@/components/orcamentos/OrcamentoActions";
+import { prisma } from "@/lib/prisma";
 
 export default async function OrcamentosProdutosPage({
   searchParams,
@@ -93,7 +94,7 @@ export default async function OrcamentosProdutosPage({
             ) : (
               items.map((item) => (
                 <tr key={item.Id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="py-3 px-6 font-bold text-gray-900">#{item.Numero}</td>
+                  <td className="py-3 px-6 font-bold text-gray-900">{item.Numero}</td>
                   <td className="py-3 px-4 text-gray-600">{new Date(item.DataEmissao).toLocaleDateString("pt-BR")}</td>
                   <td className="py-3 px-4 text-gray-600">{item.DataValidade ? new Date(item.DataValidade).toLocaleDateString("pt-BR") : "-"}</td>
                   <td className="py-3 px-4 text-right font-medium">R$ {item.TotalProdutos.toFixed(2).replace(".", ",")}</td>
