@@ -315,7 +315,7 @@ export function Sidebar() {
 
   return (
     <aside className={cn(
-      "bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 flex flex-col h-full shadow-sm shrink-0 overflow-y-auto transition-all duration-300 ease-in-out z-20",
+      "bg-white dark:bg-[#050505] border-r border-gray-200 dark:border-[#1c1c1e] flex flex-col h-full shadow-sm shrink-0 overflow-y-auto transition-all duration-300 ease-in-out z-20",
       isOpen ? "w-64 translate-x-0 opacity-100" : "w-0 -translate-x-full opacity-0 pointer-events-none"
     )}>
       {/* Sidebar specific top box */}
@@ -338,7 +338,7 @@ export function Sidebar() {
                   "flex items-center justify-between px-4 py-3 rounded-md text-sm transition-colors group",
                   isActive
                     ? "text-[#38b473] bg-green-50/50 dark:bg-[#38b473]/10 font-medium"
-                    : (isExpanded ? "text-[#38b473] font-medium" : "text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white")
+                    : (isExpanded ? "text-[#38b473] font-medium" : "text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-zinc-900/50 hover:text-gray-900 dark:hover:text-white")
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -360,7 +360,7 @@ export function Sidebar() {
 
               {/* Mapeando os subitens Nível 1 */}
               {isExpanded && item.subItems && (
-                <div className="ml-10 mt-1 flex flex-col gap-1 border-l-2 border-gray-100 dark:border-slate-800 pl-2">
+                <div className="ml-10 mt-1 flex flex-col gap-1 border-l-2 border-gray-100 dark:border-zinc-800 pl-2">
                   {item.subItems.map((sub, sx) => {
                     const isSubActive = pathname === sub.href;
                     const isSubExpanded = sub.id ? !!expandedKeys[sub.id] : false;
@@ -374,7 +374,7 @@ export function Sidebar() {
                             "flex items-center gap-3 py-2.5 px-3 rounded-md text-[13px] transition-colors",
                             isSubActive 
                               ? "text-[#38b473] font-medium" 
-                              : (isSubExpanded ? "text-[#38b473]" : "text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white")
+                              : (isSubExpanded ? "text-[#38b473]" : "text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-zinc-900/50 hover:text-gray-900 dark:hover:text-white")
                           )}
                         >
                           <sub.icon className={cn("w-4 h-4", (isSubActive || isSubExpanded) ? "text-[#38b473]" : "text-gray-400")} />
@@ -384,17 +384,17 @@ export function Sidebar() {
 
                         {/* Mapeando subitens Nível 2 (Opções Auxiliares) */}
                         {isSubExpanded && sub.subItems && (
-                          <div className="ml-6 mt-1 flex flex-col gap-1 border-l-2 border-gray-100 dark:border-slate-800 pl-2">
+                          <div className="ml-6 mt-1 flex flex-col gap-1 border-l-2 border-gray-100 dark:border-zinc-800 pl-2">
                              {sub.subItems.map((child, cx) => {
                                const isChildActive = pathname === child.href;
                                return (
                                  <Link 
                                   key={cx} href={child.href}
-                                  className={cn(
+                                   className={cn(
                                     "flex items-center gap-2 py-2 px-2 rounded-md text-[12px] transition-colors",
                                     isChildActive 
-                                      ? "text-gray-900 dark:text-white bg-gray-50 dark:bg-slate-800 font-medium" 
-                                      : "text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white"
+                                      ? "text-gray-900 dark:text-white bg-gray-50 dark:bg-zinc-900 font-medium" 
+                                      : "text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-white"
                                   )}
                                  >
                                    <child.icon className={cn("w-3.5 h-3.5", isChildActive ? "text-gray-700" : "text-gray-400")} />

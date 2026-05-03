@@ -8,10 +8,10 @@
 }
 
 .dark {
-  --background: #0f172a;
+  --background: #020203;
   --foreground: #f8fafc;
-  --card: #1e293b;
-  --border: #334155;
+  --card: #0a0a0b;
+  --border: #1c1c1e;
 }
 
 @theme inline {
