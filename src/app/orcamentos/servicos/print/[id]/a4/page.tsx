@@ -5,6 +5,7 @@ import { Printer, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { PrintButton } from "@/components/forms/PrintButton";
 import { FloatingPrintActions } from "@/components/common/FloatingPrintActions";
+import { AutoPrint } from "@/components/common/AutoPrint";
 
 export default async function PrintOrcamentoServicoA4Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -28,6 +29,7 @@ export default async function PrintOrcamentoServicoA4Page({ params }: { params: 
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       
       <FloatingPrintActions />
+      <AutoPrint />
 
       <style dangerouslySetInnerHTML={{ __html: `
         .print-container {
@@ -204,7 +206,7 @@ export default async function PrintOrcamentoServicoA4Page({ params }: { params: 
                     </td>
                 </tr>
                 <tr>
-                    <td className="text-right" style={{border: "none", borderRight: "1px solid #ccc"}}><strong>VALOR TOTAL:</strong></td>
+                    <td className="text-right" style={{borderRight: "1px solid #ccc"}}><strong>VALOR TOTAL:</strong></td>
                     <td className="text-right font-bold os-th-gray text-[15px]">
                         {Number(orcamento.Total).toLocaleString('pt-BR', { minimumFractionDigits: 2, style: 'currency', currency: 'BRL' })}
                     </td>
