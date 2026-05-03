@@ -1,42 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f9fafb;
+  --background: #ffffff;
   --foreground: #171717;
-  --card: #ffffff;
-  --border: #e5e7eb;
-}
-
-.dark {
-  --background: #020203;
-  --foreground: #f8fafc;
-  --card: #0a0a0b;
-  --border: #1c1c1e;
 }
 
 @theme inline {
-  --variant-dark: .dark &;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  
+
   /* Efatech Theme Colors */
   --color-primary-green: #38b473;
   --color-hover-green: #2e965f;
-  --color-bg-page: #e9f7ef;
-  --color-text-dark: #333333;
+  --color-bg-page: #f4f7f6;
+  --color-text-dark: #171717;
   --color-text-gray: #7f8c8d;
   --color-border-color: #dcdcdc;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: #f4f7f6;
+  color: #171717;
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* ── CUSTOM SCROLLBARS ── */
@@ -50,13 +37,15 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2); /* Preto transparente */
+  background: rgba(0, 0, 0, 0.2);
+  /* Preto transparente */
   border-radius: 10px;
   transition: all 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.6); /* Preto mais sólido no hover */
+  background: rgba(0, 0, 0, 0.6);
+  /* Preto mais sólido no hover */
 }
 
 /* Áreas específicas com scrollbars mais visíveis ao passar o mouse */
@@ -70,13 +59,15 @@ body {
   scrollbar-color: #333333 transparent;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
 }
 
 /* ── PRINT STYLES ── */
 @media print {
+
   /* Ocultar sidebar e header */
   aside,
   nav,
@@ -113,4 +104,3 @@ html, body {
     size: A4;
   }
 }
-
