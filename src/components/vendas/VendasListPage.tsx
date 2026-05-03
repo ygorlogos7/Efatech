@@ -27,8 +27,9 @@ export async function VendasListPage({ tipo, title, page = 1 }: VendasListPagePr
     <div className="space-y-6">
       <VendasHeader tipo={tipo} title={title} items={items} />
 
-      <div className="bg-white rounded-md shadow-sm border border-gray-100">
-        <table className="w-full text-sm text-left border-collapse min-w-[750px]">
+      <div className="bg-white rounded-md shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left border-collapse min-w-[850px]">
           <thead className="bg-[#f8f9fa] border-b border-gray-200 text-gray-700 font-semibold">
             <tr>
               <th className="py-3 px-4 w-[80px]">Venda Nº</th>
@@ -126,10 +127,11 @@ export async function VendasListPage({ tipo, title, page = 1 }: VendasListPagePr
             )}
           </tbody>
         </table>
+      </div>
         
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white rounded-b-md">
-          <div className="text-sm text-gray-600">
-            Mostrando <span className="font-medium">{from}</span> a <span className="font-medium">{to}</span> de um total de <span className="font-medium">{total}</span>
+        <div className="px-4 sm:px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between bg-white rounded-b-md gap-4">
+          <div className="text-xs sm:text-sm text-gray-600">
+            Mostrando <span className="font-medium">{from}</span> a <span className="font-medium">{to}</span> de <span className="font-medium">{total}</span>
           </div>
 
           <div className="flex items-center -space-x-px">

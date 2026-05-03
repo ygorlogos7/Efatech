@@ -44,7 +44,7 @@ export function Header({ userName, userEmail }: HeaderProps) {
   }, []);
 
   return (
-    <header className="h-[60px] bg-[#1a1c23] flex items-center justify-between px-6 text-white shrink-0 shadow-md relative z-[100]">
+    <header className="h-[60px] bg-[#1a1c23] flex items-center justify-between px-4 sm:px-6 text-white shrink-0 shadow-md relative z-[100]">
       {/* Left section: Logo & Hamburger */}
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-1.5 text-xl font-bold tracking-tight select-none">

@@ -61,10 +61,10 @@ export function VendasHeader({ tipo, title }: VendasHeaderProps) {
 
   return (
     <>
-      <div className="flex justify-between items-center bg-white p-4 rounded-md shadow-sm border border-gray-200 mb-6">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center bg-white p-4 rounded-md shadow-sm border border-gray-200 mb-6 gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <div className="flex flex-col">
-            <h2 className="text-gray-900 font-bold text-2xl mb-0">{title}</h2>
+            <h2 className="text-gray-900 font-bold text-xl sm:text-2xl mb-0">{title}</h2>
             <div className="text-gray-400 text-[10px] flex items-center gap-1 mt-0.5">
               <Home className="w-2.5 h-2.5" />
               <Link href="/home" className="hover:underline">Início</Link>
@@ -74,14 +74,14 @@ export function VendasHeader({ tipo, title }: VendasHeaderProps) {
           </div>
           
           {caixaAtivo && (
-            <div className="bg-green-50 text-green-700 px-2 py-0.5 rounded-full text-[10px] font-black flex items-center gap-1.5 border border-green-200 ml-2">
+            <div className="bg-green-50 text-green-700 px-2 py-0.5 rounded-full text-[10px] font-black flex items-center gap-1.5 border border-green-200">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
               CAIXA ABERTO (# {caixaAtivo.Id})
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start sm:justify-end">
           {/* Advanced Search */}
           <button className="flex items-center gap-1.5 border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-medium px-3 py-1.5 rounded shadow-sm transition-colors">
             <Search className="w-3.5 h-3.5" />
