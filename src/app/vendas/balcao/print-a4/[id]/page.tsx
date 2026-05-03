@@ -5,6 +5,7 @@ import { Printer, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { PrintButton } from "@/components/forms/PrintButton";
 import { AutoPrint } from "@/components/common/AutoPrint";
+import { auth } from "@/auth";
 
 export default async function PrintVendaA4Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -16,6 +17,7 @@ export default async function PrintVendaA4Page({ params }: { params: Promise<{ i
 
   const { data: venda } = await getVendaById(vendaId);
   const { data: empresa } = await getEmpresa();
+  const session = await auth();
 
   if (!venda) notFound();
 
@@ -147,10 +149,15 @@ export default async function PrintVendaA4Page({ params }: { params: Promise<{ i
             @page { margin: 10mm; size: A4 portrait; }
         }
       `}} />
-
       <AutoPrint />
-
-
+      {session && (
+        <div className="max-w-[900px] mx-auto mb-4 mt-6 p-4 print:hidden flex justify-between items-center bg-white shadow-2xl rounded-2xl border border-gray-100">
+            <Link href="/vendas/balcao" className="px-4 py-1.5 bg-gray-50 text-sm font-bold border rounded-lg hover:bg-black hover:text-white transition-all flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" /> Voltar
+            </Link>
+            <PrintButton label="IMPRIMIR VENDA" />
+        </div>
+      )}
       <div className="print-container">
           {/* Cabeçalho */}
           <div className="os-header">
