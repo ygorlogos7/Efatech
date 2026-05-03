@@ -163,9 +163,7 @@ export default async function PrintOSA4Page({ params }: { params: Promise<{ id: 
       `}} />
 
       {/* BARRA DE AÇÕES (ESCONDIDA NA IMPRESSÃO) */}
-      <div className="max-w-[900px] mx-auto mb-4 mt-6 print:hidden flex justify-center">
-          <PrintButton label="SALVAR EM PDF" />
-      </div>
+
 
       <div className="print-container">
           {/* Cabeçalho */}

@@ -149,9 +149,7 @@ export default async function PrintVendaA4Page({ params }: { params: Promise<{ i
       `}} />
 
       <AutoPrint />
-      <div className="max-w-[900px] mx-auto mb-4 mt-6 print:hidden flex justify-center">
-          <PrintButton label="SALVAR EM PDF" />
-      </div>
+
 
       <div className="print-container">
           {/* Cabeçalho */}

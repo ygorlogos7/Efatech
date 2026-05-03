@@ -139,9 +139,7 @@ export default async function PrintOrcamentoServicoA4Page({ params }: { params: 
         }
       `}} />
 
-      <div className="max-w-[900px] mx-auto mb-4 mt-6 print:hidden flex justify-center">
-          <PrintButton label="SALVAR EM PDF" />
-      </div>
+
 
       <div className="print-container">
           <div className="os-header">
