@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { PlusCircle, Edit2, Eye, ShoppingBasket, Printer, Share2, FileText, RefreshCw, Coins, DollarSign, CheckSquare, MessageCircle, Mail } from "lucide-react";
 import { getVendas } from "@/actions/vendas";
+import { getWhatsAppLink, getBaseUrl } from "@/lib/whatsapp";
 
 import { MoreActionsDropdown } from "@/components/common/MoreActionsDropdown";
 import { DeleteVendaButton } from "@/components/forms/DeleteVendaButton";
@@ -91,13 +92,18 @@ export async function VendasListPage({ tipo, title, page = 1 }: VendasListPagePr
                               { label: "Cupom Térmico", href: `/vendas/${tipo}/print/${item.Id}` },
                             ]
                           },
-                          { label: "Alterar situação", icon: <CheckSquare className="w-4 h-4" /> },
-                          { 
+                          { label: "Alterar situação", icon: <CheckSquare className="w-4 h-4" /> },                          { 
                             label: "Compartilhar", 
                             icon: <Share2 className="w-4 h-4" />,
                             subItems: [
                               { label: "Via E-mail", icon: <Mail className="w-3.5 h-3.5" /> },
-                              { label: "Via WhatsApp", icon: <MessageCircle className="w-3.5 h-3.5" /> },
+                              { 
+                                label: "Via WhatsApp", 
+                                icon: <MessageCircle className="w-3.5 h-3.5" />,
+                                href: getWhatsAppLink(item.Cliente?.TelefoneCelular || item.Cliente?.Telefone || item.Cliente?.TelefoneComercial, `Olá ${item.Cliente?.Nome || ""}, sua venda #${item.Numero} foi concluída. Você pode visualizar o comprovante em PDF através deste link: ${getBaseUrl()}/vendas/${tipo}/print-a4/${item.Id}`) || undefined,
+                                alertMessage: !(item.Cliente?.TelefoneCelular || item.Cliente?.Telefone || item.Cliente?.TelefoneComercial) ? "Este cliente não possui telefone/celular cadastrado!" : undefined,
+                                target: "_blank"
+                              },
                             ]
                           },
                           { 

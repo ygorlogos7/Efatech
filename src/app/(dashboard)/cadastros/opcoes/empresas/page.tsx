@@ -15,22 +15,21 @@ export default async function EmpresasPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-gray-900 font-bold text-3xl mb-0">Empresas</h2>
-        <div className="text-gray-500 text-sm flex items-center gap-1">
-          <Home className="w-4 h-4 mr-1" />
-          <Link href="/home" className="hover:underline">Início</Link>
-          <span className="text-gray-300 mx-1">&gt;</span>
-          <span className="text-gray-400">Empresas</span>
+      <div className="flex justify-between items-center bg-white p-4 rounded-md shadow-sm border border-gray-200">
+        <div className="flex items-center gap-4">
+          <h2 className="text-gray-900 font-bold text-2xl mb-0">Empresas</h2>
+          <div className="text-gray-400 text-xs flex items-center gap-1 mt-1">
+            <Home className="w-3 h-3" />
+            <Link href="/home" className="hover:underline">Início</Link>
+            <span>&gt;</span>
+            <span>Empresas</span>
+          </div>
         </div>
-      </div>
 
-      <div className="flex justify-between items-center">
-        <div></div>
         <div className="flex items-center gap-3">
           {/* Barra de Pesquisa */}
           <form method="get" className="m-0">
-            <div className="flex items-center border border-gray-300 rounded-md bg-white overflow-hidden px-3 py-1.5 focus-within:ring-2 focus-within:ring-green-500 transition-all">
+            <div className="flex items-center border border-gray-300 rounded bg-white overflow-hidden px-3 py-1.5 focus-within:ring-1 focus-within:ring-green-500 transition-all shadow-sm">
               <SearchIcon className="w-4 h-4 text-gray-400 mr-2" />
               <input
                 type="text"

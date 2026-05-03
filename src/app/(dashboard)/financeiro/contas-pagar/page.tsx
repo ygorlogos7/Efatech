@@ -2,7 +2,8 @@
 
 import React, { useState, useTransition } from "react";
 import { getContasPagar, createContaPagar } from "@/actions/financeiro";
-import { Banknote, PlusCircle, Check, X, Calendar, DollarSign } from "lucide-react";
+import { Banknote, PlusCircle, Check, X, Calendar, DollarSign, Home } from "lucide-react";
+import Link from "next/link";
 
 export default function ContasPagarPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -31,11 +32,20 @@ export default function ContasPagarPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-3xl font-bold text-gray-900">Contas a Pagar</h2>
+      <div className="flex justify-between items-center bg-white p-4 rounded-md shadow-sm border border-gray-200">
+        <div className="flex items-center gap-4">
+          <h2 className="text-gray-900 font-bold text-2xl mb-0">Contas a Pagar</h2>
+          <div className="text-gray-400 text-xs flex items-center gap-1 mt-1">
+            <Home className="w-3 h-3" />
+            <Link href="/home" className="hover:underline">Início</Link>
+            <span>&gt;</span>
+            <span>Contas a Pagar</span>
+          </div>
+        </div>
+
         <button
           onClick={() => setIsAdding(!isAdding)}
-          className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 rounded-md shadow-sm"
+          className="flex items-center gap-1.5 bg-[#dd4b39] hover:bg-red-600 text-white text-sm font-bold px-4 py-2 rounded shadow-sm transition-colors"
         >
           <PlusCircle className="w-4 h-4" /> Nova Conta
         </button>

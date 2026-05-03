@@ -15,6 +15,7 @@ export async function getOrcamentosProdutos(searchQuery?: string, page: number =
 
     const items = await prisma.orcamento.findMany({
       where: whereClause,
+      include: { Clientes: true },
       orderBy: { CreatedAt: "desc" },
       take: pageSize,
       skip: skip,
@@ -33,6 +34,7 @@ export async function getOrcamentosServicos(searchQuery?: string, page: number =
 
   try {
     const items = await prisma.orcamento.findMany({
+      include: { Clientes: true },
       orderBy: { CreatedAt: "desc" },
       take: pageSize,
       skip: skip,
@@ -160,7 +162,29 @@ export async function getOrcamentoById(id: number) {
 
 export async function createOrcamento(formData: FormData) {
   try {
-    const clienteId = parseInt(formData.get("ClienteId") as string);
+    let clienteId = formData.get("ClienteId") ? Number(formData.get("ClienteId")) : null;
+    const clienteNome = formData.get("ClienteNome") as string;
+    const clienteTelefone = formData.get("ClienteTelefone") as string;
+    const clienteCPF = formData.get("ClienteCPF") as string;
+    const clienteEmail = formData.get("ClienteEmail") as string;
+
+    // Se não tiver ID mas tiver Nome, cria um novo cliente
+    if (!clienteId && clienteNome) {
+      const novoCliente = await prisma.clientes.create({
+        data: {
+          Nome: clienteNome,
+          Telefone: clienteTelefone || null,
+          CPFCNPJ: clienteCPF || null,
+          Email: clienteEmail || null,
+          TipoCliente: "F",
+          Ativo: true,
+          VendedorResponsavel: "Johnny Andrade Ferreira",
+          PermitirExcederLimite: false
+        }
+      });
+      clienteId = novoCliente.Id;
+    }
+
     const dataValidadeStr = formData.get("DataValidade") as string;
     const total = parseFloat(formData.get("Total") as string) || 0;
     const desconto = parseFloat(formData.get("Desconto") as string) || 0;
@@ -170,7 +194,7 @@ export async function createOrcamento(formData: FormData) {
       DataValidade: dataValidadeStr ? new Date(dataValidadeStr) : null,
       Descricao: formData.get("Descricao") as string || null,
       Observacoes: formData.get("Observacoes") as string || null,
-      TotalProdutos: total, // Para "Orçamento de Produtos", tratamos como total de produtos
+      TotalProdutos: total,
       Total: total - desconto,
       Desconto: desconto,
       Ativo: true,

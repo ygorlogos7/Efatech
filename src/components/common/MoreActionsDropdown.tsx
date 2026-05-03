@@ -7,6 +7,7 @@ export interface ActionItem {
   label: string;
   icon?: React.ReactNode;
   onClick?: () => void;
+  alertMessage?: string; // Nova propriedade serializável
   href?: string;
   target?: string;
   subItems?: ActionItem[];
@@ -119,8 +120,20 @@ function DropdownItem({ action, closeParent }: { action: ActionItem; closeParent
           href={action.href} 
           target={action.target}
           rel={action.target === "_blank" ? "noopener noreferrer" : undefined}
-          onClick={closeParent} 
-          className="block" 
+          onClick={(e) => {
+            if (action.alertMessage) {
+              alert(action.alertMessage);
+            }
+            
+            if (action.target === "_blank") {
+              e.preventDefault();
+              window.open(action.href, "_blank", "noopener,noreferrer");
+            }
+            
+            // Fecha o menu após um pequeno delay para garantir a execução
+            setTimeout(closeParent, 100);
+          }} 
+          className="block w-full" 
           role="menuitem"
         >
           {content}
@@ -128,9 +141,14 @@ function DropdownItem({ action, closeParent }: { action: ActionItem; closeParent
       ) : (
         <button
           onClick={() => {
-            if (!hasSubItems && action.onClick) {
+            if (!hasSubItems) {
+              if (action.alertMessage) {
+                alert(action.alertMessage);
+              }
+              if (action.onClick) {
                 action.onClick();
-                closeParent();
+              }
+              closeParent();
             }
           }}
           className="block w-full"

@@ -1,15 +1,23 @@
 import React from "react";
 import Link from "next/link";
-import { SearchIcon, PlusCircle, Edit2, ClipboardList, Printer, Eye, Share2, FileText, DollarSign, CheckSquare, Coins, MessageCircle, Mail } from "lucide-react";
+import { SearchIcon, PlusCircle, Edit2, ClipboardList, Printer, Eye, Share2, FileText, DollarSign, CheckSquare, Coins, MessageCircle, Mail, Home } from "lucide-react";
 import { getOrdensServico } from "@/actions/ordensServico";
 import { DeleteOSButton } from "@/components/forms/DeleteOSButton";
 import { MoreActionsDropdown } from "@/components/common/MoreActionsDropdown";
+import { getWhatsAppLink, getBaseUrl } from "@/lib/whatsapp";
+import { headers } from "next/headers";
 
 export default async function OrdensServicoPage({
   searchParams,
 }: {
   searchParams: Promise<{ pesquisa?: string }>;
 }) {
+  const headersList = await headers();
+  const host = headersList.get("host") || "";
+  const protocol = host.includes("localhost") ? "http" : "https";
+  const defaultBaseUrl = host ? `${protocol}://${host}` : "";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || defaultBaseUrl || "https://seu-sistema.com";
+
   const resolvedParams = await searchParams;
   const pesquisa = resolvedParams?.pesquisa || "";
   const page = Number(resolvedParams?.page) || 1;
@@ -19,16 +27,32 @@ export default async function OrdensServicoPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-end mb-4">
-        <h2 className="text-3xl font-bold text-gray-900">Ordens de Serviço</h2>
+      <div className="flex justify-between items-center bg-white p-4 rounded-md shadow-sm border border-gray-200">
+        <div className="flex items-center gap-4">
+          <h2 className="text-gray-900 font-bold text-2xl mb-0">Ordens de Serviço</h2>
+          <div className="text-gray-400 text-xs flex items-center gap-1 mt-1">
+            <Home className="w-3 h-3" />
+            <Link href="/home" className="hover:underline">Início</Link>
+            <span>&gt;</span>
+            <span>Ordens de Serviço</span>
+          </div>
+        </div>
+
         <div className="flex items-center gap-3">
-          <form method="get">
-            <div className="flex items-center border border-gray-300 rounded-md bg-white px-3 py-1.5 focus-within:ring-2 focus-within:ring-green-500 transition-all">
+          <form method="get" className="m-0">
+            <div className="flex items-center border border-gray-300 rounded bg-white overflow-hidden px-3 py-1.5 focus-within:ring-1 focus-within:ring-green-500 transition-all shadow-sm">
               <SearchIcon className="w-4 h-4 text-gray-400 mr-2" />
-              <input type="text" name="pesquisa" defaultValue={pesquisa} className="outline-none text-sm w-[200px] text-gray-700" placeholder="Equipamento ou defeito..." />
+              <input 
+                type="text" 
+                name="pesquisa" 
+                defaultValue={pesquisa} 
+                className="outline-none text-sm w-[200px] text-gray-700" 
+                placeholder="Equipamento ou defeito..." 
+              />
             </div>
           </form>
-          <Link href="/ordens-servico/create" className="flex items-center gap-1.5 bg-[#00b050] hover:bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-md shadow-sm">
+
+          <Link href="/ordens-servico/create" className="flex items-center gap-1.5 bg-[#00a65a] hover:bg-green-600 transition-colors text-white text-sm font-bold px-4 py-2 rounded shadow-sm">
             <PlusCircle className="w-4 h-4" />
             Nova O.S.
           </Link>
@@ -105,7 +129,13 @@ export default async function OrdensServicoPage({
                             label: "Compartilhar", 
                             icon: <Share2 className="w-4 h-4" />,
                             subItems: [
-                              { label: "Via WhatsApp", icon: <MessageCircle className="w-3.5 h-3.5" /> },
+                              { 
+                                label: "Via WhatsApp", 
+                                icon: <MessageCircle className="w-3.5 h-3.5" />,
+                                href: getWhatsAppLink(item.Cliente?.TelefoneCelular || item.Cliente?.Telefone || item.Cliente?.TelefoneComercial, `Olá ${item.Cliente?.Nome || ""}, sua Ordem de Serviço #${item.Numero} está pronta. Você pode visualizá-la e baixá-la em PDF através deste link: ${baseUrl}/ordens-servico/print/${item.Id}/a4`) || undefined,
+                                alertMessage: !(item.Cliente?.TelefoneCelular || item.Cliente?.Telefone || item.Cliente?.TelefoneComercial) ? "Este cliente não possui telefone/celular cadastrado!" : undefined,
+                                target: "_blank"
+                              },
                               { label: "Via E-mail", icon: <Mail className="w-3.5 h-3.5" /> },
                             ]
                           },

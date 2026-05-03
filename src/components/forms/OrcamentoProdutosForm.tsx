@@ -22,16 +22,19 @@ export function OrcamentoProdutosForm({ initialData, isReadOnly = false }: Orcam
   const { success, error } = useNotification();
   const isEdit = !!initialData && !isReadOnly;
 
-  // States for search and selection
+  // States for client (direct entry + search)
   const [clientes, setClientes] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState(initialData?.Clientes?.Nome || "");
   const [selectedClienteId, setSelectedClienteId] = useState<number | null>(initialData?.ClienteId || null);
+  const [clienteTelefone, setClienteTelefone] = useState(initialData?.Clientes?.Telefone || initialData?.Clientes?.TelefoneCelular || "");
+  const [clienteCPF, setClienteCPF] = useState(initialData?.Clientes?.CPFCNPJ || "");
+  const [clienteEmail, setClienteEmail] = useState(initialData?.Clientes?.Email || "");
   const [isSearching, setIsSearching] = useState(false);
 
   // Load clients on search
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
-      if (searchTerm.length >= 2 && !selectedClienteId) {
+      if (searchTerm.length >= 2 && searchTerm !== initialData?.Clientes?.Nome) {
         setIsSearching(true);
         const res = await getClientes(searchTerm);
         if (res.success && res.data) setClientes(res.data || []);
@@ -42,12 +45,14 @@ export function OrcamentoProdutosForm({ initialData, isReadOnly = false }: Orcam
     }, 400);
 
     return () => clearTimeout(delayDebounce);
-  }, [searchTerm, selectedClienteId]);
+  }, [searchTerm, initialData]);
 
   const handleSubmit = (formData: FormData) => {
-    if (selectedClienteId) {
-        formData.append("ClienteId", selectedClienteId.toString());
-    }
+    if (selectedClienteId) formData.append("ClienteId", selectedClienteId.toString());
+    formData.append("ClienteNome", searchTerm);
+    formData.append("ClienteTelefone", clienteTelefone);
+    formData.append("ClienteCPF", clienteCPF);
+    formData.append("ClienteEmail", clienteEmail);
 
     startTransition(async () => {
       let r;
@@ -69,7 +74,7 @@ export function OrcamentoProdutosForm({ initialData, isReadOnly = false }: Orcam
   };
 
   const formatDateForInput = (date: any) => {
-    if (!date) return "";
+    if (!date) return new Date().toISOString().split("T")[0];
     return new Date(date).toISOString().split("T")[0];
   };
 
@@ -83,33 +88,29 @@ export function OrcamentoProdutosForm({ initialData, isReadOnly = false }: Orcam
           <h3 className="font-semibold text-gray-800 text-sm">Identificação do Cliente</h3>
         </div>
         
-        <div className="p-5 grid grid-cols-1 md:grid-cols-12 gap-6">
-          <div className="md:col-span-12">
-            <label className="block text-xs font-bold text-gray-700 mb-1">Buscar Cliente</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="Nome, CPF ou E-mail do cliente..."
-                value={searchTerm}
-                onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    if (selectedClienteId) setSelectedClienteId(null);
-                }}
-                disabled={isReadOnly}
-                className="block w-full pl-10 pr-3 py-1.5 border border-gray-300 rounded text-sm focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed"
-              />
-              {isSearching && (
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                  <div className="animate-spin h-3 w-3 border-2 border-[#00a859] border-t-transparent rounded-full"></div>
-                </div>
-              )}
-            </div>
+        <div className="p-5 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="md:col-span-2 relative">
+            <label className="block text-xs font-bold text-gray-700 mb-1">Nome *</label>
+            <input
+              type="text"
+              placeholder="Digite o nome do cliente"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                if (e.target.value === "") {
+                  setSelectedClienteId(null);
+                  setClienteTelefone("");
+                  setClienteCPF("");
+                  setClienteEmail("");
+                }
+              }}
+              disabled={isReadOnly}
+              required
+              className="block w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
             
             {clientes.length > 0 && !isReadOnly && (
-              <div className="absolute z-10 w-[calc(100%-48px)] mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-60 overflow-y-auto">
+              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded shadow-xl max-h-48 overflow-y-auto">
                 {clientes.map((c) => (
                   <button
                     key={c.Id}
@@ -117,19 +118,55 @@ export function OrcamentoProdutosForm({ initialData, isReadOnly = false }: Orcam
                     onClick={() => {
                       setSelectedClienteId(c.Id);
                       setSearchTerm(c.Nome);
+                      setClienteTelefone(c.Telefone || c.TelefoneCelular || "");
+                      setClienteCPF(c.CPFCNPJ || "");
+                      setClienteEmail(c.Email || "");
                       setClientes([]);
                     }}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-50 flex justify-between items-center transition-colors border-b border-gray-100 last:border-0"
+                    className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm border-b last:border-0 transition-colors"
                   >
-                    <div>
-                      <p className="text-sm font-bold text-gray-800">{c.Nome}</p>
-                      <p className="text-[10px] text-gray-500">{c.CPFCNPJ || "Sem documento"}</p>
-                    </div>
-                    {selectedClienteId === c.Id && <Check className="w-4 h-4 text-[#00a859]" />}
+                    <span className="font-bold text-gray-800">{c.Nome}</span>
+                    <span className="text-[10px] text-gray-400 ml-2">{c.CPFCNPJ || "S/ Documento"}</span>
                   </button>
                 ))}
               </div>
             )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">Telefone Principal</label>
+            <input 
+              type="text" 
+              value={clienteTelefone}
+              onChange={(e) => setClienteTelefone(e.target.value)}
+              disabled={isReadOnly}
+              placeholder="(00) 00000-0000"
+              className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed" 
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">CPF/CNPJ</label>
+            <input 
+              type="text" 
+              value={clienteCPF}
+              onChange={(e) => setClienteCPF(e.target.value)}
+              disabled={isReadOnly}
+              placeholder="000.000.000-00"
+              className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed" 
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-xs font-bold text-gray-700 mb-1">E-mail</label>
+            <input 
+              type="email" 
+              value={clienteEmail}
+              onChange={(e) => setClienteEmail(e.target.value)}
+              disabled={isReadOnly}
+              placeholder="cliente@email.com"
+              className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed" 
+            />
           </div>
         </div>
       </div>

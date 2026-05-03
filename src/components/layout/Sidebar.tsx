@@ -118,9 +118,7 @@ const MENU_ITEMS = [
       { href: "/orcamentos/produtos", label: "Produtos", icon: Box },
       { href: "/orcamentos/servicos", label: "Serviços", icon: Wrench },
       { href: "/orcamentos/opcoes/situacoes", label: "Situações", icon: ClipboardList },
-      { href: "/orcamentos/opcoes/campos-extras", label: "Campos extras", icon: FileText },
       { href: "/orcamentos/opcoes/modelos-email", label: "Modelos de e-mail", icon: Receipt },
-      { href: "/orcamentos/opcoes/configuracoes", label: "Configurações", icon: Settings },
     ]
   },
   { 
@@ -133,7 +131,6 @@ const MENU_ITEMS = [
       { href: "/ordens-servico", label: "Gerenciar O.S.", icon: ClipboardList },
       { href: "/ordens-servico/painel", label: "Painel", icon: LineChart },
       { href: "/ordens-servico/opcoes/situacoes", label: "Situações", icon: ClipboardList },
-      { href: "/ordens-servico/opcoes/campos-extras", label: "Campos extras", icon: FileText },
       { href: "/ordens-servico/opcoes/modelos-email", label: "Modelos de e-mail", icon: Receipt },
       { href: "/ordens-servico/opcoes/configuracoes", label: "Configurações", icon: Settings },
     ]
@@ -150,7 +147,6 @@ const MENU_ITEMS = [
       { href: "/vendas/servicos", label: "Serviços", icon: Wrench },
       { href: "/vendas/opcoes/situacoes", label: "Situações", icon: ClipboardList },
       { href: "/vendas/opcoes/canais", label: "Canais", icon: Megaphone },
-      { href: "/vendas/opcoes/campos-extras", label: "Campos extras", icon: FileText },
       { href: "/vendas/opcoes/modelos-email", label: "Modelos de e-mail", icon: Receipt },
       { href: "/vendas/opcoes/balancas", label: "Balanças", icon: Scale },
       { href: "/vendas/opcoes/configuracoes", label: "Configurações", icon: Settings },
@@ -181,7 +177,6 @@ const MENU_ITEMS = [
       { href: "/estoque/trocas-devolucoes", label: "Trocas e devoluções", icon: RotateCcw },
       { href: "/estoque/opcoes/situacoes", label: "Situações", icon: ClipboardList },
       { href: "/estoque/opcoes/locais", label: "Locais de estoque", icon: MapPin },
-      { href: "/estoque/opcoes/campos-extras", label: "Campos extras", icon: FileText },
     ]
   },
   {
@@ -215,7 +210,6 @@ const MENU_ITEMS = [
       { href: "/financeiro/opcoes/centros-custo", label: "Centros de custos", icon: Network },
       { href: "/financeiro/opcoes/conciliacao", label: "Conciliação bancária", icon: RefreshCw },
       { href: "/financeiro/opcoes/transferencias", label: "Transferências", icon: ArrowLeftRight },
-      { href: "/financeiro/opcoes/campos-extras", label: "Campos extras", icon: FileText },
       { href: "/financeiro/opcoes/modelos-email", label: "Modelos de e-mails", icon: Receipt },
       { href: "/financeiro/opcoes/tabelas-rateio", label: "Tabelas de rateios", icon: Percent },
       { href: "/financeiro/opcoes/configuracoes", label: "Configurações", icon: Settings },
@@ -254,7 +248,6 @@ const MENU_ITEMS = [
       { href: "/contratos/assinaturas", label: "Assinaturas", icon: RefreshCw },
       { href: "/contratos/opcoes/situacoes-contratos", label: "Situações de contratos", icon: List },
       { href: "/contratos/opcoes/situacoes-locacoes", label: "Situações de locações", icon: List },
-      { href: "/contratos/opcoes/campos-extras", label: "Campos extras", icon: FileText },
       { href: "/contratos/opcoes/configuracoes", label: "Configurações", icon: Settings },
     ]
   },
@@ -270,7 +263,6 @@ const MENU_ITEMS = [
       { href: "/atendimentos/opcoes/categorias", label: "Categorias", icon: List },
       { href: "/atendimentos/opcoes/canais", label: "Canais", icon: MessageSquare },
       { href: "/atendimentos/opcoes/situacoes", label: "Situações", icon: List },
-      { href: "/atendimentos/opcoes/campos-extras", label: "Campos extras", icon: FileText },
       { href: "/atendimentos/opcoes/configuracoes", label: "Configurações", icon: Settings },
     ]
   },

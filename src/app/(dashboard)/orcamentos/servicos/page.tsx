@@ -1,15 +1,23 @@
 import React from "react";
 import Link from "next/link";
-import { PlusCircle, SearchIcon, Wrench, Printer, Share2, FileText, RefreshCw, Coins, DollarSign, CheckSquare, MessageCircle, Mail, Edit2 } from "lucide-react";
+import { PlusCircle, SearchIcon, Wrench, Printer, Share2, FileText, RefreshCw, Coins, DollarSign, CheckSquare, MessageCircle, Mail, Edit2, Home } from "lucide-react";
 import { getOrcamentosServicos } from "@/actions/orcamentos";
 import { MoreActionsDropdown } from "@/components/common/MoreActionsDropdown";
 import { DeleteOrcamentoButton } from "@/components/forms/DeleteOrcamentoButton";
+import { getWhatsAppLink } from "@/lib/whatsapp";
+import { headers } from "next/headers";
 
 export default async function OrcamentosServicosPage({
   searchParams,
 }: {
   searchParams: Promise<{ pesquisa?: string }>;
 }) {
+  const headersList = await headers();
+  const host = headersList.get("host") || "";
+  const protocol = host.includes("localhost") ? "http" : "https";
+  const defaultBaseUrl = host ? `${protocol}://${host}` : "";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || defaultBaseUrl || "https://seu-sistema.com";
+
   const resolvedParams = await searchParams;
   const pesquisa = resolvedParams?.pesquisa || "";
   const page = Number(resolvedParams?.page) || 1;
@@ -19,16 +27,32 @@ export default async function OrcamentosServicosPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-end mb-4">
-        <h2 className="text-3xl font-bold text-gray-900">Orçamentos — Serviços</h2>
+      <div className="flex justify-between items-center bg-white p-4 rounded-md shadow-sm border border-gray-200">
+        <div className="flex items-center gap-4">
+          <h2 className="text-gray-900 font-bold text-2xl mb-0">Orçamentos — Serviços</h2>
+          <div className="text-gray-400 text-xs flex items-center gap-1 mt-1">
+            <Home className="w-3 h-3" />
+            <Link href="/home" className="hover:underline">Início</Link>
+            <span>&gt;</span>
+            <span>Serviços</span>
+          </div>
+        </div>
+
         <div className="flex items-center gap-3">
-          <form method="get">
-            <div className="flex items-center border border-gray-300 rounded-md bg-white px-3 py-1.5 focus-within:ring-2 focus-within:ring-green-500 transition-all">
+          <form method="get" className="m-0">
+            <div className="flex items-center border border-gray-300 rounded bg-white overflow-hidden px-3 py-1.5 focus-within:ring-1 focus-within:ring-green-500 transition-all shadow-sm">
               <SearchIcon className="w-4 h-4 text-gray-400 mr-2" />
-              <input type="text" name="pesquisa" defaultValue={pesquisa} className="outline-none text-sm w-[180px] text-gray-700" placeholder="Nº do orçamento..." />
+              <input 
+                type="text" 
+                name="pesquisa" 
+                defaultValue={pesquisa} 
+                className="outline-none text-sm w-[180px] text-gray-700" 
+                placeholder="Nº do orçamento..." 
+              />
             </div>
           </form>
-          <Link href="/orcamentos/servicos/create" className="flex items-center gap-1.5 bg-[#00b050] hover:bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-md shadow-sm">
+
+          <Link href="/orcamentos/servicos/create" className="flex items-center gap-1.5 bg-[#00a65a] hover:bg-green-600 transition-colors text-white text-sm font-bold px-4 py-2 rounded shadow-sm">
             <PlusCircle className="w-4 h-4" />
             Novo Orçamento
           </Link>
@@ -94,9 +118,8 @@ export default async function OrcamentosServicosPage({
                             label: "Imprimir",
                             icon: <Printer className="w-4 h-4" />,
                             subItems: [
-                              { label: "Formato A4", href: `/orcamentos/servicos/print/${item.Id}` },
+                              { label: "Formato A4", href: `/orcamentos/servicos/print/${item.Id}/a4` },
                               { label: "Cupom", href: `/orcamentos/servicos/print/${item.Id}` },
-                              { label: "Produção", href: `/orcamentos/servicos/print/${item.Id}` },
                             ]
                           },
                           { label: "Alterar situação", icon: <CheckSquare className="w-4 h-4" /> },
@@ -105,7 +128,13 @@ export default async function OrcamentosServicosPage({
                             icon: <Share2 className="w-4 h-4" />,
                             subItems: [
                               { label: "Via E-mail", icon: <Mail className="w-3.5 h-3.5" /> },
-                              { label: "Via WhatsApp", icon: <MessageCircle className="w-3.5 h-3.5" /> },
+                              { 
+                                label: "Via WhatsApp", 
+                                icon: <MessageCircle className="w-3.5 h-3.5" />,
+                                href: getWhatsAppLink(item.Clientes?.TelefoneCelular || item.Clientes?.Telefone || item.Clientes?.TelefoneComercial, `Olá ${item.Clientes?.Nome || ""}, seu orçamento de serviços #${item.Numero} está pronto. Você pode visualizá-lo e baixá-lo em PDF através deste link: ${baseUrl}/orcamentos/servicos/print/${item.Id}/a4`) || undefined,
+                                alertMessage: !(item.Clientes?.TelefoneCelular || item.Clientes?.Telefone || item.Clientes?.TelefoneComercial) ? "Este cliente não possui telefone/celular cadastrado!" : undefined,
+                                target: "_blank"
+                              },
                             ]
                           },
                           {

@@ -28,6 +28,7 @@ export async function getVendas(tipo?: string, page: number = 1, pageSize: numbe
     
     const items = await prisma.vendas.findMany({
       where: whereClause,
+      include: { Cliente: true },
       orderBy: { CreatedAt: "desc" },
       take: pageSize,
       skip: skip,

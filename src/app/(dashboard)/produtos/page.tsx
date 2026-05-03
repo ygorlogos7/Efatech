@@ -5,7 +5,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { SearchIcon, PlusCircle, Edit2, Box, Package, Copy, Upload, Download, Settings, Trash2, DollarSign, Tag, Printer, Share2, Mail, MessageCircle, FileText, RefreshCw, Coins } from "lucide-react";
+import { SearchIcon, PlusCircle, Edit2, Box, Package, Copy, Upload, Download, Settings, Trash2, DollarSign, Tag, Printer, Share2, Mail, MessageCircle, FileText, RefreshCw, Coins, Home } from "lucide-react";
 import { getProdutos } from "@/actions/produtos";
 import { DeleteProdutoButton } from "@/components/forms/DeleteProdutoButton";
 import { MoreActionsDropdown } from "@/components/common/MoreActionsDropdown";
@@ -24,20 +24,32 @@ export default async function ProdutosPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-end mb-4">
-        <div>
-          <h2 className="text-dark font-bold text-3xl text-gray-900 mb-0">Produtos</h2>
+      <div className="flex justify-between items-center bg-white p-4 rounded-md shadow-sm border border-gray-200">
+        <div className="flex items-center gap-4">
+          <h2 className="text-gray-900 font-bold text-2xl mb-0">Produtos</h2>
+          <div className="text-gray-400 text-xs flex items-center gap-1 mt-1">
+            <Home className="w-3 h-3" />
+            <Link href="/home" className="hover:underline">Início</Link>
+            <span>&gt;</span>
+            <span>Produtos</span>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
           <form method="get" className="m-0">
-            <div className="flex items-center border border-gray-300 rounded-md bg-white overflow-hidden px-3 py-1.5 focus-within:ring-2 focus-within:ring-green-500 transition-all">
+            <div className="flex items-center border border-gray-300 rounded bg-white overflow-hidden px-3 py-1.5 focus-within:ring-1 focus-within:ring-green-500 transition-all shadow-sm">
               <SearchIcon className="w-4 h-4 text-gray-400 mr-2" />
-              <input type="text" name="pesquisa" defaultValue={pesquisa} className="outline-none text-sm w-[200px] text-gray-700" placeholder="Buscar Produto ou Cód..." />
+              <input
+                type="text"
+                name="pesquisa"
+                defaultValue={pesquisa}
+                className="outline-none text-sm w-[200px] text-gray-700"
+                placeholder="Buscar por Produto..."
+              />
             </div>
           </form>
 
-          <Link href="/produtos/create" className="flex items-center gap-1.5 bg-[#00b050] hover:bg-green-600 transition-colors text-white text-sm font-medium px-4 py-2 rounded-md shadow-sm">
+          <Link href="/produtos/create" className="flex items-center gap-1.5 bg-[#00a65a] hover:bg-green-600 transition-colors text-white text-sm font-bold px-4 py-2 rounded shadow-sm">
             <PlusCircle className="w-4 h-4" />
             Adicionar
           </Link>
