@@ -1,11 +1,16 @@
 "use client";
 
 import React from "react";
-import { Settings, Globe, ShieldCheck, Save, Laptop, Sparkles, Clock, ChevronDown } from "lucide-react";
+import { Settings, Globe, ShieldCheck, Save, Laptop, Sparkles, Clock, ChevronDown, Sun, Moon } from "lucide-react";
 import { useTheme } from "next-themes";
 
+function cn(...classes: string[]) {
+  return classes.filter(Boolean).join(" ");
+}
+
 export default function ConfigGeraisPage() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   return (
     <div className="space-y-8 max-w-5xl">
@@ -66,15 +71,29 @@ export default function ConfigGeraisPage() {
              </div>
              <div className="p-8 space-y-6">
                 <div 
-                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                   onClick={() => setTheme(isDark ? "light" : "dark")}
                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900 rounded-2xl border-2 border-transparent hover:border-[#38b473]/20 transition-all cursor-pointer group"
                 >
                    <div className="flex items-center gap-3">
-                      <Laptop className={`w-5 h-5 transition-colors ${theme === "dark" ? "text-[#38b473]" : "text-gray-400 dark:text-slate-500 group-hover:text-[#38b473]"}`} />
-                      <span className="text-sm font-black text-gray-700 dark:text-slate-200">Interface Dark Mode</span>
+                      <div className={cn(
+                        "p-2 rounded-lg transition-colors",
+                        isDark ? "bg-slate-800 text-yellow-400" : "bg-white text-gray-400"
+                      )}>
+                        {isDark ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                      </div>
+                      <div>
+                        <span className="text-sm font-black text-gray-700 dark:text-slate-200 block">Modo Escuro</span>
+                        <span className="text-[10px] font-bold text-[#38b473] uppercase">{isDark ? "Ativado" : "Desativado"}</span>
+                      </div>
                    </div>
-                   <div className={`w-12 h-6 rounded-full relative p-1 shadow-inner transition-colors ${theme === "dark" ? "bg-[#38b473]" : "bg-gray-300"}`}>
-                      <div className={`w-4 h-4 bg-white rounded-full transition-all shadow-md ${theme === "dark" ? "translate-x-6" : "translate-x-0"}`} />
+                   <div className={cn(
+                      "w-12 h-6 rounded-full relative p-1 shadow-inner transition-colors",
+                      isDark ? "bg-[#38b473]" : "bg-gray-300"
+                   )}>
+                      <div className={cn(
+                        "w-4 h-4 bg-white rounded-full transition-all shadow-md",
+                        isDark ? "translate-x-6" : "translate-x-0"
+                      )} />
                    </div>
                 </div>
                 <div className="p-4 bg-blue-50/50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-900/30 flex items-start gap-3">
