@@ -31,7 +31,7 @@ export default async function PrintOSA4Page({ params }: { params: Promise<{ id: 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       
-      <FloatingPrintActions />
+
       <AutoPrint />
 
       <style dangerouslySetInnerHTML={{ __html: `
@@ -163,10 +163,7 @@ export default async function PrintOSA4Page({ params }: { params: Promise<{ id: 
       `}} />
 
       {/* BARRA DE AÇÕES (ESCONDIDA NA IMPRESSÃO) */}
-      <div className="max-w-[900px] mx-auto mb-4 mt-6 p-4 print:hidden flex justify-between items-center bg-white shadow-2xl rounded-2xl border border-gray-100">
-          <Link href="/ordens-servico" className="px-4 py-1.5 bg-gray-50 text-sm font-bold border rounded-lg hover:bg-black hover:text-white transition-all flex items-center gap-2">
-              <ArrowLeft className="w-4 h-4" /> Voltar
-          </Link>
+      <div className="max-w-[900px] mx-auto mb-4 mt-6 print:hidden flex justify-center">
           <PrintButton label="SALVAR EM PDF" />
       </div>
 
