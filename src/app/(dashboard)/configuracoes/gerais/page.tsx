@@ -1,9 +1,12 @@
 "use client";
 
 import React from "react";
-import { Settings, Globe, Clock, ShieldCheck, Save, Laptop, Sparkles } from "lucide-react";
+import { Settings, Globe, ShieldCheck, Save, Laptop, Sparkles } from "lucide-react";
+import { useTheme } from "next-themes";
 
 export default function ConfigGeraisPage() {
+  const { theme, setTheme } = useTheme();
+
   return (
     <div className="space-y-8 max-w-5xl">
        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100 gap-4">
@@ -53,13 +56,16 @@ export default function ConfigGeraisPage() {
                 <Sparkles className="w-4 h-4 text-[#38b473] animate-pulse" />
              </div>
              <div className="p-8 space-y-6">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border-2 border-transparent hover:border-[#38b473]/20 transition-all cursor-pointer group">
+                <div 
+                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                   className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border-2 border-transparent hover:border-[#38b473]/20 transition-all cursor-pointer group"
+                >
                    <div className="flex items-center gap-3">
-                      <Laptop className="w-5 h-5 text-gray-400 group-hover:text-[#38b473] transition-colors" />
+                      <Laptop className={`w-5 h-5 transition-colors ${theme === "dark" ? "text-[#38b473]" : "text-gray-400 group-hover:text-[#38b473]"}`} />
                       <span className="text-sm font-black text-gray-700">Interface Dark Mode</span>
                    </div>
-                   <div className="w-12 h-6 bg-gray-300 rounded-full relative p-1 shadow-inner">
-                      <div className="w-4 h-4 bg-white rounded-full transition-all" />
+                   <div className={`w-12 h-6 rounded-full relative p-1 shadow-inner transition-colors ${theme === "dark" ? "bg-[#38b473]" : "bg-gray-300"}`}>
+                      <div className={`w-4 h-4 bg-white rounded-full transition-all shadow-md ${theme === "dark" ? "translate-x-6" : "translate-x-0"}`} />
                    </div>
                 </div>
                 <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-start gap-3">
