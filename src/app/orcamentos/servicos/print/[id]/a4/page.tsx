@@ -143,7 +143,7 @@ export default async function PrintOrcamentoServicoA4Page({ params }: { params: 
           <Link href="/orcamentos/servicos" className="px-4 py-1.5 bg-gray-50 text-sm font-bold border rounded-lg hover:bg-black hover:text-white transition-all flex items-center gap-2">
               <ArrowLeft className="w-4 h-4" /> Voltar
           </Link>
-          <PrintButton label="IMPRIMIR ORÇAMENTO" />
+          <PrintButton label="SALVAR EM PDF" />
       </div>
 
       <div className="print-container">
@@ -196,7 +196,7 @@ export default async function PrintOrcamentoServicoA4Page({ params }: { params: 
               </thead>
               <tbody>
                 <tr>
-                    <td className="min-h-[100px] vertical-top h-[150px]">
+                    <td className="min-h-[60px] vertical-top h-auto">
                         <div className="font-bold uppercase leading-relaxed p-2 whitespace-pre-wrap">
                            {orcamento.Descricao || "NENHUMA DESCRIÇÃO INFORMADA."}
                         </div>
