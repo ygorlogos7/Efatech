@@ -180,7 +180,7 @@ export default async function PrintOSPage({ params }: PageProps) {
                 {/* GARANTIA */}
                 <div className="section-header-bar">TERMOS DE GARANTIA</div>
                 <p className="text-[9px] text-justify leading-tight mb-3 font-bold uppercase border-l-2 border-black pl-2">
-                    NÃO GARANTIMOS APARELHOS QUE SOFRAM DANOS PELO CLIENTE COMO MAU USO, CONTATO COM ÁGUA/LÍQUIDOS, CONFIGURAÇÕES INDEVIDAS, INSTALAÇÕES DE SOFTWARE VÍRUS, AGENTES NATURAIS (RAIOS), TRANSPORTE INDEVIDO OU ACIDENTES. NÃO NOS RESPONSABILIZAMOS POR BACKUPS OU DADOS.
+                    NÃO COBRIMOS APARELHOS QUE SOFRAM DANOS PELO CLIENTE COMO MAU USO, CONTATO COM ÁGUA/LÍQUIDOS, CONFIGURAÇÕES INDEVIDAS, INSTALAÇÕES DE SOFTWARE VÍRUS, AGENTES NATURAIS (RAIOS), TRANSPORTE INDEVIDO OU ACIDENTES. NÃO NOS RESPONSABILIZAMOS POR BACKUPS OU DADOS.
                 </p>
 
                 {/* SERVIÇOS */}

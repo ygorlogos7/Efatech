@@ -27,11 +27,14 @@ export default function ModelosEmailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-3xl font-bold text-gray-900">Modelos de E-mail</h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-md shadow-sm border border-gray-200 gap-4">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Modelos de E-mail</h2>
+          <p className="text-xs text-gray-500">Personalize os e-mails enviados aos clientes</p>
+        </div>
         <button
           onClick={() => setIsAdding(!isAdding)}
-          className="flex items-center gap-1.5 bg-[#00b050] hover:bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-md shadow-sm"
+          className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-[#00b050] hover:bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-md shadow-sm transition-all active:scale-95"
         >
           <PlusCircle className="w-4 h-4" />
           Adicionar Modelo
@@ -40,7 +43,7 @@ export default function ModelosEmailPage() {
 
       {isAdding && (
         <form action={handleAdd} className="bg-white p-6 rounded-md shadow-sm border border-gray-100 space-y-4 animate-in slide-in-from-top duration-200">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1">Nome do Modelo *</label>
               <input type="text" name="Nome" required placeholder="Ex: Orçamento padrão" className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859]" />
@@ -55,17 +58,17 @@ export default function ModelosEmailPage() {
             <textarea name="Corpo" rows={5} required placeholder="Prezado cliente, segue orçamento em anexo..." className="w-full text-sm border border-gray-300 rounded p-3 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859]"></textarea>
           </div>
           <div className="flex gap-2">
-            <button type="submit" className="flex items-center gap-1.5 bg-[#00a65a] hover:bg-green-600 text-white font-bold py-2 px-5 rounded shadow-sm text-sm transition-colors">
+            <button type="submit" className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-[#00a65a] hover:bg-green-600 text-white font-bold py-2 px-5 rounded shadow-sm text-sm transition-colors">
               <Check className="w-4 h-4" /> Salvar
             </button>
-            <button type="button" onClick={() => setIsAdding(false)} className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-5 rounded shadow-sm text-sm transition-colors">
+            <button type="button" onClick={() => setIsAdding(false)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-5 rounded shadow-sm text-sm transition-colors">
               <X className="w-4 h-4" /> Cancelar
             </button>
           </div>
         </form>
       )}
 
-      <div className="bg-white rounded-md shadow-sm overflow-hidden border border-gray-100">
+      <div className="bg-white rounded-md shadow-sm overflow-x-auto border border-gray-100">
         <table className="w-full text-sm text-left border-collapse min-w-[600px]">
           <thead className="bg-[#f8f9fa] border-b border-gray-200 text-gray-700 font-semibold">
             <tr>

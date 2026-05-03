@@ -254,7 +254,7 @@ export default async function PrintVendaPage({ params }: { params: Promise<{ id:
                 <tr>
                     <td colSpan={4} className="info-terms" style={{padding: "10px"}}>
                         <p><strong>Termos de garantia / Observações</strong></p>
-                        <p>NÃO GARANTIMOS APARELHOS QUE SOFRAM DANOS PELO CLIENTE COMO MAU USO, CONTATO COM ÁGUA, CONFIGURAÇÕES INDEVIDAS, INSTALAÇÕES DE SOFTWARE VÍRUS, AGENTES NATURAIS (RAIOS), TRANSPORTE INDEVIDO OU ACIDENTES. NÃO NOS RESPONSABILIZAMOS POR BACKUPS OU DANOS.</p>
+                        <p>NÃO COBRIMOS APARELHOS QUE SOFRAM DANOS PELO CLIENTE COMO MAU USO, CONTATO COM ÁGUA, CONFIGURAÇÕES INDEVIDAS, INSTALAÇÕES DE SOFTWARE VÍRUS, AGENTES NATURAIS (RAIOS), TRANSPORTE INDEVIDO OU ACIDENTES. NÃO NOS RESPONSABILIZAMOS POR BACKUPS OU DANOS.</p>
                         {venda.Observacoes && <p className="mt-2"><strong>Obs:</strong> {venda.Observacoes}</p>}
                     </td>
                 </tr>

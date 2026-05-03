@@ -20,11 +20,18 @@ const toNum = (v: any) => {
 };
 
 // --- Vendas ---
-export async function getVendas(tipo?: string, page: number = 1, pageSize: number = 20) {
+export async function getVendas(tipo?: string, page: number = 1, pageSize: number = 20, searchQuery?: string) {
   const skip = (page - 1) * pageSize;
   
   try {
-    const whereClause = tipo ? { Tipo: tipo } : {};
+    const whereClause: any = tipo ? { Tipo: tipo } : {};
+
+    if (searchQuery) {
+      whereClause.OR = [
+        { Numero: isNaN(parseInt(searchQuery)) ? undefined : { equals: parseInt(searchQuery) } },
+        { Cliente: { Nome: { contains: searchQuery, mode: "insensitive" } } }
+      ].filter(c => c.Numero !== undefined || c.Cliente !== undefined);
+    }
     
     const items = await prisma.vendas.findMany({
       where: whereClause,
@@ -38,6 +45,7 @@ export async function getVendas(tipo?: string, page: number = 1, pageSize: numbe
     
     return { success: true, data: items.map(toNum), total };
   } catch (error) {
+    console.error("Error in getVendas:", error);
     return { success: false, error: "Falha ao buscar vendas." };
   }
 }
@@ -299,5 +307,19 @@ export async function saveVendaConfig(formData: FormData) {
     return { success: true };
   } catch (error) {
     return { success: false, error: "Falha ao salvar." };
+  }
+}
+export async function updateSituacaoVenda(id: number, ativo: boolean) {
+  try {
+    await prisma.venda.update({
+      where: { Id: id },
+      data: { Ativo: ativo }
+    });
+    revalidatePath("/vendas/produtos");
+    revalidatePath("/vendas/balcao");
+    revalidatePath("/vendas/servicos");
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "Falha ao alterar situação da venda." };
   }
 }

@@ -230,15 +230,17 @@ model Orcamento {
   UpdatedAt     DateTime  @default(now()) @updatedAt
   Descricao     String?
   Clientes      Clientes? @relation(fields: [ClienteId], references: [Id])
+  Situacao      OrcamentoSituacao? @relation(fields: [SituacaoId], references: [Id])
 }
 
 model OrcamentoSituacao {
-  Id                 Int     @id @default(autoincrement())
+  Id                 Int         @id @default(autoincrement())
   Nome               String
   Cor                String?
-  Ativo              Boolean @default(true)
-  ExibirNaListagem   Boolean @default(true)
-  TransformarEmVenda Boolean @default(false)
+  Ativo              Boolean     @default(true)
+  ExibirNaListagem   Boolean     @default(true)
+  TransformarEmVenda Boolean     @default(false)
+  Orcamentos         Orcamento[]
 }
 
 model OrcamentoModeloEmail {
@@ -705,6 +707,7 @@ model OrdensServico {
   FormaPagamentoId  Int?
   Cliente           Clientes? @relation(fields: [ClienteId], references: [Id])
   FormaPagamento    FormaPagamento? @relation(fields: [FormaPagamentoId], references: [Id])
+  Situacao          OrdemServicoSituacao? @relation(fields: [SituacaoId], references: [Id])
 }
 
 model OrdemServicoConfig {
@@ -724,10 +727,11 @@ model OrdemServicoModeloEmail {
 }
 
 model OrdemServicoSituacao {
-  Id    Int     @id @default(autoincrement())
-  Nome  String
-  Cor   String?
-  Ativo Boolean @default(true)
+  Id            Int             @id @default(autoincrement())
+  Nome          String
+  Cor           String?
+  Ativo         Boolean         @default(true)
+  OrdensServico OrdensServico[]
 }
 
 model Vendas {

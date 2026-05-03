@@ -18,9 +18,12 @@ export default function NotasProdutosPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-3xl font-bold text-gray-900">Notas de Produtos (NFe)</h2>
-        <Link href="/notas/produtos/create" className="flex items-center gap-1.5 bg-[#00a859] hover:bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-md shadow-sm transition-colors decoration-transparent">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-md shadow-sm border border-gray-200 gap-4">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Notas de Produtos (NFe)</h2>
+          <p className="text-xs text-gray-500">Gerenciamento de Notas Fiscais Eletrônicas</p>
+        </div>
+        <Link href="/notas/produtos/create" className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-[#00a859] hover:bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-md shadow-sm transition-all active:scale-95 decoration-transparent">
           <PlusCircle className="w-4 h-4" /> Emitir Nova NFe
         </Link>
       </div>
@@ -35,7 +38,7 @@ export default function NotasProdutosPage() {
         </button>
       </div>
 
-      <div className="bg-white rounded-md shadow-sm overflow-hidden border border-gray-100">
+      <div className="bg-white rounded-md shadow-sm overflow-x-auto border border-gray-100">
         <table className="w-full text-sm text-left border-collapse min-w-[900px]">
           <thead className="bg-[#f8f9fa] border-b border-gray-200 text-gray-700 font-semibold">
             <tr>

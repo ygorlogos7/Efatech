@@ -239,7 +239,7 @@ export default async function PrintVendaA4Page({ params }: { params: Promise<{ i
                         <p className="text-justify leading-tight text-black font-medium">
                             <span className="uppercase font-bold">FORMA DE PAGAMENTO: {venda.FormaPagamento?.Nome || "DINHEIRO"}</span>
                             <br />
-                            NÃO GARANTIMOS PRODUTOS QUE SOFRAM DANOS PELO CLIENTE COMO MAU USO, CONTATO COM ÁGUA/LÍQUIDOS, QUEDAS, AGENTES NATURAIS OU ACIDENTES. 
+                            NÃO COBRIMOS PRODUTOS QUE SOFRAM DANOS PELO CLIENTE COMO MAU USO, CONTATO COM ÁGUA/LÍQUIDOS, QUEDAS, AGENTES NATURAIS OU ACIDENTES. 
                             {venda.Garantia && <><br/><strong>PRAZO DE GARANTIA:</strong> {venda.Garantia}</>}
                         </p>
                         {venda.Observacoes && <p className="mt-4 p-2 bg-gray-50 border-l-4 border-black"><strong>Obs:</strong> {venda.Observacoes}</p>}

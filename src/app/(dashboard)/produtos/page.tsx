@@ -38,7 +38,9 @@ export default async function ProdutosPage({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
           <form method="get" className="m-0">
             <div className="flex items-center border border-gray-300 rounded bg-white overflow-hidden px-3 py-1.5 focus-within:ring-1 focus-within:ring-green-500 transition-all shadow-sm">
-              <SearchIcon className="w-4 h-4 text-gray-400 mr-2" />
+              <button type="submit" className="p-0 border-none bg-transparent flex items-center">
+                <SearchIcon className="w-4 h-4 text-gray-400 mr-2 cursor-pointer hover:text-green-500 transition-colors" />
+              </button>
               <input
                 type="text"
                 name="pesquisa"

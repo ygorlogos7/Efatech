@@ -15,10 +15,10 @@ export default async function EmpresasPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-white p-4 rounded-md shadow-sm border border-gray-200">
-        <div className="flex items-center gap-4">
-          <h2 className="text-gray-900 font-bold text-2xl mb-0">Empresas</h2>
-          <div className="text-gray-400 text-xs flex items-center gap-1 mt-1">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-md shadow-sm border border-gray-200 gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-gray-900 font-bold text-xl sm:text-2xl mb-0">Empresas</h2>
+          <div className="text-gray-400 text-[10px] sm:text-xs flex items-center gap-1">
             <Home className="w-3 h-3" />
             <Link href="/home" className="hover:underline">Início</Link>
             <span>&gt;</span>
@@ -26,30 +26,30 @@ export default async function EmpresasPage({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           {/* Barra de Pesquisa */}
-          <form method="get" className="m-0">
+          <form method="get" className="m-0 flex-grow sm:flex-grow-0">
             <div className="flex items-center border border-gray-300 rounded bg-white overflow-hidden px-3 py-1.5 focus-within:ring-1 focus-within:ring-green-500 transition-all shadow-sm">
               <SearchIcon className="w-4 h-4 text-gray-400 mr-2" />
               <input
                 type="text"
                 name="pesquisa"
                 defaultValue={pesquisa}
-                className="outline-none text-sm w-[200px] text-gray-700"
+                className="outline-none text-sm w-full sm:w-[200px] text-gray-700"
                 placeholder="Buscar por Empresa..."
               />
             </div>
           </form>
 
           {/* Botão Adicionar */}
-          <Link href="/cadastros/opcoes/empresas/create" className="flex items-center gap-1.5 bg-[#00a65a] hover:bg-green-600 transition-colors text-white text-sm font-bold px-4 py-2 rounded shadow-sm">
+          <Link href="/cadastros/opcoes/empresas/create" className="flex items-center justify-center gap-1.5 bg-[#00a65a] hover:bg-green-600 transition-colors text-white text-sm font-bold px-4 py-2 rounded shadow-sm flex-grow sm:flex-grow-0">
             <PlusCircle className="w-4 h-4" />
             Adicionar
           </Link>
         </div>
       </div>
 
-      <div className="bg-white rounded shadow-sm border border-gray-200">
+      <div className="bg-white rounded shadow-sm border border-gray-200 overflow-x-auto">
         <table className="w-full text-sm text-left border-collapse min-w-[700px]">
           <thead className="bg-[#f8f9fa] border-b border-gray-200 text-gray-700 font-bold">
             <tr>

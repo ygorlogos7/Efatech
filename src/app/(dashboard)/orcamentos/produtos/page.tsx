@@ -6,6 +6,7 @@ import { MoreActionsDropdown } from "@/components/common/MoreActionsDropdown";
 import { DeleteOrcamentoButton } from "@/components/forms/DeleteOrcamentoButton";
 import { getWhatsAppLink } from "@/lib/whatsapp";
 import { headers } from "next/headers";
+import { OrcamentoActions } from "@/components/orcamentos/OrcamentoActions";
 
 export default async function OrcamentosProdutosPage({
   searchParams,
@@ -22,6 +23,12 @@ export default async function OrcamentosProdutosPage({
   const pesquisa = resolvedParams?.pesquisa || "";
   const page = Number(resolvedParams?.page) || 1;
   const { success, data: items, total = 0 } = await getOrcamentosProdutos(pesquisa, page, 20);
+
+  // Buscar situações para o dropdown
+  const { data: situacoes = [] } = await prisma.orcamentoSituacao.findMany({ 
+    where: { Ativo: true },
+    orderBy: { Nome: "asc" }
+  }).then(res => ({ data: res })).catch(() => ({ data: [] }));
   const from = total === 0 ? 0 : (page - 1) * 20 + 1;
   const to = total === 0 ? 0 : Math.min(page * 20, total);
 
@@ -41,7 +48,9 @@ export default async function OrcamentosProdutosPage({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
           <form method="get" className="m-0">
             <div className="flex items-center border border-gray-300 rounded bg-white overflow-hidden px-3 py-1.5 focus-within:ring-1 focus-within:ring-green-500 transition-all shadow-sm">
-              <SearchIcon className="w-4 h-4 text-gray-400 mr-2" />
+              <button type="submit" className="p-0 border-none bg-transparent flex items-center">
+                <SearchIcon className="w-4 h-4 text-gray-400 mr-2 cursor-pointer hover:text-green-500 transition-colors" />
+              </button>
               <input 
                 type="text" 
                 name="pesquisa" 
@@ -90,9 +99,15 @@ export default async function OrcamentosProdutosPage({
                   <td className="py-3 px-4 text-right font-medium">R$ {item.TotalProdutos.toFixed(2).replace(".", ",")}</td>
                   <td className="py-3 px-4 text-right font-bold text-green-700">R$ {item.Total.toFixed(2).replace(".", ",")}</td>
                   <td className="py-3 px-4 text-center">
-                    <span className="inline-block px-2.5 py-1 text-[11px] font-medium rounded border bg-yellow-50 text-yellow-700 border-yellow-200">
-                      {item.Ativo ? "Aberto" : "Encerrado"}
-                    </span>
+                    {item.Situacao ? (
+                      <span className="inline-block px-2.5 py-1 text-[10px] font-black uppercase rounded text-white shadow-sm" style={{ backgroundColor: item.Situacao.Cor || "#6c757d" }}>
+                        {item.Situacao.Nome}
+                      </span>
+                    ) : (
+                      <span className={`inline-block px-2.5 py-1 text-[11px] font-medium rounded border ${item.Ativo ? "bg-yellow-50 text-yellow-700 border-yellow-200" : "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                        {item.Ativo ? "Aberto" : "Encerrado"}
+                      </span>
+                    )}
                   </td>
                   <td className="py-3 px-6 text-right">
                     <div className="flex justify-end gap-1 items-center">
@@ -111,46 +126,7 @@ export default async function OrcamentosProdutosPage({
                         <Edit2 className="w-3.5 h-3.5" />
                       </Link>
                       <DeleteOrcamentoButton id={item.Id} numero={item.Numero} />
-                      <MoreActionsDropdown 
-                        variant="row"
-                        actions={[
-                          { label: "Link de cobrança", icon: <DollarSign className="w-4 h-4" /> },
-                          { 
-                            label: "Imprimir", 
-                            icon: <Printer className="w-4 h-4" />,
-                            subItems: [
-                              { label: "Formato A4", href: `/orcamentos/produtos/print/${item.Id}/a4` },
-                              { label: "Cupom", href: `/orcamentos/produtos/print/${item.Id}` },
-                            ]
-                          },
-                          { label: "Alterar situação", icon: <CheckSquare className="w-4 h-4" /> },
-                          { 
-                            label: "Compartilhar", 
-                            icon: <Share2 className="w-4 h-4" />,
-                            subItems: [
-                              { label: "Via E-mail", icon: <Mail className="w-3.5 h-3.5" /> },
-                              { 
-                                label: "Via WhatsApp", 
-                                icon: <MessageCircle className="w-3.5 h-3.5" />,
-                                href: getWhatsAppLink(item.Clientes?.TelefoneCelular || item.Clientes?.Telefone || item.Clientes?.TelefoneComercial, `Olá ${item.Clientes?.Nome || ""}, seu orçamento de produtos #${item.Numero} está pronto. Você pode visualizá-lo e baixá-lo em PDF através deste link: ${baseUrl}/orcamentos/produtos/print/${item.Id}/a4`) || undefined,
-                                alertMessage: !(item.Clientes?.TelefoneCelular || item.Clientes?.Telefone || item.Clientes?.TelefoneComercial) ? "Este cliente não possui telefone/celular cadastrado!" : undefined,
-                                target: "_blank"
-                              },
-                            ]
-                          },
-                          { 
-                            label: "Emitir", 
-                            icon: <FileText className="w-4 h-4" />,
-                            subItems: [
-                              { label: "NF-e" },
-                              { label: "NFC-e" },
-                              { label: "NFS-e" },
-                            ]
-                          },
-                          { label: "Gerar", icon: <RefreshCw className="w-4 h-4" /> },
-                          { label: "Ver no financeiro", icon: <Coins className="w-4 h-4" /> },
-                        ]} 
-                      />
+                      <OrcamentoActions item={item} baseUrl={baseUrl} tipo="produtos" situacoes={situacoes} />
                     </div>
                   </td>
                 </tr>

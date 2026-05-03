@@ -148,7 +148,6 @@ const MENU_ITEMS = [
       { href: "/vendas/opcoes/situacoes", label: "Situações", icon: ClipboardList },
       { href: "/vendas/opcoes/canais", label: "Canais", icon: Megaphone },
       { href: "/vendas/opcoes/modelos-email", label: "Modelos de e-mail", icon: Receipt },
-      { href: "/vendas/opcoes/balancas", label: "Balanças", icon: Scale },
       { href: "/vendas/opcoes/configuracoes", label: "Configurações", icon: Settings },
     ]
   },

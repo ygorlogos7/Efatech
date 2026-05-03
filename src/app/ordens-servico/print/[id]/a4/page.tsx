@@ -268,7 +268,7 @@ export default async function PrintOSA4Page({ params }: { params: Promise<{ id: 
                     <td colSpan={2} className="info-terms" style={{padding: "15px"}}>
                         <p><strong>Termos de garantia / Observações</strong></p>
                         <p className="text-justify leading-tight opacity-70">
-                            NÃO GARANTIMOS APARELHOS QUE SOFRAM DANOS PELO CLIENTE COMO MAU USO, CONTATO COM ÁGUA/LÍQUIDOS, CONFIGURAÇÕES INDEVIDAS, INSTALAÇÕES DE SOFTWARE VÍRUS, AGENTES NATURAIS (RAIOS), TRANSPORTE INDEVIDO OU ACIDENTES. NÃO NOS RESPONSABILIZAMOS POR BACKUPS OU DADOS.
+                            NÃO COBRIMOS APARELHOS QUE SOFRAM DANOS PELO CLIENTE COMO MAU USO, CONTATO COM ÁGUA/LÍQUIDOS, CONFIGURAÇÕES INDEVIDAS, INSTALAÇÕES DE SOFTWARE VÍRUS, AGENTES NATURAIS (RAIOS), TRANSPORTE INDEVIDO OU ACIDENTES. NÃO NOS RESPONSABILIZAMOS POR BACKUPS OU DADOS.
                             <br />
                             <strong>VALIDADE DA GARANTIA:</strong> 90 DIAS A PARTIR DE {new Date(os.DataAbertura).toLocaleDateString('pt-BR')}.
                         </p>

@@ -9,9 +9,20 @@ export async function getOrcamentosProdutos(searchQuery?: string, page: number =
   const skip = (page - 1) * pageSize;
   
   try {
-    const whereClause = {
-      ...(searchQuery ? { Numero: { equals: parseInt(searchQuery) || undefined } } : {})
-    };
+    const whereClause: any = {};
+    
+    if (searchQuery) {
+      whereClause.OR = [
+        { Numero: isNaN(parseInt(searchQuery)) ? undefined : { equals: parseInt(searchQuery) } },
+        { Clientes: { Nome: { contains: searchQuery, mode: "insensitive" } } }
+      ].filter(c => c.Numero !== undefined || c.Clientes !== undefined);
+
+      if (isNaN(parseInt(searchQuery))) {
+        whereClause.OR = [
+          { Clientes: { Nome: { contains: searchQuery, mode: "insensitive" } } }
+        ];
+      }
+    }
 
     const items = await prisma.orcamento.findMany({
       where: whereClause,
@@ -20,9 +31,22 @@ export async function getOrcamentosProdutos(searchQuery?: string, page: number =
       take: pageSize,
       skip: skip,
     });
+
+    const situacoes = await prisma.orcamentoSituacao.findMany({ where: { Ativo: true } });
     
     const total = await prisma.orcamento.count({ where: whereClause });
-    return { success: true, data: items.map(i => ({ ...i, TotalProdutos: Number(i.TotalProdutos), TotalServicos: Number(i.TotalServicos), Desconto: Number(i.Desconto), Total: Number(i.Total) })), total };
+    return { 
+      success: true, 
+      data: items.map(i => ({ 
+        ...i, 
+        TotalProdutos: Number(i.TotalProdutos), 
+        TotalServicos: Number(i.TotalServicos), 
+        Desconto: Number(i.Desconto), 
+        Total: Number(i.Total),
+        Situacao: situacoes.find(s => s.Id === i.SituacaoId)
+      })), 
+      total 
+    };
   } catch (error) {
     return { success: false, error: "Falha ao buscar orçamentos de produtos." };
   }
@@ -31,17 +55,45 @@ export async function getOrcamentosProdutos(searchQuery?: string, page: number =
 // --- Orçamentos (Serviços) ---
 export async function getOrcamentosServicos(searchQuery?: string, page: number = 1, pageSize: number = 20) {
   const skip = (page - 1) * pageSize;
-
   try {
+    const whereClause: any = {};
+    
+    if (searchQuery) {
+      whereClause.OR = [
+        { Numero: isNaN(parseInt(searchQuery)) ? undefined : { equals: parseInt(searchQuery) } },
+        { Clientes: { Nome: { contains: searchQuery, mode: "insensitive" } } }
+      ].filter(c => c.Numero !== undefined || c.Clientes !== undefined);
+
+      if (isNaN(parseInt(searchQuery))) {
+        whereClause.OR = [
+          { Clientes: { Nome: { contains: searchQuery, mode: "insensitive" } } }
+        ];
+      }
+    }
+
     const items = await prisma.orcamento.findMany({
+      where: whereClause,
       include: { Clientes: true },
       orderBy: { CreatedAt: "desc" },
       take: pageSize,
       skip: skip,
     });
+
+    const situacoes = await prisma.orcamentoSituacao.findMany({ where: { Ativo: true } });
     
-    const total = await prisma.orcamento.count();
-    return { success: true, data: items.map(i => ({ ...i, TotalProdutos: Number(i.TotalProdutos), TotalServicos: Number(i.TotalServicos), Desconto: Number(i.Desconto), Total: Number(i.Total) })), total };
+    const total = await prisma.orcamento.count({ where: whereClause });
+    return { 
+      success: true, 
+      data: items.map(i => ({ 
+        ...i, 
+        TotalProdutos: Number(i.TotalProdutos), 
+        TotalServicos: Number(i.TotalServicos), 
+        Desconto: Number(i.Desconto), 
+        Total: Number(i.Total),
+        Situacao: situacoes.find(s => s.Id === i.SituacaoId)
+      })), 
+      total 
+    };
   } catch (error) {
     return { success: false, error: "Falha ao buscar orçamentos de serviços." };
   }
@@ -245,5 +297,32 @@ export async function deleteOrcamento(id: number) {
     return { success: true };
   } catch (error) {
     return { success: false, error: "Falha ao excluir orçamento." };
+  }
+}
+export async function updateSituacaoOrcamento(id: number, ativo: boolean) {
+  try {
+    await prisma.orcamento.update({
+      where: { Id: id },
+      data: { Ativo: ativo }
+    });
+    revalidatePath("/orcamentos/produtos");
+    revalidatePath("/orcamentos/servicos");
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "Falha ao alterar situação do orçamento." };
+  }
+}
+
+export async function updateSituacaoIdOrcamento(id: number, situacaoId: number | null) {
+  try {
+    await prisma.orcamento.update({
+      where: { Id: id },
+      data: { SituacaoId: situacaoId }
+    });
+    revalidatePath("/orcamentos/produtos");
+    revalidatePath("/orcamentos/servicos");
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "Falha ao alterar situação." };
   }
 }

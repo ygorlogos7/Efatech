@@ -6,6 +6,7 @@ import { MoreActionsDropdown } from "@/components/common/MoreActionsDropdown";
 import { DeleteOrcamentoButton } from "@/components/forms/DeleteOrcamentoButton";
 import { getWhatsAppLink } from "@/lib/whatsapp";
 import { headers } from "next/headers";
+import { OrcamentoActions } from "@/components/orcamentos/OrcamentoActions";
 
 export default async function OrcamentosServicosPage({
   searchParams,
@@ -22,6 +23,12 @@ export default async function OrcamentosServicosPage({
   const pesquisa = resolvedParams?.pesquisa || "";
   const page = Number(resolvedParams?.page) || 1;
   const { success, data: items, total = 0 } = await getOrcamentosServicos(pesquisa, page, 20);
+  
+  // Buscar situações para o dropdown
+  const { data: situacoes = [] } = await prisma.orcamentoSituacao.findMany({ 
+    where: { Ativo: true },
+    orderBy: { Nome: "asc" }
+  }).then(res => ({ data: res })).catch(() => ({ data: [] }));
   const from = total === 0 ? 0 : (page - 1) * 20 + 1;
   const to = total === 0 ? 0 : Math.min(page * 20, total);
 
@@ -41,7 +48,9 @@ export default async function OrcamentosServicosPage({
         <div className="flex items-center gap-3">
           <form method="get" className="m-0">
             <div className="flex items-center border border-gray-300 rounded bg-white overflow-hidden px-3 py-1.5 focus-within:ring-1 focus-within:ring-green-500 transition-all shadow-sm">
-              <SearchIcon className="w-4 h-4 text-gray-400 mr-2" />
+              <button type="submit" className="p-0 border-none bg-transparent flex items-center">
+                <SearchIcon className="w-4 h-4 text-gray-400 mr-2 cursor-pointer hover:text-green-500 transition-colors" />
+              </button>
               <input 
                 type="text" 
                 name="pesquisa" 
@@ -89,9 +98,15 @@ export default async function OrcamentosServicosPage({
                   <td className="py-3 px-4 text-right font-medium">R$ {item.TotalServicos.toFixed(2).replace(".", ",")}</td>
                   <td className="py-3 px-4 text-right font-bold text-green-700">R$ {item.Total.toFixed(2).replace(".", ",")}</td>
                   <td className="py-3 px-4 text-center">
-                    <span className="inline-block px-2.5 py-1 text-[11px] font-medium rounded border bg-yellow-50 text-yellow-700 border-yellow-200">
-                      {item.Ativo ? "Aberto" : "Encerrado"}
-                    </span>
+                    {item.Situacao ? (
+                      <span className="inline-block px-2.5 py-1 text-[10px] font-black uppercase rounded text-white shadow-sm" style={{ backgroundColor: item.Situacao.Cor || "#6c757d" }}>
+                        {item.Situacao.Nome}
+                      </span>
+                    ) : (
+                      <span className={`inline-block px-2.5 py-1 text-[11px] font-medium rounded border ${item.Ativo ? "bg-yellow-50 text-yellow-700 border-yellow-200" : "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                        {item.Ativo ? "Aberto" : "Encerrado"}
+                      </span>
+                    )}
                   </td>
                   <td className="py-3 px-6 text-right">
                     <div className="flex justify-end gap-1 items-center">
@@ -110,46 +125,7 @@ export default async function OrcamentosServicosPage({
                         <Edit2 className="w-3.5 h-3.5" />
                       </Link>
                       <DeleteOrcamentoButton id={item.Id} numero={item.Numero} />
-                      <MoreActionsDropdown
-                        variant="row"
-                        actions={[
-                          { label: "Link de cobrança", icon: <DollarSign className="w-4 h-4" /> },
-                          {
-                            label: "Imprimir",
-                            icon: <Printer className="w-4 h-4" />,
-                            subItems: [
-                              { label: "Formato A4", href: `/orcamentos/servicos/print/${item.Id}/a4` },
-                              { label: "Cupom", href: `/orcamentos/servicos/print/${item.Id}` },
-                            ]
-                          },
-                          { label: "Alterar situação", icon: <CheckSquare className="w-4 h-4" /> },
-                          {
-                            label: "Compartilhar",
-                            icon: <Share2 className="w-4 h-4" />,
-                            subItems: [
-                              { label: "Via E-mail", icon: <Mail className="w-3.5 h-3.5" /> },
-                              { 
-                                label: "Via WhatsApp", 
-                                icon: <MessageCircle className="w-3.5 h-3.5" />,
-                                href: getWhatsAppLink(item.Clientes?.TelefoneCelular || item.Clientes?.Telefone || item.Clientes?.TelefoneComercial, `Olá ${item.Clientes?.Nome || ""}, seu orçamento de serviços #${item.Numero} está pronto. Você pode visualizá-lo e baixá-lo em PDF através deste link: ${baseUrl}/orcamentos/servicos/print/${item.Id}/a4`) || undefined,
-                                alertMessage: !(item.Clientes?.TelefoneCelular || item.Clientes?.Telefone || item.Clientes?.TelefoneComercial) ? "Este cliente não possui telefone/celular cadastrado!" : undefined,
-                                target: "_blank"
-                              },
-                            ]
-                          },
-                          {
-                            label: "Emitir",
-                            icon: <FileText className="w-4 h-4" />,
-                            subItems: [
-                              { label: "NF-e" },
-                              { label: "NFC-e" },
-                              { label: "NFS-e" },
-                            ]
-                          },
-                          { label: "Gerar", icon: <RefreshCw className="w-4 h-4" /> },
-                          { label: "Ver no financeiro", icon: <Coins className="w-4 h-4" /> },
-                        ]}
-                      />
+                      <OrcamentoActions item={item} baseUrl={baseUrl} tipo="servicos" situacoes={situacoes} />
                     </div>
                   </td>
                 </tr>
@@ -166,7 +142,7 @@ export default async function OrcamentosServicosPage({
 
         <div className="flex items-center -space-x-px">
           <Link
-            href={`/orcamentos/servicos?page=${Math.max(1, page - 1)}`}
+            href={`/orcamentos/servicos?page=${Math.max(1, page - 1)}${pesquisa ? `&pesquisa=${pesquisa}` : ""}`}
             className={`px-3 py-2 border border-gray-200 text-gray-500 rounded-l-md hover:bg-gray-50 transition-colors ${page === 1 ? 'pointer-events-none opacity-50' : ''}`}
           >
             ‹
@@ -178,7 +154,7 @@ export default async function OrcamentosServicosPage({
               return (
                 <Link
                   key={p}
-                  href={`/orcamentos/servicos?page=${p}`}
+                  href={`/orcamentos/servicos?page=${p}${pesquisa ? `&pesquisa=${pesquisa}` : ""}`}
                   className={`px-4 py-2 border border-gray-200 text-sm font-medium transition-colors ${page === p
                       ? "bg-[#0c1a25] text-white border-[#0c1a25] z-10"
                       : "bg-white text-gray-700 hover:bg-gray-50"
@@ -193,7 +169,7 @@ export default async function OrcamentosServicosPage({
           })}
 
           <Link
-            href={`/orcamentos/servicos?page=${Math.min(Math.ceil(total / 20), page + 1)}`}
+            href={`/orcamentos/servicos?page=${Math.min(Math.ceil(total / 20), page + 1)}${pesquisa ? `&pesquisa=${pesquisa}` : ""}`}
             className={`px-3 py-2 border border-gray-200 text-gray-500 rounded-r-md hover:bg-gray-50 transition-colors ${page === Math.ceil(total / 20) || total === 0 ? 'pointer-events-none opacity-50' : ''}`}
           >
             ›

@@ -28,7 +28,7 @@ export default async function DashboardLayout({
         <div className="flex flex-1 overflow-hidden relative">
           <Sidebar />
           
-          <main className="flex-1 overflow-y-auto p-6 text-gray-800 relative z-0">
+          <main className="flex-1 overflow-auto p-4 sm:p-6 text-gray-800 relative z-0">
             <PageTitleUpdater />
             <PageTransition>
               <NotificationProvider>

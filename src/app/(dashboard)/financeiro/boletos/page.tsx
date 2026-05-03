@@ -1,31 +1,101 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
-import { getBoletos } from "@/actions/financeiro";
+import React, { useState, useTransition, useRef } from "react";
+import { getBoletos, exportarRemessa, importarRetorno } from "@/actions/financeiro";
 import { Barcode, Search, Filter, Download, Upload } from "lucide-react";
 
 export default function BoletosPage() {
   const [items, setItems] = useState<any[]>([]);
   const [isPending, startTransition] = useTransition();
+  const [isExporting, setIsExporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
+  const fetchBoletos = async () => {
     startTransition(async () => {
       const r = await getBoletos();
       if (r.success) setItems(r.data as any[]);
     });
+  };
+
+  React.useEffect(() => {
+    fetchBoletos();
   }, []);
+
+  const handleExportarRemessa = async () => {
+    if (items.length === 0) {
+      alert("Não há boletos para exportar.");
+      return;
+    }
+    
+    setIsExporting(true);
+    try {
+      const ids = items.map(i => i.Id);
+      const res = await exportarRemessa(ids);
+      if (res.success && res.data) {
+        const blob = new Blob([res.data], { type: "text/plain" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `REMESSA_${new Date().getTime()}.rem`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } else {
+        alert(res.error || "Erro ao exportar remessa.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Falha técnica ao exportar.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImportarRetorno = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const content = event.target?.result as string;
+      startTransition(async () => {
+        const res = await importarRetorno(content);
+        if (res.success) {
+          alert(res.message);
+          fetchBoletos();
+        } else {
+          alert(res.error);
+        }
+      });
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   return (
     <div className="space-y-6">
+      <input 
+        type="file" 
+        ref={fileInputRef}
+        className="hidden" 
+        onChange={handleImportarRetorno}
+        accept=".ret,.txt,.rem"
+      />
+
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-3xl font-bold text-gray-900">Gestão de Boletos</h2>
         <div className="flex gap-2">
-           <button className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-4 py-2 rounded-md shadow-sm border border-gray-200 transition-colors">
+           <Link 
+            href="/financeiro/boletos/exportar-remessa"
+            className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-4 py-2 rounded-md shadow-sm border border-gray-200 transition-colors"
+           >
             <Upload className="w-4 h-4" /> Exportar Remessa
-          </button>
-          <button className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-4 py-2 rounded-md shadow-sm border border-gray-200 transition-colors">
+          </Link>
+          <Link 
+            href="/financeiro/boletos/importar-retorno"
+            className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-4 py-2 rounded-md shadow-sm border border-gray-200 transition-colors"
+          >
             <Download className="w-4 h-4" /> Importar Retorno
-          </button>
+          </Link>
         </div>
       </div>
 

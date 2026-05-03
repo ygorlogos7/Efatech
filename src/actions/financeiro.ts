@@ -193,3 +193,54 @@ export async function getBoletos() {
     return { success: false, error: "Falha ao buscar boletos." };
   }
 }
+
+export async function exportarRemessa(ids: number[]) {
+  try {
+    const boletos = await prisma.boletoBancario.findMany({
+      where: { Id: { in: ids } }
+    });
+
+    if (boletos.length === 0) return { success: false, error: "Nenhum boleto selecionado." };
+
+    // Placeholder: Gerar um arquivo simulado no padrão CNAB
+    let content = "01REMESSA01COBRANCA       \n"; // Header simples
+    boletos.forEach(b => {
+      content += `1${b.Numero.padStart(10, '0')}${Math.round(Number(b.Valor) * 100).toString().padStart(10, '0')}${new Date(b.Vencimento).toISOString().split('T')[0].replace(/-/g, '')}\n`;
+    });
+    content += "999999999999999999999999999\n"; // Trailer simples
+
+    return { success: true, data: content };
+  } catch (error) {
+    return { success: false, error: "Falha ao exportar remessa." };
+  }
+}
+
+export async function importarRetorno(fileContent: string) {
+  try {
+    const lines = fileContent.split("\n");
+    let updatedCount = 0;
+
+    for (const line of lines) {
+      if (line.startsWith("1")) { // Linha de detalhe
+        const numero = line.substring(1, 11).replace(/^0+/, '');
+        // Na vida real, o arquivo diria se foi pago ou não. Vamos assumir que sim para teste.
+        const boleto = await prisma.boletoBancario.findFirst({
+          where: { Numero: numero }
+        });
+
+        if (boleto) {
+          await prisma.boletoBancario.update({
+            where: { Id: boleto.Id },
+            data: { Status: "pago" }
+          });
+          updatedCount++;
+        }
+      }
+    }
+
+    revalidatePath("/financeiro/boletos");
+    return { success: true, message: `${updatedCount} boletos atualizados com sucesso.` };
+  } catch (error) {
+    return { success: false, error: "Falha ao processar arquivo de retorno." };
+  }
+}

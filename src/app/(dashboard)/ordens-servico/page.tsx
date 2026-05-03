@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SearchIcon, PlusCircle, Edit2, ClipboardList, Printer, Eye, Share2, FileText, DollarSign, CheckSquare, Coins, MessageCircle, Mail, Home } from "lucide-react";
 import { getOrdensServico } from "@/actions/ordensServico";
 import { DeleteOSButton } from "@/components/forms/DeleteOSButton";
-import { MoreActionsDropdown } from "@/components/common/MoreActionsDropdown";
+import { OSActions } from "@/components/ordens-servico/OSActions";
 import { getWhatsAppLink, getBaseUrl } from "@/lib/whatsapp";
 import { headers } from "next/headers";
 
@@ -22,6 +22,12 @@ export default async function OrdensServicoPage({
   const pesquisa = resolvedParams?.pesquisa || "";
   const page = Number(resolvedParams?.page) || 1;
   const { success, data: items, total = 0 } = await getOrdensServico(pesquisa, page, 20);
+  
+  // Buscar situações para o dropdown
+  const { data: situacoes = [] } = await prisma.ordemServicoSituacao.findMany({ 
+    where: { Ativo: true },
+    orderBy: { Nome: "asc" }
+  }).then(res => ({ data: res })).catch(() => ({ data: [] }));
   const from = total === 0 ? 0 : (page - 1) * 20 + 1;
   const to = total === 0 ? 0 : Math.min(page * 20, total);
 
@@ -41,7 +47,9 @@ export default async function OrdensServicoPage({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
           <form method="get" className="m-0">
             <div className="flex items-center border border-gray-300 rounded bg-white overflow-hidden px-3 py-1.5 focus-within:ring-1 focus-within:ring-green-500 transition-all shadow-sm">
-              <SearchIcon className="w-4 h-4 text-gray-400 mr-2" />
+              <button type="submit" className="p-0 border-none bg-transparent flex items-center">
+                <SearchIcon className="w-4 h-4 text-gray-400 mr-2 cursor-pointer hover:text-green-500 transition-colors" />
+              </button>
               <input 
                 type="text" 
                 name="pesquisa" 
@@ -92,9 +100,15 @@ export default async function OrdensServicoPage({
                   <td className="py-3 px-4 text-gray-700" suppressHydrationWarning>{item.DataPrevisao ? new Date(item.DataPrevisao).toLocaleDateString("pt-BR") : "-"}</td>
                   <td className="py-3 px-4 text-right font-bold text-green-700">R$ {item.Total.toFixed(2).replace(".", ",")}</td>
                   <td className="py-3 px-4 text-center">
-                    <span className={`inline-block px-2.5 py-1 text-[11px] font-medium rounded border ${item.Ativo ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-gray-100 text-gray-600 border-gray-200"}`}>
-                      {item.Ativo ? "Aberta" : "Encerrada"}
-                    </span>
+                    {item.Situacao ? (
+                      <span className="inline-block px-2.5 py-1 text-[10px] font-black uppercase rounded text-white shadow-sm" style={{ backgroundColor: item.Situacao.Cor || "#6c757d" }}>
+                        {item.Situacao.Nome}
+                      </span>
+                    ) : (
+                      <span className={`inline-block px-2.5 py-1 text-[11px] font-medium rounded border ${item.Ativo ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                        {item.Ativo ? "Aberta" : "Encerrada"}
+                      </span>
+                    )}
                   </td>
                   <td className="py-3 px-4 text-right">
                     <div className="flex justify-end items-center gap-1">
@@ -113,37 +127,7 @@ export default async function OrdensServicoPage({
                         <Edit2 className="w-3.5 h-3.5" />
                       </Link>
                       <DeleteOSButton id={item.Id} numero={item.Numero} />
-                      <MoreActionsDropdown 
-                        variant="row"
-                        actions={[
-                          { 
-                            label: "Imprimir", 
-                            icon: <Printer className="w-4 h-4" />,
-                            subItems: [
-                              { label: "Formato A4", href: `/ordens-servico/print/${item.Id}/a4` },
-                              { label: "Térmico (POS80)", href: `/ordens-servico/print/${item.Id}` },
-                            ]
-                          },
-                          { label: "Link de cobrança", icon: <DollarSign className="w-4 h-4" /> },
-                          { label: "Alterar situação", icon: <CheckSquare className="w-4 h-4" /> },
-                          { 
-                            label: "Compartilhar", 
-                            icon: <Share2 className="w-4 h-4" />,
-                            subItems: [
-                              { 
-                                label: "Via WhatsApp", 
-                                icon: <MessageCircle className="w-3.5 h-3.5" />,
-                                href: getWhatsAppLink(item.Cliente?.TelefoneCelular || item.Cliente?.Telefone || item.Cliente?.TelefoneComercial, `Olá ${item.Cliente?.Nome || ""}, sua Ordem de Serviço #${item.Numero} está pronta. Você pode visualizá-la e baixá-la em PDF através deste link: ${baseUrl}/ordens-servico/print/${item.Id}/a4`) || undefined,
-                                alertMessage: !(item.Cliente?.TelefoneCelular || item.Cliente?.Telefone || item.Cliente?.TelefoneComercial) ? "Este cliente não possui telefone/celular cadastrado!" : undefined,
-                                target: "_blank"
-                              },
-                              { label: "Via E-mail", icon: <Mail className="w-3.5 h-3.5" /> },
-                            ]
-                          },
-                          { label: "Gerar Recibo", icon: <FileText className="w-4 h-4" /> },
-                          { label: "Ver no financeiro", icon: <Coins className="w-4 h-4" /> },
-                        ]} 
-                      />
+                      <OSActions item={item} baseUrl={baseUrl} situacoes={situacoes} />
                     </div>
                   </td>
                 </tr>

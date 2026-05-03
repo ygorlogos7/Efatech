@@ -24,8 +24,21 @@ export async function getOrdensServico(searchQuery?: string, page: number = 1, p
       skip: skip,
     });
     
+    // Manual join for situations to avoid prisma generate issues
+    const situacoes = await prisma.ordemServicoSituacao.findMany({
+      where: { Ativo: true }
+    });
+
     const total = await prisma.ordensServico.count({ where: whereClause });
-    return { success: true, data: items.map(i => ({ ...i, Total: Number(i.Total) })), total };
+    return { 
+        success: true, 
+        data: items.map(i => ({ 
+            ...i, 
+            Total: Number(i.Total),
+            Situacao: situacoes.find(s => s.Id === i.SituacaoId)
+        })), 
+        total 
+    };
   } catch (error) {
     return { success: false, error: "Falha ao buscar ordens de serviço." };
   }
@@ -241,5 +254,30 @@ export async function saveOSConfig(formData: FormData) {
     return { success: true };
   } catch (error) {
     return { success: false, error: "Falha ao salvar." };
+  }
+}
+export async function updateSituacaoOS(id: number, ativo: boolean) {
+  try {
+    await prisma.ordensServico.update({
+      where: { Id: id },
+      data: { Ativo: ativo }
+    });
+    revalidatePath("/ordens-servico");
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "Falha ao alterar situação da OS." };
+  }
+}
+
+export async function updateSituacaoIdOS(id: number, situacaoId: number | null) {
+  try {
+    await prisma.ordensServico.update({
+      where: { Id: id },
+      data: { SituacaoId: situacaoId }
+    });
+    revalidatePath("/ordens-servico");
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "Falha ao alterar situação da OS." };
   }
 }

@@ -82,6 +82,22 @@ export function VendasHeader({ tipo, title }: VendasHeaderProps) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start sm:justify-end">
+          {/* Barra de Pesquisa */}
+          <form method="get" className="m-0">
+            <div className="flex items-center border border-gray-300 rounded bg-white overflow-hidden px-3 py-1 focus-within:ring-1 focus-within:ring-green-500 transition-all shadow-sm">
+              <button type="submit" className="p-0 border-none bg-transparent">
+                <Search className="w-4 h-4 text-gray-400 mr-2 cursor-pointer hover:text-green-500 transition-colors" />
+              </button>
+              <input
+                type="text"
+                name="pesquisa"
+                defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('pesquisa') || '' : ''}
+                className="outline-none text-sm w-[180px] sm:w-[220px] text-gray-700 py-1"
+                placeholder="Buscar por Venda ou Cliente..."
+              />
+            </div>
+          </form>
+
           {/* Advanced Search */}
           <button className="flex items-center gap-1.5 border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-medium px-3 py-1.5 rounded shadow-sm transition-colors">
             <Search className="w-3.5 h-3.5" />
