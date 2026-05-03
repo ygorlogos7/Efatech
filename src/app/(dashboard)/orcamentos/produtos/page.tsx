@@ -159,6 +159,7 @@ export default async function OrcamentosProdutosPage({
           </tbody>
         </table>
       </div>
+    </div>
       
       <div className="px-4 sm:px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between bg-white rounded-b-md gap-4">
         <div className="text-xs sm:text-sm text-gray-600">
