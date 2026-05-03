@@ -15,6 +15,7 @@
 }
 
 @theme inline {
+  --variant-dark: .dark &;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

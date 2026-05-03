@@ -20,7 +20,7 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex flex-col h-screen overflow-hidden bg-[#f4f7f6]">
+      <div className="flex flex-col h-screen overflow-hidden bg-[#f4f7f6] dark:bg-[#020203] transition-colors duration-300">
         {/* Top Header Navigation */}
         <Header userName={session.user.name || undefined} userEmail={session.user.email || undefined} />
         
@@ -28,7 +28,7 @@ export default async function DashboardLayout({
         <div className="flex flex-1 overflow-hidden relative">
           <Sidebar />
           
-          <main className="flex-1 overflow-auto p-4 sm:p-6 text-gray-800 relative z-0">
+          <main className="flex-1 overflow-auto p-4 sm:p-6 text-gray-800 dark:text-slate-200 relative z-0">
             <PageTitleUpdater />
             <PageTransition>
               <NotificationProvider>

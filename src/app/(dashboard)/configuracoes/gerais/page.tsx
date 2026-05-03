@@ -2,15 +2,32 @@
 
 import React from "react";
 import { Settings, Globe, ShieldCheck, Save, Laptop, Sparkles, Clock, ChevronDown, Sun, Moon } from "lucide-react";
-import { useTheme } from "next-themes";
 
 function cn(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
 }
 
 export default function ConfigGeraisPage() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const [theme, setThemeState] = React.useState<"light" | "dark">("light");
+
+  React.useEffect(() => {
+    // Inicializa o estado com o que estiver no HTML ou localStorage
+    const isDark = document.documentElement.classList.contains("dark");
+    setThemeState(isDark ? "dark" : "light");
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    if (newTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    setThemeState(newTheme);
+    localStorage.setItem("theme", newTheme);
+  };
+
+  const isDark = theme === "dark";
 
   return (
     <div className="space-y-8 max-w-5xl">
@@ -71,7 +88,7 @@ export default function ConfigGeraisPage() {
              </div>
              <div className="p-8 space-y-6">
                 <div 
-                   onClick={() => setTheme(isDark ? "light" : "dark")}
+                   onClick={toggleTheme}
                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900 rounded-2xl border-2 border-transparent hover:border-[#38b473]/20 transition-all cursor-pointer group"
                 >
                    <div className="flex items-center gap-3">
