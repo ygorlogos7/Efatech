@@ -15,10 +15,10 @@ export default async function FuncionariosPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-white p-4 rounded-md shadow-sm border border-gray-200">
-        <div className="flex items-center gap-4">
-          <h2 className="text-gray-900 font-bold text-2xl mb-0">Funcionários</h2>
-          <div className="text-gray-400 text-xs flex items-center gap-1 mt-1">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-md shadow-sm border border-gray-200 gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-gray-900 font-bold text-xl sm:text-2xl mb-0">Funcionários</h2>
+          <div className="text-gray-400 text-[10px] sm:text-xs flex items-center gap-1">
             <Home className="w-3 h-3" />
             <Link href="/home" className="hover:underline">Início</Link>
             <span>&gt;</span>
@@ -26,7 +26,7 @@ export default async function FuncionariosPage({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
           <form method="get" className="m-0">
             <div className="flex items-center border border-gray-300 rounded bg-white overflow-hidden px-3 py-1.5 focus-within:ring-1 focus-within:ring-green-500 transition-all shadow-sm">
               <SearchIcon className="w-4 h-4 text-gray-400 mr-2" />
