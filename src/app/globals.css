@@ -1,13 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #f9fafb;
   --foreground: #171717;
+  --card: #ffffff;
+  --border: #e5e7eb;
+}
+
+.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --card: #1e293b;
+  --border: #334155;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   
@@ -20,16 +31,11 @@
   --color-border-color: #dcdcdc;
 }
 
-/* Force Light Theme */
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* ── CUSTOM SCROLLBARS ── */
@@ -66,7 +72,6 @@ body {
 html, body {
   margin: 0;
   padding: 0;
-  background: #f9fafb; /* Gray-50 fallback */
 }
 
 /* ── PRINT STYLES ── */
