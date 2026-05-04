@@ -41,8 +41,8 @@ export function VendasHeader({ tipo, title, items }: VendasHeaderProps) {
     // Refresh status when window gains focus
     window.addEventListener("focus", checkCaixa);
     
-    // Periodically check every 10 seconds
-    const interval = setInterval(checkCaixa, 10000);
+    // Periodically check every 5 seconds
+    const interval = setInterval(checkCaixa, 5000);
     
     return () => {
       window.removeEventListener("focus", checkCaixa);
