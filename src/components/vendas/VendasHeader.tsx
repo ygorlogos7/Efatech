@@ -19,6 +19,7 @@ interface VendasHeaderProps {
 
 export function VendasHeader({ tipo, title, items }: VendasHeaderProps) {
   const router = useRouter();
+  const { success, error: notifyError } = useNotification();
   const [isCashierModalOpen, setIsCashierModalOpen] = useState(false);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -29,6 +30,8 @@ export function VendasHeader({ tipo, title, items }: VendasHeaderProps) {
     const res = await getCaixaAberto();
     if (res.success) {
       setCaixaAtivo(res.data);
+    } else {
+      console.error("Erro ao checar caixa:", res.error);
     }
   };
 
