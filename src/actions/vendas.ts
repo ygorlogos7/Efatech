@@ -112,6 +112,7 @@ export async function createVenda(tipo: string, formData: FormData) {
         Total: total,
         Observacoes: formData.get("Observacoes") as string | null,
         Vendedor: formData.get("Vendedor") as string | null,
+        EmpresaId: formData.get("EmpresaId") ? Number(formData.get("EmpresaId")) : null,
         AssinaturaCliente: formData.get("AssinaturaCliente") as string | null,
         Ativo: true,
         CaixaSessaoId: caixaAberto?.Id || null, // Vínculo com o caixa
@@ -152,6 +153,7 @@ export async function updateVenda(id: number, tipo: string, formData: FormData) 
         Vendedor: formData.get("Vendedor") as string | null,
         Garantia: formData.get("Garantia") as string | null,
         CanalId: formData.get("CanalId") ? Number(formData.get("CanalId")) : null,
+        EmpresaId: formData.get("EmpresaId") ? Number(formData.get("EmpresaId")) : null,
         FormaPagamentoId: formData.get("FormaPagamentoId") ? Number(formData.get("FormaPagamentoId")) : null,
         Ativo: formData.get("Ativo") !== "false",
       },
