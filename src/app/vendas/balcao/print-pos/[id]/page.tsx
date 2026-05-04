@@ -46,73 +46,61 @@ export default async function PrintVendaPage({ params }: { params: Promise<{ id:
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
             @page { margin: 0; size: 80mm auto; }
-            body { margin: 0; padding: 0; width: 80mm; overflow: hidden !important; background: white !important; -webkit-print-color-adjust: exact; }
+            body { margin: 0; padding: 0; width: 80mm; overflow: hidden !important; background: white !important; }
             .print-hidden { display: none !important; }
         }
 
         /* REMOVER SCROLLBARS TOTAL */
         ::-webkit-scrollbar { display: none; }
-        html, body { overflow-x: hidden !important; }
+        html, body { overflow: hidden !important; }
 
         .receipt-professional {
             width: 80mm;
             background: #fff;
-            padding: 4mm 2mm;
+            padding: 3.5mm;
             box-sizing: border-box;
-            font-family: 'Inter', 'Courier New', Courier, monospace;
-            line-height: 1.1;
-            color: #000;
+            font-family: 'Inter', Arial, sans-serif;
+            line-height: 1.05;
+            overflow: hidden;
         }
 
-        .dotted-divider { border-bottom: 1.5pt dashed #000; margin: 6px 0; width: 100%; }
-        .solid-divider { border-bottom: 2pt solid #000; margin: 8px 0; width: 100%; }
+        .dotted-divider { border-bottom: 2px dotted #000; margin: 3px 0; width: 100%; }
         
-        .os-table-mini { width: 100%; border-collapse: collapse; margin: 4px 0; }
+        .os-table-mini { width: 100%; border-collapse: collapse; margin: 2px 0; }
         .os-table-mini th { 
-            font-size: 10px; 
+            font-size: 9px; 
             text-transform: uppercase; 
             text-align: left; 
-            border-bottom: 1pt solid #000;
-            padding-bottom: 2px;
+            border-bottom: 1px solid #000;
+            padding: 1px 0;
         }
         .os-table-mini td { 
             font-size: 13px; 
-            padding: 4px 0; 
-            font-weight: 800;
-            vertical-align: top;
+            padding: 2.5px 0; 
+            font-weight: 700;
         }
 
-        .f-label-tiny { font-size: 10px; font-weight: 900; text-transform: uppercase; }
-        .f-value-client { font-size: 14px; font-weight: 900; display: block; margin-top: 1px; }
-        .f-title-main { font-size: 16px; font-weight: 900; text-align: center; display: block; padding: 4px 0; }
+        .f-label-tiny { font-size: 10px; font-weight: 900; text-transform: uppercase; color: #333; }
+        .f-value-client { font-size: 12px; font-weight: 900; display: inline; margin-left: 4px; }
+        .f-value-large { font-size: 18px; font-weight: 900; display: block; line-height: 1.0; }
+        .f-title-main { font-size: 15px; font-weight: 900; text-align: center; display: block; padding: 1px 0; }
         
-        .header-container { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; margin-bottom: 8px; }
-        .company-info { font-size: 11px; line-height: 1.2; font-weight: 700; }
-        .company-info b { font-size: 14px; font-weight: 900; text-transform: uppercase; }
+        .header-container { display: flex; align-items: start; gap: 8px; margin-bottom: 2px; }
+        .company-info { flex: 1; font-size: 10px; line-height: 1.1; }
+        .company-info b { font-size: 12px; font-weight: 900; }
 
         .section-header-bar { 
             text-align: center; 
-            font-size: 12px; 
+            font-size: 11px; 
             font-weight: 900; 
             text-transform: uppercase;
-            border: 1.5pt solid #000;
-            padding: 2px;
-            margin: 8px 0 4px 0;
-            background: #000;
-            color: #fff;
+            background: #f0f0f0;
+            padding: 1px;
+            border: 1px solid #000;
+            margin: 2px 0;
+            line-height: 1.2;
             -webkit-print-color-adjust: exact;
         }
-
-        .total-box {
-            border: 2pt solid #000;
-            padding: 6px;
-            margin: 10px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .total-label { font-size: 14px; font-weight: 900; }
-        .total-value { font-size: 22px; font-weight: 900; letter-spacing: -1px; }
       `}} />
 
       {/* BARRA DE AÇÕES (ESCONDIDA NA IMPRESSÃO) */}
@@ -126,42 +114,35 @@ export default async function PrintVendaPage({ params }: { params: Promise<{ id:
       <div className="receipt-professional shadow-2xl print:shadow-none mb-10">
           {/* CABEÇALHO */}
           <div className="header-container">
-              <img src="/images/logo_efatech.png" alt="EFATECH" className="w-20 h-20 object-contain mb-2" />
-              <div className="company-info">
+              <img src="/images/logo_efatech.png" alt="EFATECH" className="w-14 h-14 object-contain shrink-0" />
+              <div className="company-info leading-tight">
                   <b>{empresa.RazaoSocial}</b><br />
                   CNPJ: {empresa.Cnpj}<br />
-                  {empresa.Logradouro}, {empresa.Numero || '20'}<br />
-                  {empresa.Bairro} - {empresa.Cidade}<br />
-                  CEP: {empresa.Cep || '09710-040'}<br />
-                  TEL: {empresa.Telefone}
+                  {empresa.Logradouro}, {empresa.Numero || '20'} - {empresa.Bairro}<br />
+                  {empresa.Cidade} - CEP: {empresa.Cep || '09710-040'}<br />
+                  {empresa.Telefone}
               </div>
           </div>
 
-          <div className="solid-divider" />
-          <span className="f-title-main">COMPROVANTE DE VENDA<br />Nº {venda.Numero}</span>
-          <div className="solid-divider" />
+          <div className="dotted-divider" />
+          <span className="f-title-main">COMPROVANTE DE VENDA Nº {venda.Numero}</span>
+          <div className="dotted-divider" />
 
           {/* INFO CLIENTE */}
-          <div className="my-2 space-y-2 px-1">
-              <div className="flex justify-between border-b border-dotted border-black pb-1">
-                  <span className="f-label-tiny">DATA: {new Date(venda.DataVenda).toLocaleDateString('pt-BR')}</span>
-                  <span className="f-label-tiny">HORA: {new Date(venda.DataVenda).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+          <div className="my-1 space-y-0.5 px-0.5">
+              <div className="flex justify-between mb-1">
+                  <span className="f-label-tiny tracking-tighter text-[9px]">DATA: {new Date(venda.DataVenda).toLocaleDateString('pt-BR')}</span>
+                  <span className="f-label-tiny tracking-tighter text-[9px]">VENDEDOR: {venda.Vendedor || "SISTEMA"}</span>
               </div>
-              <div className="flex flex-col gap-1">
-                  <div>
-                      <span className="f-label-tiny">VENDEDOR:</span>
-                      <span className="font-bold text-[12px] ml-1 uppercase">{venda.Vendedor || "SISTEMA"}</span>
-                  </div>
+              <div className="flex flex-col gap-0.5 mt-1 border-t border-dotted border-gray-300 pt-1">
                   <div>
                       <span className="f-label-tiny">CLIENTE:</span>
-                      <span className="f-value-client uppercase">{cliente?.Nome || "CONSUMIDOR FINAL"}</span>
+                      <span className="f-value-client uppercase">{cliente?.Nome || "AVULSO / BALCAO"}</span>
                   </div>
-                  {cliente?.Telefone && (
-                    <div>
-                        <span className="f-label-tiny">TEL:</span>
-                        <span className="font-bold text-[12px] ml-1">{cliente.Telefone}</span>
-                    </div>
-                  )}
+                  <div>
+                      <span className="f-label-tiny">TELEFONE:</span>
+                      <span className="f-value-client">{cliente?.Telefone || "(---) ---- ----"}</span>
+                  </div>
               </div>
           </div>
 
@@ -171,17 +152,17 @@ export default async function PrintVendaPage({ params }: { params: Promise<{ id:
               <thead>
                   <tr>
                       <th width="15%" className="text-center">QTD</th>
-                      <th width="50%">DESCRIÇÃO</th>
-                      <th width="35%" className="text-right">TOTAL</th>
+                      <th width="45%">DESCRIÇÃO</th>
+                      <th width="40%" className="text-right">TOTAL</th>
                   </tr>
               </thead>
               <tbody>
                   {venda.Itens?.map((item: any) => (
                     <tr key={item.Id}>
-                        <td className="text-center">{Number(item.Quantidade)}</td>
-                        <td className="leading-tight uppercase">
+                        <td className="text-[13px] text-center">{Number(item.Quantidade)}</td>
+                        <td className="text-[12px] leading-tight font-black uppercase">
                           {item.Produtos?.Cod_Nome}
-                          <div className="text-[9px] font-medium leading-none mt-0.5">ID: {item.ProdutoId}</div>
+                          <div className="text-[9px] font-medium leading-none text-gray-500">ID: {item.ProdutoId}</div>
                         </td>
                         <td className="text-right">R$ {Number(item.ValorTotal).toFixed(2).replace(".", ",")}</td>
                     </tr>
@@ -189,62 +170,55 @@ export default async function PrintVendaPage({ params }: { params: Promise<{ id:
               </tbody>
           </table>
 
-          {/* TOTAL */}
-          <div className="total-box">
-              <span className="total-label uppercase">TOTAL GERAL</span>
-              <span className="total-value">R$ {Number(venda.Total).toFixed(2).replace(".", ",")}</span>
+          {/* TOTAL E PAGAMENTO */}
+          <div className="flex justify-between gap-1 mt-3 bg-gray-100 p-1 border border-black items-center">
+              <span className="text-[12px] font-black uppercase">TOTAL:</span>
+              <span className="text-[16px] font-black tracking-tighter">R$ {Number(venda.Total).toFixed(2).replace(".", ",")}</span>
           </div>
           
-          {/* PAGAMENTO */}
-          <div className="border-t border-black pt-2">
-              <span className="f-label-tiny block mb-1">RESUMO DE PAGAMENTO:</span>
-              <table className="w-full text-[11px] font-black uppercase leading-tight">
-                  <tbody>
-                      <tr className="border-b border-dotted border-gray-400">
-                          <td className="py-1">FORMA:</td>
-                          <td className="text-right py-1">{venda.FormaPagamento?.Nome || "À VISTA / DINHEIRO"}</td>
+          <div className="border border-black border-t-0 bg-white mb-2 pb-0.5">
+              <table className="w-full text-[9px] text-center font-bold uppercase leading-tight mt-0.5">
+                  <thead>
+                      <tr className="border-b border-gray-300 text-gray-500">
+                          <td width="33%">FORMA PAG.</td>
+                          <td width="33%">VENCIMENTO</td>
+                          <td width="34%">VALOR (R$)</td>
                       </tr>
-                      {venda.Desconto > 0 && (
-                        <tr className="border-b border-dotted border-gray-400 text-red-600">
-                            <td className="py-1">DESCONTO:</td>
-                            <td className="text-right py-1">- R$ {Number(venda.Desconto).toFixed(2).replace(".", ",")}</td>
-                        </tr>
-                      )}
+                  </thead>
+                  <tbody>
+                      <tr>
+                          <td className="pt-0.5">{venda.FormaPagamento?.Nome || "À VISTA"}</td>
+                          <td className="pt-0.5">{new Date(venda.DataVenda).toLocaleDateString('pt-BR')}</td>
+                          <td className="pt-0.5">{Number(venda.Total).toFixed(2).replace(".", ",")}</td>
+                      </tr>
                   </tbody>
               </table>
           </div>
 
           {/* GARANTIA */}
-          <div className="section-header-bar">TERMOS E GARANTIA</div>
-          <p className="text-[10px] text-justify leading-tight mb-4 font-bold uppercase">
+          <div className="section-header-bar">
+            {venda.Garantia ? `GARANTIA: ${venda.Garantia}` : "TERMOS DE GARANTIA"}
+          </div>
+          <p className="text-[9px] text-justify leading-tight mb-2 font-bold uppercase border-l-2 border-black pl-2">
               {venda.Garantia 
-                ? `GARANTIA DE ${venda.Garantia} CONTRA DEFEITOS DE FABRICAÇÃO. `
+                ? `ESTE PRODUTO POSSUI GARANTIA DE ${venda.Garantia} CONTRA DEFEITOS DE FABRICAÇÃO. `
                 : ""
               }
-              NÃO COBRIMOS DANOS POR MAU USO, LÍQUIDOS, QUEDAS, RACHADURAS, SOBRECARGA ELÉTRICA OU VIOLAÇÃO DE LACRES.
+              NÃO COBRIMOS APARELHOS QUE SOFRAM DANOS PELO CLIENTE COMO MAU USO, CONTATO COM ÁGUA/LÍQUIDOS, CONFIGURAÇÕES INDEVIDAS, INSTALAÇÕES DE SOFTWARE VÍRUS, AGENTES NATURAIS (RAIOS), TRANSPORTE INDEVIDO OU ACIDENTES.
           </p>
           
+          <div className="dotted-divider" />
           {venda.Observacoes && (
-            <div className="border border-dashed border-black p-2 mb-4">
-                <span className="f-label-tiny block mb-1">OBSERVAÇÕES:</span>
-                <p className="text-[12px] font-bold uppercase italic">{venda.Observacoes}</p>
-            </div>
+            <p className="text-[11px] font-black italic mb-3 text-center uppercase tracking-tighter">Obs: {venda.Observacoes}</p>
           )}
           
-          <div className="solid-divider" />
-          <p className="text-center text-[11px] font-black py-1">
-              *** DOCUMENTO NÃO FISCAL ***
+          <p className="text-center text-[10px] font-black border-y border-black py-1 mb-2">
+              *** NÃO É DOCUMENTO FISCAL ***
           </p>
-          <div className="solid-divider" />
 
-          <div className="text-center mt-4">
-              <p className="text-[12px] font-black uppercase">Obrigado pela preferência!</p>
-              <p className="text-[9px] font-bold text-gray-500 mt-2">
-                  Efatech ERP - www.efatech.com.br
-              </p>
-          </div>
-          
-          <div className="h-10" /> {/* Espaço para corte manual */}
+          <p className="text-center text-[8px] font-bold text-gray-400 mt-2">
+              Efatech ERP - Gestão Especialista
+          </p>
       </div>
     </div>
   );
