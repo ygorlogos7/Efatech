@@ -14,17 +14,27 @@ function serializeCaixa(caixa: any) {
 }
 
 export async function getCaixaAberto() {
-  noStore();
   try {
     const caixa = await prisma.caixaSessao.findFirst({
       where: { Status: "Aberto" },
       orderBy: { DataAbertura: "desc" },
     });
 
-    return { success: true, data: serializeCaixa(caixa) };
+    if (!caixa) return { success: true, data: null };
+
+    // Serialização manual ultra-segura
+    return { 
+      success: true, 
+      data: {
+        Id: caixa.Id,
+        Status: caixa.Status,
+        ValorAbertura: Number(caixa.ValorAbertura),
+        DataAbertura: caixa.DataAbertura ? caixa.DataAbertura.toISOString() : null
+      } 
+    };
   } catch (error) {
     console.error("Erro ao verificar caixa:", error);
-    return { success: false, error: "Falha ao verificar status do caixa." };
+    return { success: false, error: "Erro interno no servidor." };
   }
 }
 
