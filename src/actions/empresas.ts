@@ -101,3 +101,22 @@ export async function deleteEmpresa(id: number) {
     return { success: false, error: "Falha ao excluir empresa." };
   }
 }
+export async function quickCreateEmpresa(formData: FormData) {
+  const razao = formData.get("RazaoSocial") as string;
+  try {
+    const data = {
+      RazaoSocial: razao,
+      NomeFantasia: formData.get("NomeFantasia") as string || razao,
+      Cnpj: formData.get("Cnpj") as string | null,
+      Telefone: formData.get("Telefone") as string | null,
+      Ativo: true,
+    };
+
+    const newEmpresa = await prisma.empresa.create({ data });
+    revalidatePath("/cadastros/opcoes/empresas");
+    return { success: true, data: newEmpresa };
+  } catch (error) {
+    console.error("Erro no quickCreateEmpresa:", error);
+    return { success: false, error: "Falha ao gravar empresa rapidamente." };
+  }
+}

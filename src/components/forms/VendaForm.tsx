@@ -2,11 +2,12 @@
 
 import React, { useTransition, useState, useEffect } from "react";
 import { createVenda, updateVenda } from "@/actions/vendas";
-import { getClientes } from "@/actions/clientes";
+import { getClientes, quickCreateCliente } from "@/actions/clientes";
 import { getProdutos } from "@/actions/produtos";
 import { getFuncionarios } from "@/actions/funcionarios";
 import { getVendaCanais } from "@/actions/vendas";
 import { getFormasPagamento } from "@/actions/financeiro";
+import { getEmpresas, quickCreateEmpresa } from "@/actions/empresas";
 import { 
   ShoppingBasket, 
   DollarSign, 
@@ -28,7 +29,9 @@ import {
   Truck,
   FileSearch,
   ExternalLink,
-  Pencil
+  Pencil,
+  Building2,
+  PlusCircle
 } from "lucide-react";
 import Link from "next/link";
 import { useNotification } from "@/hooks/use-notification";
@@ -58,8 +61,13 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
   const [funcionarios, setFuncionarios] = useState<any[]>([]);
   const [canais, setCanais] = useState<any[]>([]);
   const [formasPagamento, setFormasPagamento] = useState<any[]>([]);
+  const [empresas, setEmpresas] = useState<any[]>([]);
   
+  const [showQuickClienteModal, setShowQuickClienteModal] = useState(false);
+  const [showQuickEmpresaModal, setShowQuickEmpresaModal] = useState(false);
+
   const [selectedClienteId, setSelectedClienteId] = useState<number | null>(initialData?.ClienteId || null);
+  const [selectedEmpresaId, setSelectedEmpresaId] = useState<number | null>(initialData?.EmpresaId || null);
   const [selectedVendedor, setSelectedVendedor] = useState<string>(initialData?.Vendedor || "");
   const [selectedCanalId, setSelectedCanalId] = useState<number | null>(initialData?.CanalId || null);
   const [selectedFormaPagamentoId, setSelectedFormaPagamentoId] = useState<number | null>(initialData?.FormaPagamentoId || null);
@@ -100,6 +108,15 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
 
       const formaRes = await getFormasPagamento();
       if (formaRes.success) setFormasPagamento(formaRes.data || []);
+
+      const empRes = await getEmpresas();
+      if (empRes.success) {
+        const emps = empRes.data || [];
+        setEmpresas(emps);
+        if (!initialData?.EmpresaId && emps.length > 0) {
+          setSelectedEmpresaId(emps[0].Id);
+        }
+      }
     };
     loadData();
   }, []);
@@ -181,6 +198,7 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
     formData.append("Desconto", desconto.toString());
     formData.append("Vendedor", selectedVendedor);
     formData.append("CanalId", selectedCanalId ? String(selectedCanalId) : "");
+    formData.append("EmpresaId", selectedEmpresaId ? String(selectedEmpresaId) : "");
     formData.append("Garantia", garantia);
 
     startTransition(async () => {
@@ -200,6 +218,35 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
         error((r as any)?.error || "Erro ao salvar venda.");
       }
     });
+  };
+
+  const handleQuickCreateCliente = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const res = await quickCreateCliente(formData);
+    if (res.success && res.data) {
+      setClientes([...clientes, res.data]);
+      setSelectedClienteId(res.data.Id);
+      setSearchCli(res.data.Nome);
+      setShowQuickClienteModal(false);
+      success("Cliente cadastrado com sucesso!");
+    } else {
+      error(res.error || "Erro ao cadastrar cliente.");
+    }
+  };
+
+  const handleQuickCreateEmpresa = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const res = await quickCreateEmpresa(formData);
+    if (res.success && res.data) {
+      setEmpresas([...empresas, res.data]);
+      setSelectedEmpresaId(res.data.Id);
+      setShowQuickEmpresaModal(false);
+      success("Empresa cadastrada com sucesso!");
+    } else {
+      error(res.error || "Erro ao cadastrar empresa.");
+    }
   };
 
   return (
@@ -222,28 +269,47 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-5">
             <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500">Número</label>
-              <div className="flex bg-gray-100 border border-gray-200 rounded overflow-hidden">
-                <input readOnly value={initialData?.Numero || "NOVA"} className="w-full bg-transparent p-2 outline-none" />
-                <div className="bg-white border-l border-gray-200 p-2"><FileSearch className="w-3 h-3 text-gray-400" /></div>
+              <label className="font-semibold text-gray-500">Empresa / Filial *</label>
+              <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm">
+                <select 
+                  className="w-full p-2 outline-none bg-white font-bold"
+                  value={selectedEmpresaId || ""}
+                  onChange={(e) => setSelectedEmpresaId(Number(e.target.value))}
+                  required
+                >
+                  <option value="">Selecione...</option>
+                  {empresas.map(emp => (
+                    <option key={emp.Id} value={emp.Id}>{emp.RazaoSocial}</option>
+                  ))}
+                </select>
+                <button type="button" onClick={() => setShowQuickEmpresaModal(true)} className="bg-emerald-50 border-l border-gray-200 p-2 hover:bg-emerald-100 transition-colors" title="Cadastrar Empresa"><PlusCircle className="w-3.5 h-3.5 text-emerald-600" /></button>
               </div>
             </div>
 
             <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500">Cliente</label>
-              <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-blue-400 focus-within:border-blue-400 transition-all">
+              <label className="font-semibold text-gray-500 font-bold text-red-500">Data *</label>
+              <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm">
+                 <input type="text" readOnly value={new Date(initialData?.DataVenda || Date.now()).toLocaleDateString("pt-BR")} className="w-full p-2 outline-none" />
+                 <div className="bg-white border-l border-gray-200 p-2"><Calendar className="w-3 h-3 text-gray-400" /></div>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-500">Cliente *</label>
+              <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-emerald-400 transition-all">
                 <input 
                   type="text" 
-                  placeholder="Pesquisar..." 
-                  className="w-full p-2 outline-none bg-white"
+                  placeholder="Pesquisar cliente..." 
+                  className="w-full p-2 outline-none bg-white font-bold"
                   value={searchCli || selectedCliente?.Nome || ""}
                   onChange={(e) => setSearchCli(e.target.value)}
                 />
+                <button type="button" onClick={() => setShowQuickClienteModal(true)} className="bg-emerald-50 border-l border-gray-200 p-2 hover:bg-emerald-100 transition-colors" title="Novo Cliente"><PlusCircle className="w-3.5 h-3.5 text-emerald-600" /></button>
                 <button type="button" onClick={() => { setSelectedClienteId(null); setSearchCli(""); }} className="bg-white border-l border-gray-200 p-2 hover:bg-gray-50"><Trash2 className="w-3 h-3 text-gray-400" /></button>
-                {searchCli && (
+                {searchCli && !selectedClienteId && (
                    <div className="absolute z-50 mt-10 bg-white border border-gray-200 shadow-xl rounded w-[300px] max-h-60 overflow-y-auto">
                       {clientes.filter(c => c.Nome.toLowerCase().includes(searchCli.toLowerCase())).map(c => (
-                        <div key={c.Id} onClick={() => { setSelectedClienteId(c.Id); setSearchCli(c.Nome); }} className="p-2 hover:bg-blue-50 cursor-pointer border-b text-sm">{c.Nome}</div>
+                        <div key={c.Id} onClick={() => { setSelectedClienteId(c.Id); setSearchCli(c.Nome); }} className="p-2 hover:bg-emerald-50 cursor-pointer border-b text-sm font-bold">{c.Nome}</div>
                       ))}
                    </div>
                 )}
@@ -262,45 +328,38 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
                     <option key={f.Id} value={f.Nome}>{f.Nome}</option>
                   ))}
                 </select>
-                <div className="bg-white border-l border-gray-200 p-2"><Trash2 className="w-3 h-3 text-gray-400" /></div>
+                <div className="bg-white border-l border-gray-200 p-2"><User className="w-3 h-3 text-gray-400" /></div>
               </div>
             </div>
 
             <div className="space-y-1.5 text-xs">
               <label className="font-semibold text-gray-500">Situação *</label>
-              <select className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm transition-all focus:ring-1 focus:ring-blue-400">
-                <option value="Concretizada">{initialData?.Ativo ? "Concretizada" : "Aberta"}</option>
+              <select className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm transition-all focus:ring-1 focus:ring-emerald-400 font-bold">
+                <option value="Aberta">Aberta</option>
+                <option value="Concretizada">Concretizada</option>
               </select>
-            </div>
-
-            <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500 font-bold text-red-500">Data *</label>
-              <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm">
-                 <input type="text" readOnly value={new Date(initialData?.DataVenda || Date.now()).toLocaleDateString("pt-BR")} className="w-full p-2 outline-none" />
-                 <div className="bg-white border-l border-gray-200 p-2"><Calendar className="w-3 h-3 text-gray-400" /></div>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500">Prazo de entrega</label>
-              <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm">
-                 <input type="text" readOnly value={new Date(initialData?.DataVenda || Date.now()).toLocaleDateString("pt-BR")} className="w-full p-2 outline-none" />
-                 <div className="bg-white border-l border-gray-200 p-2"><Calendar className="w-3 h-3 text-gray-400" /></div>
-              </div>
             </div>
 
             <div className="space-y-1.5 text-xs">
               <label className="font-semibold text-gray-500 font-bold text-red-500">Canal de venda *</label>
               <select 
-                className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm"
+                className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm font-bold"
                 value={selectedCanalId || ""}
                 onChange={(e) => setSelectedCanalId(Number(e.target.value))}
               >
                 <option value="">Selecione...</option>
                 {canais.map(c => (
-                  <option key={c.Id} value={c.Id}>{c.Nome}</option>
+                   <option key={c.Id} value={c.Id}>{c.Nome}</option>
                 ))}
               </select>
+            </div>
+            
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-500">Número</label>
+              <div className="flex bg-gray-50 border border-gray-200 rounded overflow-hidden">
+                <input readOnly value={initialData?.Numero || "NOVA"} className="w-full bg-transparent p-2 outline-none font-bold text-gray-500" />
+                <div className="bg-white border-l border-gray-200 p-2"><FileSearch className="w-3 h-3 text-gray-400" /></div>
+              </div>
             </div>
             
             <div className="space-y-1.5 text-xs">
@@ -519,7 +578,7 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
           disabled={isPending}
           className="flex items-center gap-1.5 bg-[#00b050] hover:bg-green-700 text-white px-6 py-2.5 rounded font-bold text-xs shadow-sm transition-all active:scale-95 disabled:opacity-50"
         >
-          {isPending ? "PROCESSANDO..." : <><Check className="w-4 h-4" /> ATUALIZAR</>}
+          {isPending ? "PROCESSANDO..." : <><Check className="w-4 h-4" /> {isEdit ? "ATUALIZAR" : "FINALIZAR VENDA"}</>}
         </button>
         <Link 
           href={`/vendas/${tipo}`}
@@ -528,6 +587,76 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
           <X className="w-4 h-4" /> CANCELAR
         </Link>
       </div>
+
+      {/* MODAL CADASTRO RÁPIDO: CLIENTE */}
+      {showQuickClienteModal && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100 animate-in zoom-in-95 duration-200">
+            <div className="bg-emerald-600 p-4 text-white flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <UserCheck className="w-5 h-5" />
+                <h3 className="font-black uppercase tracking-tighter">Cadastro Rápido: Cliente</h3>
+              </div>
+              <button onClick={() => setShowQuickClienteModal(false)}><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={handleQuickCreateCliente} className="p-6 space-y-4">
+               <div>
+                 <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Nome / Razão Social *</label>
+                 <input name="Nome" required className="w-full border-2 border-gray-100 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-all font-bold" placeholder="Digite o nome completo..." />
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                 <div>
+                   <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">CPF / CNPJ</label>
+                   <input name="CPFCNPJ" className="w-full border-2 border-gray-100 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-all font-bold" placeholder="000.000.000-00" />
+                 </div>
+                 <div>
+                   <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Telefone</label>
+                   <input name="Telefone" className="w-full border-2 border-gray-100 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-all font-bold" placeholder="(00) 0000-0000" />
+                 </div>
+               </div>
+               <div>
+                 <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">E-mail</label>
+                 <input name="Email" type="email" className="w-full border-2 border-gray-100 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-all font-bold" placeholder="exemplo@email.com" />
+               </div>
+               <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-black uppercase tracking-widest shadow-lg transition-all active:scale-95">Salvar e Selecionar</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CADASTRO RÁPIDO: EMPRESA */}
+      {showQuickEmpresaModal && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-emerald-600 p-4 text-white flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <Building2 className="w-5 h-5" />
+              <h3 className="font-black uppercase tracking-tighter">Cadastro Rápido: Empresa</h3>
+            </div>
+            <button onClick={() => setShowQuickEmpresaModal(false)}><X className="w-5 h-5" /></button>
+          </div>
+          <form onSubmit={handleQuickCreateEmpresa} className="p-6 space-y-4">
+             <div>
+               <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Razão Social *</label>
+               <input name="RazaoSocial" required className="w-full border-2 border-gray-100 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-all font-bold" placeholder="Nome jurídico da empresa..." />
+             </div>
+             <div>
+               <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Nome Fantasia</label>
+               <input name="NomeFantasia" className="w-full border-2 border-gray-100 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-all font-bold" placeholder="Nome comercial..." />
+             </div>
+             <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">CNPJ</label>
+                 <input name="Cnpj" className="w-full border-2 border-gray-100 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-all font-bold" placeholder="00.000.000/0000-00" />
+               </div>
+               <div>
+                 <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Telefone</label>
+                 <input name="Telefone" className="w-full border-2 border-gray-100 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-all font-bold" placeholder="(00) 0000-0000" />
+               </div>
+             </div>
+             <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-black uppercase tracking-widest shadow-lg transition-all active:scale-95">Salvar e Selecionar</button>
+          </form>
+        </div>
+      )}
 
     </form>
   );

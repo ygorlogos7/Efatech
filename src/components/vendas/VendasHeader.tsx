@@ -50,7 +50,7 @@ export function VendasHeader({ tipo, title, items }: VendasHeaderProps) {
         router.push(destination);
       } else {
         setCaixaAtivo(null);
-        router.push("/financeiro/caixas/abrir");
+        setIsCashierModalOpen(true);
       }
     } catch (err: any) {
       console.error("Erro ao verificar caixa:", err);
@@ -173,9 +173,15 @@ export function VendasHeader({ tipo, title, items }: VendasHeaderProps) {
 
       {/* Modals & Overlays */}
       <CashierModal 
-        isOpen={false} 
-        onClose={() => {}} 
-        onSuccess={() => {}} 
+        isOpen={isCashierModalOpen} 
+        onClose={() => setIsCashierModalOpen(false)} 
+        onSuccess={() => {
+          setIsCashierModalOpen(false);
+          checkCaixa();
+          // Após abrir, tenta redirecionar para a venda novamente
+          const destination = tipo === "balcao" ? `/pdv/balcao` : `/vendas/${tipo}/create`;
+          router.push(destination);
+        }} 
       />
 
       {caixaAtivo && (

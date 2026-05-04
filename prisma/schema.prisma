@@ -608,6 +608,7 @@ model Empresa {
   Cores             String?
   Ativo             Boolean  @default(true)
   CreatedAt         DateTime @default(now())
+  Vendas            Vendas[]
 }
 
 model Plano {
@@ -755,9 +756,11 @@ model Vendas {
   Garantia          String?
   CaixaSessaoId     Int?
   FormaPagamentoId  Int?
+  EmpresaId         Int?
   Itens             VendaItens[]
   Cliente           Clientes?    @relation(fields: [ClienteId], references: [Id])
   FormaPagamento    FormaPagamento? @relation(fields: [FormaPagamentoId], references: [Id])
+  Empresa           Empresa?     @relation(fields: [EmpresaId], references: [Id])
 }
 
 model VendaItens {

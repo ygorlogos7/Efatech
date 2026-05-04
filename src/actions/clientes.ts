@@ -151,3 +151,23 @@ export async function deleteCliente(id: number) {
     return { success: false, error: "Falha ao deletar." };
   }
 }
+export async function quickCreateCliente(formData: FormData) {
+  const nome = formData.get("Nome") as string;
+  try {
+    const data = {
+      TipoCliente: formData.get("TipoCliente") as string || "F",
+      Ativo: true,
+      Nome: nome,
+      CPFCNPJ: formData.get("CPFCNPJ") as string | null,
+      Telefone: formData.get("Telefone") as string | null,
+      Email: formData.get("Email") as string | null,
+    };
+
+    const newCliente = await prisma.clientes.create({ data });
+    revalidatePath("/cadastros/clientes");
+    return { success: true, data: newCliente };
+  } catch (error) {
+    console.error("Erro no quickCreateCliente:", error);
+    return { success: false, error: "Falha ao gravar cliente rapidamente." };
+  }
+}
