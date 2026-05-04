@@ -12,6 +12,11 @@ export async function sendEmailAction({ to, subject, html }: SendEmailParams) {
   try {
     const from = process.env.NEXT_PUBLIC_SENDER_EMAIL || "onboarding@resend.dev";
     
+    if (!resend) {
+      console.warn(">>> [MAIL] Resend não configurado. Chave de API ausente.");
+      return { success: false, error: "Serviço de e-mail não configurado no servidor." };
+    }
+
     const { data, error } = await resend.emails.send({
       from: `Efatech PRO <${from}>`,
       to: [to],
@@ -20,7 +25,7 @@ export async function sendEmailAction({ to, subject, html }: SendEmailParams) {
     });
 
     if (error) {
-      console.error("Resend error:", error);
+      console.error(">>> [MAIL] Erro no Resend:", error);
       return { success: false, error: error.message };
     }
 
