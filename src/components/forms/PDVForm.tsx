@@ -16,7 +16,8 @@ import {
   Monitor,
   UserCheck,
   Tag,
-  ArrowLeft
+  ArrowLeft,
+  AlertTriangle
 } from "lucide-react";
 import { createVenda } from "@/actions/vendas";
 import { getClientes } from "@/actions/clientes";
@@ -51,11 +52,12 @@ export function PDVForm({ tipo, onClose }: PDVFormProps) {
   const [searchProd, setSearchProd] = useState("");
 
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedFormaPagamentoId, setSelectedFormaPagamentoId] = useState<number | null>(null);
 
   // Current Item focused in the edit area
   const [currentItem, setCurrentItem] = useState<any>(null);
-  const [editQty, setEditQty] = useState(1);
+  const [editQty, setEditQty] = useState(0);
   const [editPrice, setEditPrice] = useState(0);
   const [editDiscount, setEditDiscount] = useState(0);
 
@@ -77,13 +79,13 @@ export function PDVForm({ tipo, onClose }: PDVFormProps) {
   const selectProductToEdit = (prod: any) => {
     setCurrentItem(prod);
     setEditPrice(Number(prod.Cod_Preco));
-    setEditQty(1);
+    setEditQty(0);
     setEditDiscount(0);
     setSearchProd("");
   };
 
   const addItemToCart = () => {
-    if (!currentItem) return;
+    if (!currentItem || editQty <= 0) return;
 
     const numericTotal = (editPrice * editQty) - editDiscount;
     const newItem: CartItem = {
@@ -98,7 +100,7 @@ export function PDVForm({ tipo, onClose }: PDVFormProps) {
 
     setCart([...cart, newItem]);
     setCurrentItem(null);
-    setEditQty(1);
+    setEditQty(0);
     setEditPrice(0);
     setEditDiscount(0);
   };
@@ -257,7 +259,7 @@ export function PDVForm({ tipo, onClose }: PDVFormProps) {
                   </div>
 
                   <button
-                    disabled={!currentItem}
+                    disabled={!currentItem || editQty <= 0}
                     onClick={addItemToCart}
                     className="w-full bg-[#1a252f] hover:bg-black text-white py-4 rounded font-black uppercase tracking-widest transition-all disabled:opacity-50 mt-4 h-14 text-lg shadow-lg active:scale-95"
                   >
@@ -317,7 +319,7 @@ export function PDVForm({ tipo, onClose }: PDVFormProps) {
                   <HandIcon className="w-6 h-5" />
                   AGUARDAR
                 </button>
-                <button onClick={() => { if (confirm("Cancelar venda?")) onClose(); }} className="bg-[#e74c3c] hover:bg-red-700 text-white p-3 rounded font-black text-sm flex flex-col items-center gap-1 transition-colors uppercase shadow-md active:scale-95">
+                <button onClick={() => setShowCancelModal(true)} className="bg-[#e74c3c] hover:bg-red-700 text-white p-3 rounded font-black text-sm flex flex-col items-center gap-1 transition-colors uppercase shadow-md active:scale-95">
                   <Ban className="w-6 h-5" />
                   CANCELAR
                 </button>
@@ -402,6 +404,38 @@ export function PDVForm({ tipo, onClose }: PDVFormProps) {
                         Voltar para o carrinho
                       </button>
                    </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Cancel Sale Modal */}
+          {showCancelModal && (
+            <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100 animate-in zoom-in-95 duration-200">
+                <div className="p-8 flex flex-col items-center text-center">
+                  <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-5">
+                    <AlertTriangle className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-2xl font-black text-gray-900 mb-2 uppercase tracking-tighter">Cancelar Venda?</h3>
+                  <p className="text-sm text-gray-500 mb-8 leading-relaxed font-medium">
+                    Tem certeza que deseja cancelar esta operação? <br/>
+                    <span className="text-red-500 font-bold">Todos os itens do carrinho serão perdidos.</span>
+                  </p>
+                  <div className="flex w-full gap-3">
+                    <button 
+                      onClick={() => setShowCancelModal(false)} 
+                      className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-black rounded-lg transition-all text-xs uppercase tracking-widest"
+                    >
+                      Voltar
+                    </button>
+                    <button 
+                      onClick={() => { setShowCancelModal(false); onClose(); }} 
+                      className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-black rounded-lg transition-all text-xs uppercase tracking-widest shadow-lg active:scale-95"
+                    >
+                      Confirmar
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

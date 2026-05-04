@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { PlusCircle, ShoppingBag, List, Calendar, Search, ChevronDown, Home } from "lucide-react";
+import { PlusCircle, ShoppingBag, List, Calendar, Search, ChevronDown, Home, CheckSquare } from "lucide-react";
 import { MoreActionsDropdown } from "@/components/common/MoreActionsDropdown";
 import { CashierModal } from "./CashierModal";
 import { getCaixaAberto } from "@/actions/caixa";
@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { CloseCashierModal } from "./CloseCashierModal";
 import { Lock } from "lucide-react";
 import Link from "next/link";
+import { downloadCsv } from "@/lib/exportUtils";
 
 interface VendasHeaderProps {
   tipo: "produtos" | "balcao" | "servicos";
@@ -16,7 +17,7 @@ interface VendasHeaderProps {
   items: any[];
 }
 
-export function VendasHeader({ tipo, title }: VendasHeaderProps) {
+export function VendasHeader({ tipo, title, items }: VendasHeaderProps) {
   const router = useRouter();
   const [isCashierModalOpen, setIsCashierModalOpen] = useState(false);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
@@ -45,7 +46,8 @@ export function VendasHeader({ tipo, title }: VendasHeaderProps) {
       const res = await getCaixaAberto();
       if (res.success && res.data) {
         setCaixaAtivo(res.data);
-        router.push(`/pdv/${tipo}`);
+        const destination = tipo === "balcao" ? `/pdv/balcao` : `/vendas/${tipo}/create`;
+        router.push(destination);
       } else {
         setCaixaAtivo(null);
         router.push("/financeiro/caixas/abrir");
@@ -55,6 +57,32 @@ export function VendasHeader({ tipo, title }: VendasHeaderProps) {
     } finally {
       setIsPending(false);
     }
+  };
+
+  const handleExportExcel = () => {
+    if (!items || items.length === 0) return;
+    
+    const columns = [
+      { header: 'Venda Nº', key: 'Numero' },
+      { header: 'Data', key: 'DataVenda' },
+      { header: 'Produtos', key: 'TotalProdutos' },
+      { header: 'Serviços', key: 'TotalServicos' },
+      { header: 'Desconto', key: 'Desconto' },
+      { header: 'Valor', key: 'Total' },
+      { header: 'Status', key: 'Ativo' },
+    ];
+    
+    const rows = items.map(item => ({
+      Numero: item.Numero,
+      DataVenda: new Date(item.DataVenda).toLocaleDateString('pt-BR'),
+      TotalProdutos: item.TotalProdutos.toFixed(2).replace('.', ','),
+      TotalServicos: item.TotalServicos.toFixed(2).replace('.', ','),
+      Desconto: item.Desconto.toFixed(2).replace('.', ','),
+      Total: item.Total.toFixed(2).replace('.', ','),
+      Ativo: item.Ativo ? 'Concluída' : 'Cancelada',
+    }));
+    
+    downloadCsv(`vendas_${tipo}.csv`, rows, columns);
   };
 
   const breadcrumbLabel = tipo === "balcao" ? "Venda Balcão" : tipo === "produtos" ? "Vendas — Produtos" : "Vendas — Serviços";
@@ -119,7 +147,7 @@ export function VendasHeader({ tipo, title }: VendasHeaderProps) {
             disabled={isPending}
             className="flex items-center gap-1.5 bg-[#00a65a] hover:bg-green-600 text-white text-xs font-bold px-4 py-1.5 rounded shadow-sm transition-all active:scale-95 disabled:opacity-50"
           >
-            <ShoppingBag className="w-3.5 h-3.5" />
+            <CheckSquare className="w-3.5 h-3.5" />
             {caixaAtivo ? "VENDER" : "ABRIR CAIXA E VENDER"}
           </button>
 
@@ -137,7 +165,7 @@ export function VendasHeader({ tipo, title }: VendasHeaderProps) {
           <MoreActionsDropdown 
             actions={[
               { label: "Importar vendas", icon: <PlusCircle className="w-4 h-4" /> },
-              { label: "Exportar para Excel", icon: <List className="w-4 h-4" /> },
+              { label: "Exportar para Excel", icon: <List className="w-4 h-4" />, onClick: handleExportExcel },
             ]}
           />
         </div>
