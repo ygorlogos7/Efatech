@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
-import { PlusCircle, ShoppingBag, List, Calendar, Search, ChevronDown, Home, CheckSquare } from "lucide-react";
-import { MoreActionsDropdown } from "@/components/common/MoreActionsDropdown";
-import { CashierModal } from "./CashierModal";
+import React, { useState, useEffect } from "react";
+import { CheckSquare, ChevronDown, Download, FileSpreadsheet, PlusCircle, LayoutGrid, List, Home, Search, Calendar, Lock } from "lucide-react";
 import { getCaixaAberto } from "@/actions/caixa";
+import { CashierModal } from "./CashierModal";
+import { MoreActionsDropdown } from "@/components/common/MoreActionsDropdown";
 import { useRouter } from "next/navigation";
 import { CloseCashierModal } from "./CloseCashierModal";
-import { Lock } from "lucide-react";
 import Link from "next/link";
 import { downloadCsv } from "@/lib/exportUtils";
+import { useNotification } from "@/hooks/use-notification";
 
 interface VendasHeaderProps {
   tipo: "produtos" | "balcao" | "servicos";
@@ -37,7 +37,14 @@ export function VendasHeader({ tipo, title, items }: VendasHeaderProps) {
     
     // Refresh status when window gains focus
     window.addEventListener("focus", checkCaixa);
-    return () => window.removeEventListener("focus", checkCaixa);
+    
+    // Periodically check every 10 seconds
+    const interval = setInterval(checkCaixa, 10000);
+    
+    return () => {
+      window.removeEventListener("focus", checkCaixa);
+      clearInterval(interval);
+    };
   }, []);
 
   const handleVenderClick = async () => {
@@ -46,6 +53,9 @@ export function VendasHeader({ tipo, title, items }: VendasHeaderProps) {
       const res = await getCaixaAberto();
       if (res.success && res.data) {
         setCaixaAtivo(res.data);
+        if (!caixaAtivo) {
+          success("O caixa já estava aberto em outra tela. Redirecionando...");
+        }
         const destination = tipo === "balcao" ? `/pdv/balcao` : `/vendas/${tipo}/create`;
         router.push(destination);
       } else {
