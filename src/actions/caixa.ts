@@ -15,19 +15,47 @@ function serializeCaixa(caixa: any) {
   };
 }
 
-export async function getCaixaAberto() {
+export async function buscarCaixaAtivo() {
   noStore();
   try {
+    console.log(">>> [CAIXA] Buscando caixa ativo no servidor...");
+    
+    // Usando findFirst com Status case-insensitive para maior robustez
     const caixa = await prisma.caixaSessao.findFirst({
-      where: { Status: "Aberto" },
+      where: { 
+        Status: {
+          equals: "Aberto",
+          mode: "insensitive"
+        } 
+      },
       orderBy: { DataAbertura: "desc" },
     });
 
-    return { success: true, data: serializeCaixa(caixa) };
-  } catch (error) {
-    console.error("Erro ao verificar caixa:", error);
-    return { success: false, error: "Falha ao verificar status do caixa." };
+    if (!caixa) {
+      console.log(">>> [CAIXA] Nenhum caixa aberto encontrado.");
+      return { success: true, data: null };
+    }
+
+    console.log(">>> [CAIXA] Caixa encontrado! ID:", caixa.Id, "Status:", caixa.Status);
+
+    return { 
+      success: true, 
+      data: {
+        Id: caixa.Id,
+        Status: caixa.Status,
+        ValorAbertura: Number(caixa.ValorAbertura),
+        DataAbertura: caixa.DataAbertura?.toISOString() || null
+      } 
+    };
+  } catch (error: any) {
+    console.error(">>> [CAIXA] Erro fatal ao buscar caixa ativo:", error.message);
+    return { success: false, error: `Erro no servidor: ${error.message}` };
   }
+}
+
+// Mantendo o nome antigo apenas para não quebrar outros lugares temporariamente
+export async function getCaixaAberto() {
+  return buscarCaixaAtivo();
 }
 
 export async function abrirCaixa(formData: FormData) {

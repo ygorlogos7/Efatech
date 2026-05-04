@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { CheckSquare, ChevronDown, Download, FileSpreadsheet, PlusCircle, LayoutGrid, List, Home, Search, Calendar, Lock } from "lucide-react";
-import { getCaixaAberto } from "@/actions/caixa";
+import { buscarCaixaAtivo } from "@/actions/caixa";
 import { CashierModal } from "./CashierModal";
 import { MoreActionsDropdown } from "@/components/common/MoreActionsDropdown";
 import { useRouter } from "next/navigation";
@@ -27,7 +27,7 @@ export function VendasHeader({ tipo, title, items }: VendasHeaderProps) {
 
   // Carregar status do caixa ao entrar na tela
   const checkCaixa = async () => {
-    const res = await getCaixaAberto();
+    const res = await buscarCaixaAtivo();
     if (res.success) {
       setCaixaAtivo(res.data);
     } else {
@@ -53,20 +53,24 @@ export function VendasHeader({ tipo, title, items }: VendasHeaderProps) {
   const handleVenderClick = async () => {
     setIsPending(true);
     try {
-      const res = await getCaixaAberto();
-      if (res.success && res.data) {
-        setCaixaAtivo(res.data);
-        if (!caixaAtivo) {
-          success("O caixa já estava aberto em outra tela. Redirecionando...");
+      const res = await buscarCaixaAtivo();
+      
+      if (res.success) {
+        if (res.data) {
+          setCaixaAtivo(res.data);
+          const destination = tipo === "balcao" ? `/pdv/balcao` : `/vendas/${tipo}/create`;
+          router.push(destination);
+        } else {
+          setCaixaAtivo(null);
+          setIsCashierModalOpen(true);
         }
-        const destination = tipo === "balcao" ? `/pdv/balcao` : `/vendas/${tipo}/create`;
-        router.push(destination);
       } else {
+        error(res.error || "Erro ao verificar status do caixa. Tente novamente.");
         setCaixaAtivo(null);
-        setIsCashierModalOpen(true);
       }
     } catch (err: any) {
       console.error("Erro ao verificar caixa:", err);
+      error("Erro de conexão com o servidor ao verificar o caixa.");
     } finally {
       setIsPending(false);
     }
