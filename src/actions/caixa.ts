@@ -18,9 +18,8 @@ function serializeCaixa(caixa: any) {
 export async function buscarCaixaAtivo() {
   noStore();
   try {
-    console.log(">>> [CAIXA] Buscando caixa ativo no servidor...");
+    console.log(">>> [CAIXA] Buscando caixa ativo...");
     
-    // Usando findFirst com Status case-insensitive para maior robustez
     const caixa = await prisma.caixaSessao.findFirst({
       where: { 
         Status: {
@@ -40,16 +39,11 @@ export async function buscarCaixaAtivo() {
 
     return { 
       success: true, 
-      data: {
-        Id: caixa.Id,
-        Status: caixa.Status,
-        ValorAbertura: Number(caixa.ValorAbertura),
-        DataAbertura: caixa.DataAbertura?.toISOString() || null
-      } 
+      data: serializeCaixa(caixa)
     };
   } catch (error: any) {
-    console.error(">>> [CAIXA] Erro fatal ao buscar caixa ativo:", error.message);
-    return { success: false, error: `Erro no servidor: ${error.message}` };
+    console.error(">>> [CAIXA] ERRO AO BUSCAR CAIXA:", error);
+    return { success: false, error: `Erro no banco de dados: ${error.message}` };
   }
 }
 
@@ -59,62 +53,57 @@ export async function getCaixaAberto() {
 }
 
 export async function abrirCaixa(formData: FormData) {
-  console.log(">>> [CAIXA] INICIANDO PROCESSO DE ABERTURA NO SERVIDOR...");
+  console.log(">>> [CAIXA] INICIANDO ABERTURA NO SERVIDOR...");
   try {
     const rawValor = formData.get("valorAbertura");
     const valorAbertura = Number(rawValor);
     const funcionarioId = formData.get("funcionarioId") ? Number(formData.get("funcionarioId")) : null;
     const gerarRecebimento = formData.get("gerarRecebimento") === "true";
-    
     const observacoes = (formData.get("observacoes") as string) || "Abertura manual";
 
+    console.log(">>> [CAIXA] Parâmetros:", { valorAbertura, funcionarioId, gerarRecebimento });
+
     if (isNaN(valorAbertura)) {
-      return { success: false, error: "Valor inválido." };
+      return { success: false, error: "Valor de abertura inválido." };
     }
 
-    // 1. Criar a sessão do caixa
-    const novoCaixa = await prisma.caixaSessao.create({
-      data: {
-        ValorAbertura: valorAbertura,
-        Observacoes: observacoes,
-        Status: "Aberto",
-        DataAbertura: new Date(),
-        UsuarioId: funcionarioId,
-      },
+    const result = await prisma.$transaction(async (tx) => {
+      console.log(">>> [CAIXA] Criando registro de sessão...");
+      const novoCaixa = await tx.caixaSessao.create({
+        data: {
+          ValorAbertura: valorAbertura,
+          Observacoes: observacoes,
+          Status: "Aberto",
+          DataAbertura: new Date(),
+          UsuarioId: funcionarioId,
+        },
+      });
+
+      if (gerarRecebimento && valorAbertura > 0) {
+        console.log(">>> [CAIXA] Gerando lançamento financeiro...");
+        await tx.contaReceber.create({
+          data: {
+            Descricao: "Abertura de caixa",
+            Valor: valorAbertura,
+            Vencimento: new Date(),
+            Recebimento: new Date(),
+            Status: "Recebido",
+            Observacoes: `Gerado na abertura do caixa #${novoCaixa.Id}`,
+          }
+        });
+      }
+      return novoCaixa;
     });
 
-    // 2. Se solicitado, gerar lançamento financeiro
-    if (gerarRecebimento && valorAbertura > 0) {
-      const descricao = formData.get("descricao") as string || "Abertura de caixa";
-      const formaPgtoId = formData.get("formaPgtoId") ? Number(formData.get("formaPgtoId")) : null;
-      const planoContaId = formData.get("planoContaId") ? Number(formData.get("planoContaId")) : null;
-      const vencimento = formData.get("vencimento") ? new Date(formData.get("vencimento") as string) : new Date();
-
-      await prisma.contaReceber.create({
-        data: {
-          Descricao: descricao,
-          Valor: valorAbertura,
-          Vencimento: vencimento,
-          Recebimento: new Date(), // Considerado como recebido no momento da abertura
-          FormaPgtoId: formaPgtoId,
-          PlanoContaId: planoContaId,
-          Observacoes: `Gerado automaticamente na abertura do caixa #${novoCaixa.Id}`,
-          SituacaoId: 1, // Exemplo: 1 para 'Liquidado' ou similar se existir
-        }
-      });
-    }
-
-    revalidatePath("/vendas/balcao");
-    revalidatePath("/vendas/produtos");
-    revalidatePath("/vendas/servicos");
-    revalidatePath("/pdv/balcao");
-    revalidatePath("/financeiro/fluxo-caixa");
-    revalidatePath("/financeiro/opcoes/caixas");
-
-    return { success: true, data: serializeCaixa(novoCaixa) };
+    console.log(">>> [CAIXA] Revalidando caminhos...");
+    revalidatePath("/vendas");
+    revalidatePath("/financeiro");
+    
+    console.log(">>> [CAIXA] SUCESSO!");
+    return { success: true, data: serializeCaixa(result) };
   } catch (error: any) {
-    console.error(">>> [CAIXA] ERRO FATAL AO ABRIR CAIXA:", error);
-    return { success: false, error: `Erro técnico: ${error.message}` };
+    console.error(">>> [CAIXA] ERRO CRÍTICO NA ABERTURA:", error);
+    return { success: false, error: `Falha na operação: ${error.message}` };
   }
 }
 
