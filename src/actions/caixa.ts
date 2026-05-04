@@ -17,7 +17,12 @@ export async function getCaixaAberto() {
   noStore();
   try {
     const caixa = await prisma.caixaSessao.findFirst({
-      where: { Status: "Aberto" },
+      where: { 
+        Status: {
+          equals: "Aberto",
+          mode: 'insensitive'
+        }
+      },
       orderBy: { DataAbertura: "desc" },
     });
 
