@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 
 // Função auxiliar para converter Decimal do Prisma para Number antes de enviar para o cliente
 function serializeCaixa(caixa: any) {
@@ -14,6 +14,7 @@ function serializeCaixa(caixa: any) {
 }
 
 export async function getCaixaAberto() {
+  noStore();
   try {
     const caixa = await prisma.caixaSessao.findFirst({
       where: { Status: "Aberto" },
@@ -74,8 +75,11 @@ export async function abrirCaixa(formData: FormData) {
     }
 
     revalidatePath("/vendas/balcao");
+    revalidatePath("/vendas/produtos");
+    revalidatePath("/vendas/servicos");
     revalidatePath("/pdv/balcao");
     revalidatePath("/financeiro/fluxo-caixa");
+    revalidatePath("/financeiro/opcoes/caixas");
 
     return { success: true, data: serializeCaixa(novoCaixa) };
   } catch (error: any) {
