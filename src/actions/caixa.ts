@@ -142,7 +142,6 @@ export async function fecharCaixa(id: number, valorFechamento: number) {
   }
 }
 
-import { unstable_noStore as noStore } from 'next/cache';
 
 export async function getCaixaSessoes(filters?: { usuarioId?: string | number, dataInicio?: string, dataFim?: string, status?: string }) {
   noStore();
