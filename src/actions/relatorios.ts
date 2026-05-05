@@ -31,13 +31,36 @@ export async function getResumoGeral() {
   }
 }
 
-export async function getLogs(filters?: any) {
+export async function getLogs(filtros?: any, page: number = 1, pageSize: number = 20) {
   try {
-    const logs = await prisma.logSistema.findMany({
-      orderBy: { Data: "desc" },
-      take: 100,
-    });
-    return { success: true, data: logs };
+    const where: any = {};
+
+    if (filtros?.usuario) {
+      where.Usuario = { contains: filtros.usuario, mode: 'insensitive' };
+    }
+    if (filtros?.modulo && filtros.modulo !== "TODOS") {
+      where.Modulo = filtros.modulo;
+    }
+    if (filtros?.acao) {
+      where.Acao = { contains: filtros.acao, mode: 'insensitive' };
+    }
+    if (filtros?.dataInicio || filtros?.dataFim) {
+      where.Data = {};
+      if (filtros.dataInicio) where.Data.gte = new Date(filtros.dataInicio + "T00:00:00");
+      if (filtros.dataFim) where.Data.lte = new Date(filtros.dataFim + "T23:59:59");
+    }
+
+    const [logs, total] = await Promise.all([
+      prisma.logSistema.findMany({
+        where,
+        orderBy: { Data: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.logSistema.count({ where })
+    ]);
+
+    return { success: true, data: logs, total };
   } catch (error) {
     console.error("Erro ao buscar logs:", error);
     return { success: false, error: "Erro ao buscar logs" };

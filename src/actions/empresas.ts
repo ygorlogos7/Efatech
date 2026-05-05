@@ -2,6 +2,9 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { logAction } from "@/lib/logger";
+
+const MODULO = "EMPRESA";
 
 export async function getEmpresas(pesquisa: string = "") {
   try {
@@ -51,11 +54,13 @@ export async function createEmpresa(formData: FormData) {
       Ativo: formData.get("Ativo") === "on",
     };
 
-    await prisma.empresa.create({ data });
+    const empresa = await prisma.empresa.create({ data });
+    await logAction("Criar Empresa", MODULO, `Empresa ${data.RazaoSocial} (CNPJ: ${data.Cnpj}) cadastrada com sucesso.`);
     revalidatePath("/cadastros/opcoes/empresas");
     return { success: true };
   } catch (error) {
     console.error("Erro ao criar empresa:", error);
+    await logAction("Criar Empresa", MODULO, `Falha ao criar empresa: ${error}`, "ERRO");
     return { success: false, error: "Falha ao criar empresa." };
   }
 }
@@ -82,10 +87,12 @@ export async function updateEmpresa(id: number, formData: FormData) {
       where: { Id: id },
       data,
     });
+    await logAction("Atualizar Empresa", MODULO, `Empresa ID: ${id} (${data.RazaoSocial}) atualizada com sucesso.`);
     revalidatePath("/cadastros/opcoes/empresas");
     return { success: true };
   } catch (error) {
     console.error("Erro ao atualizar empresa:", error);
+    await logAction("Atualizar Empresa", MODULO, `Falha ao atualizar empresa ID: ${id}: ${error}`, "ERRO");
     return { success: false, error: "Falha ao atualizar empresa." };
   }
 }
@@ -95,9 +102,11 @@ export async function deleteEmpresa(id: number) {
     await prisma.empresa.delete({
       where: { Id: id },
     });
+    await logAction("Excluir Empresa", MODULO, `Empresa ID: ${id} removida do sistema.`);
     revalidatePath("/cadastros/opcoes/empresas");
     return { success: true };
   } catch (error) {
+    await logAction("Excluir Empresa", MODULO, `Falha ao excluir empresa ID: ${id}: ${error}`, "ERRO");
     return { success: false, error: "Falha ao excluir empresa." };
   }
 }
@@ -113,10 +122,12 @@ export async function quickCreateEmpresa(formData: FormData) {
     };
 
     const newEmpresa = await prisma.empresa.create({ data });
+    await logAction("Quick Create Empresa", MODULO, `Empresa ${razao} cadastrada via criação rápida.`);
     revalidatePath("/cadastros/opcoes/empresas");
     return { success: true, data: newEmpresa };
   } catch (error) {
     console.error("Erro no quickCreateEmpresa:", error);
+    await logAction("Quick Create Empresa", MODULO, `Falha no Quick Create: ${error}`, "ERRO");
     return { success: false, error: "Falha ao gravar empresa rapidamente." };
   }
 }
