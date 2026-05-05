@@ -415,9 +415,15 @@ export async function getCaixaSessaoDetalhes(id: number) {
   }
 }
 export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'completo') {
+  console.log(">>> [PRINT] Iniciando busca para ID:", id, "Tipo:", type);
   try {
     const session = await prisma.caixaSessao.findUnique({ where: { Id: id } });
-    if (!session) return { success: false, error: "Sessão não encontrada." };
+    if (!session) {
+      console.warn(">>> [PRINT] Sessão não encontrada para ID:", id);
+      return { success: false, error: "Sessão não encontrada." };
+    }
+
+    console.log(">>> [PRINT] Sessão encontrada. Status:", session.Status);
 
     const dataAbertura = session.DataAbertura || new Date();
     const dataFechamento = session.DataFechamento || new Date();
@@ -427,6 +433,7 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
     // 1. Vendas Consolidadas
     let vendasConsolidada: any[] = [];
     if (type === 'vendas' || type === 'completo') {
+      console.log(">>> [PRINT] Buscando Vendas...");
       const vendas = await prisma.vendas.findMany({
         where: { 
           OR: [
@@ -441,6 +448,7 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
         },
         include: { FormaPagamento: true }
       });
+      console.log(">>> [PRINT] Vendas encontradas:", vendas.length);
       
       const consolidado: Record<string, any> = {};
       vendas.forEach(v => {
@@ -456,6 +464,7 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
     // 2. O.S. Consolidadas
     let osConsolidada: any[] = [];
     if (type === 'os' || type === 'completo') {
+      console.log(">>> [PRINT] Buscando O.S...");
       const os = await prisma.ordensServico.findMany({
         where: {
           OR: [
@@ -471,6 +480,7 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
         },
         include: { FormaPagamento: true }
       });
+      console.log(">>> [PRINT] O.S. encontradas:", os.length);
 
       const consolidado: Record<string, any> = {};
       os.forEach(o => {
@@ -484,6 +494,7 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
     }
 
     // 3. Sangrias e Suprimentos
+    console.log(">>> [PRINT] Buscando Sangrias/Suprimentos...");
     const sangriasRaw = await prisma.contaPagar.findMany({
       where: { CreatedAt: { gte: dataAbertura, lte: dataFechamento } }
     });
@@ -497,6 +508,7 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
     const sangrias = sangriasRaw.map(s => ({ Forma: "Dinheiro à Vista", Pago: Number(s.Valor), Total: Number(s.Valor) }));
     const suprimentos = suprimentosRaw.map(s => ({ Forma: "Dinheiro à Vista", Recebido: Number(s.Valor), Total: Number(s.Valor) }));
 
+    console.log(">>> [PRINT] Consolidando valores...");
     // 4. Consolidado Final (Formas de Pagamento)
     const formasFinal: any = {};
     const addValues = (arr: any[], mode: 'entrada' | 'saida') => {
@@ -513,7 +525,6 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
       });
     };
 
-    // Valor de Abertura
     const abertura = { Forma: "Dinheiro à Vista", Recebido: Number(session.ValorAbertura), Total: Number(session.ValorAbertura) };
     
     addValues([abertura], 'entrada');
@@ -526,29 +537,28 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
     const totalEntradas = consolidadoGeral.reduce((acc: number, curr: any) => acc + curr.Recebido, 0);
     const totalSaidas = consolidadoGeral.reduce((acc: number, curr: any) => acc + curr.Pago, 0);
 
-    // RETORNO ULTRA-LEAN (Somente o que a tela usa)
-    return {
-      success: true,
-      data: {
-        session: {
-          Id: session.Id,
-          Status: session.Status,
-          DataAbertura: session.DataAbertura?.toISOString(),
-          DataFechamento: session.DataFechamento?.toISOString(),
-          ValorAbertura: Number(session.ValorAbertura),
-          ValorFechamento: Number(session.ValorFechamento || 0),
-          FuncionarioNome: "Johnny Andrade Ferreira" // Ou buscar do banco se necessário
-        },
-        abertura,
-        vendas: vendasConsolidada,
-        os: osConsolidada,
-        sangrias,
-        consolidadoGeral,
-        saldoReal: totalEntradas - totalSaidas
-      }
+    const dataResult = {
+      session: {
+        Id: session.Id,
+        Status: session.Status,
+        DataAbertura: session.DataAbertura?.toISOString(),
+        DataFechamento: session.DataFechamento?.toISOString(),
+        ValorAbertura: Number(session.ValorAbertura),
+        ValorFechamento: Number(session.ValorFechamento || 0),
+        FuncionarioNome: "Johnny Andrade Ferreira"
+      },
+      abertura,
+      vendas: vendasConsolidada,
+      os: osConsolidada,
+      sangrias,
+      consolidadoGeral,
+      saldoReal: totalEntradas - totalSaidas
     };
+
+    console.log(">>> [PRINT] Sucesso! Enviando payload.");
+    return { success: true, data: dataResult };
   } catch (error: any) {
-    console.error(">>> [PRINT] Erro Fatal:", error);
+    console.error(">>> [PRINT] ERRO CRÍTICO:", error);
     return { success: false, error: "Erro interno no servidor." };
   }
 }
