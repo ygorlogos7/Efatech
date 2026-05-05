@@ -415,9 +415,15 @@ export async function getCaixaSessaoDetalhes(id: number) {
   }
 }
 export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'completo') {
+  console.log(">>> [PRINT] Iniciando busca para ID:", id, "Tipo:", type);
   try {
     const session = await prisma.caixaSessao.findUnique({ where: { Id: id } });
-    if (!session) return { success: false, error: "Sessão não encontrada." };
+    if (!session) {
+      console.warn(">>> [PRINT] Sessão não encontrada para ID:", id);
+      return { success: false, error: "Sessão não encontrada." };
+    }
+
+    console.log(">>> [PRINT] Sessão encontrada. Status:", session.Status);
 
     const dataAbertura = session.DataAbertura || new Date();
     const dataFechamento = session.DataFechamento || new Date();
@@ -438,7 +444,7 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
       Total: Number(session.ValorAbertura)
     };
 
-    // 1.1 Sangrias e Suprimentos
+    console.log(">>> [PRINT] Buscando Sangrias e Suprimentos...");
     const sangrias = await prisma.contaPagar.findMany({
       where: { CreatedAt: { gte: dataAbertura, lte: dataFechamento } }
     });
@@ -452,11 +458,12 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
     result.sangrias = sangrias.map(s => ({ Forma: "Dinheiro à Vista", Pago: Number(s.Valor), Total: Number(s.Valor) }));
     result.suprimentos = suprimentos.map(s => ({ Forma: "Dinheiro à Vista", Recebido: Number(s.Valor), Total: Number(s.Valor) }));
 
-    // 2. Vendas
     const startOfDay = new Date(dataAbertura);
     startOfDay.setHours(0, 0, 0, 0);
 
+    // 2. Vendas
     if (type === 'vendas' || type === 'completo') {
+      console.log(">>> [PRINT] Buscando Vendas...");
       const vendas = await prisma.vendas.findMany({
         where: { 
           OR: [
@@ -473,7 +480,6 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
               ]
             }
           ],
-          // Removido Ativo: true para garantir que vendas concluídas apareçam
         },
         include: { FormaPagamento: true }
       });
@@ -495,6 +501,7 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
 
     // 3. Ordens de Serviço
     if (type === 'os' || type === 'completo') {
+      console.log(">>> [PRINT] Buscando O.S...");
       const os = await prisma.ordensServico.findMany({
         where: {
           OR: [
@@ -515,7 +522,6 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
         },
         include: { FormaPagamento: true }
       });
-      result.osRaw = os.map(o => ({ ...o, Total: Number(o.Total) }));
 
       const consolidadoOS: any = {};
       os.forEach(o => {
@@ -531,6 +537,7 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
       result.osRaw = [];
     }
 
+    console.log(">>> [PRINT] Consolidando valores finais...");
     // 4. Formas de Pagamento (Consolidado Final)
     const formasFinal: any = {};
     const addValues = (arr: any[], mode: 'entrada' | 'saida') => {
@@ -560,6 +567,7 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
     const totalSaidas = result.consolidadoGeral.reduce((acc: number, curr: any) => acc + curr.Pago, 0);
     result.saldoReal = totalEntradas - totalSaidas;
 
+    console.log(">>> [PRINT] Serializando para retorno...");
     // SERIALIZAÇÃO FINAL PARA EVITAR ERROS NO CLIENT COMPONENT
     const serializedResult = {
       ...result,
@@ -594,10 +602,11 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
       })) || [],
     };
 
+    console.log(">>> [PRINT] SUCESSO!");
     return { success: true, data: serializedResult };
   } catch (error: any) {
-    console.error(">>> [PRINT] Erro ao preparar dados:", error);
-    return { success: false, error: `Falha ao processar relatório: ${error.message}` };
+    console.error(">>> [PRINT] ERRO CRÍTICO NO SERVIDOR:", error);
+    return { success: false, error: `Falha técnica: ${error.message}` };
   }
 }
 
