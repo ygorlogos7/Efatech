@@ -26,8 +26,9 @@ export default function CaixaPrintPage() {
     }
   }, [id, type]);
 
-  const formatCurrency = (val: number) => {
-    return val.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatCurrency = (val: any) => {
+    if (val === undefined || val === null || isNaN(Number(val))) return "0,00";
+    return Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   const formatDate = (date: any) => {

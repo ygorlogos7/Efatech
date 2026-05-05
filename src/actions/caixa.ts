@@ -525,7 +525,12 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
       });
     };
 
-    const abertura = { Forma: "Dinheiro à Vista", Recebido: Number(session.ValorAbertura), Total: Number(session.ValorAbertura) };
+    const abertura = { 
+      Forma: "Dinheiro à Vista", 
+      Recebido: Number(session.ValorAbertura), 
+      AReceber: 0, 
+      Total: Number(session.ValorAbertura) 
+    };
     
     addValues([abertura], 'entrada');
     addValues(vendasConsolidada, 'entrada');
