@@ -535,14 +535,14 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
     const formasFinal: any = {};
     const addValues = (arr: any[], mode: 'entrada' | 'saida') => {
       arr.forEach(item => {
-        const nome = item.Forma || item.Nome;
+        const nome = item.Forma || item.Nome || "Diversos";
         if (!formasFinal[nome]) formasFinal[nome] = { Nome: nome, NaoRecebido: 0, Recebido: 0, Pago: 0, Total: 0 };
         if (mode === 'entrada') {
-           formasFinal[nome].Recebido += (item.Recebido || item.Total || 0);
-           formasFinal[nome].Total += (item.Total || 0);
+           formasFinal[nome].Recebido += Number(item.Recebido || item.Total || 0);
+           formasFinal[nome].Total += Number(item.Total || 0);
         } else {
-           formasFinal[nome].Pago += (item.Pago || item.Total || 0);
-           formasFinal[nome].Total -= (item.Total || 0);
+           formasFinal[nome].Pago += Number(item.Pago || item.Total || 0);
+           formasFinal[nome].Total -= Number(item.Total || 0);
         }
       });
     };
@@ -560,10 +560,44 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
     const totalSaidas = result.consolidadoGeral.reduce((acc: number, curr: any) => acc + curr.Pago, 0);
     result.saldoReal = totalEntradas - totalSaidas;
 
-    return { success: true, data: result };
-  } catch (error) {
-    console.error("Erro ao preparar dados de impressão:", error);
-    return { success: false, error: "Falha ao preparar relatório." };
+    // SERIALIZAÇÃO FINAL PARA EVITAR ERROS NO CLIENT COMPONENT
+    const serializedResult = {
+      ...result,
+      session: {
+        ...result.session,
+        DataAbertura: result.session.DataAbertura?.toISOString() || null,
+        DataFechamento: result.session.DataFechamento?.toISOString() || null,
+      },
+      vendasRaw: result.vendasRaw?.map((v: any) => ({
+        ...v,
+        Total: Number(v.Total),
+        DataVenda: v.DataVenda?.toISOString() || null,
+        CreatedAt: v.CreatedAt?.toISOString() || null,
+      })) || [],
+      osRaw: result.osRaw?.map((o: any) => ({
+        ...o,
+        Total: Number(o.Total),
+        DataFechamento: o.DataFechamento?.toISOString() || null,
+        CreatedAt: o.CreatedAt?.toISOString() || null,
+      })) || [],
+      sangrias: result.sangrias?.map((s: any) => ({
+        ...s,
+        Pago: Number(s.Pago),
+        Total: Number(s.Total),
+        CreatedAt: s.CreatedAt?.toISOString() || s.CreatedAt,
+      })) || [],
+      suprimentos: result.suprimentos?.map((s: any) => ({
+        ...s,
+        Recebido: Number(s.Recebido),
+        Total: Number(s.Total),
+        CreatedAt: s.CreatedAt?.toISOString() || s.CreatedAt,
+      })) || [],
+    };
+
+    return { success: true, data: serializedResult };
+  } catch (error: any) {
+    console.error(">>> [PRINT] Erro ao preparar dados:", error);
+    return { success: false, error: `Falha ao processar relatório: ${error.message}` };
   }
 }
 
