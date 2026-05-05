@@ -44,22 +44,54 @@ export async function getLogs(filters?: any) {
   }
 }
 
-export async function getRelatorioVendas(filtros?: any) {
+export async function getRelatorioVendas(filtros?: any, page: number = 1, pageSize: number = 20) {
   try {
-    const vendas = await prisma.vendas.findMany({
-      where: { Ativo: true },
-      include: {
-        Cliente: true,
-        Itens: {
-          include: {
-            Produtos: true,
-          },
-        },
+    const where: any = { Ativo: true };
+
+    if (filtros?.cliente) {
+      where.OR = [
+        { Cliente: { Nome: { contains: filtros.cliente, mode: 'insensitive' } } },
+      ];
+    }
+
+    if (filtros?.dataInicio || filtros?.dataFim) {
+      where.DataVenda = {};
+      if (filtros.dataInicio) where.DataVenda.gte = new Date(filtros.dataInicio + "T00:00:00");
+      if (filtros.dataFim) where.DataVenda.lte = new Date(filtros.dataFim + "T23:59:59");
+    }
+
+    // OTIMIZAÇÃO: Buscamos apenas o necessário para o agrupamento
+    const todasVendas = await prisma.vendas.findMany({
+      where,
+      select: {
+        Total: true,
+        DataVenda: true
       },
       orderBy: { DataVenda: "desc" },
-      take: 100,
     });
-    return { success: true, data: vendas };
+
+    // Agrupamos por dia em JavaScript (Agora muito mais rápido sem os joins pesados)
+    const agrupado: Record<string, { data: string, total: number, qtd: number }> = {};
+    
+    todasVendas.forEach(v => {
+      const dataStr = new Date(v.DataVenda).toISOString().split('T')[0];
+      if (!agrupado[dataStr]) {
+        agrupado[dataStr] = { data: dataStr, total: 0, qtd: 0 };
+      }
+      agrupado[dataStr].total += Number(v.Total || 0);
+      agrupado[dataStr].qtd += 1;
+    });
+
+    const result = Object.values(agrupado).sort((a, b) => b.data.localeCompare(a.data));
+    const total = result.length;
+    const paginado = result.slice((page - 1) * pageSize, page * pageSize);
+
+    return { 
+      success: true, 
+      data: paginado,
+      total,
+      faturamentoTotal: result.reduce((acc, curr) => acc + curr.total, 0)
+    };
   } catch (error) {
     console.error("Erro ao buscar relatório de vendas:", error);
     return { success: false, error: "Erro ao buscar relatório de vendas" };
@@ -105,17 +137,53 @@ export async function getRelatorioFinanceiro(filtros?: any) {
   }
 }
 
-export async function getRelatorioOrdensServico(filtros?: any) {
+export async function getRelatorioOrdensServico(filtros?: any, page: number = 1, pageSize: number = 20) {
   try {
-    const ordensServico = await prisma.ordensServico.findMany({
-      where: { Ativo: true },
-      include: {
-        Cliente: true,
+    const where: any = { Ativo: true };
+
+    if (filtros?.cliente) {
+      where.OR = [
+        { Cliente: { Nome: { contains: filtros.cliente, mode: 'insensitive' } } },
+      ];
+    }
+
+    if (filtros?.dataInicio || filtros?.dataFim) {
+      where.DataAbertura = {};
+      if (filtros.dataInicio) where.DataAbertura.gte = new Date(filtros.dataInicio + "T00:00:00");
+      if (filtros.dataFim) where.DataAbertura.lte = new Date(filtros.dataFim + "T23:59:59");
+    }
+
+    // OTIMIZAÇÃO: Buscamos apenas o necessário para o agrupamento
+    const todasOS = await prisma.ordensServico.findMany({
+      where,
+      select: {
+        Total: true,
+        DataAbertura: true
       },
       orderBy: { DataAbertura: "desc" },
-      take: 100,
     });
-    return { success: true, data: ordensServico };
+
+    const agrupado: Record<string, { data: string, total: number, qtd: number }> = {};
+    
+    todasOS.forEach(os => {
+      const dataStr = new Date(os.DataAbertura).toISOString().split('T')[0];
+      if (!agrupado[dataStr]) {
+        agrupado[dataStr] = { data: dataStr, total: 0, qtd: 0 };
+      }
+      agrupado[dataStr].total += Number(os.Total || 0);
+      agrupado[dataStr].qtd += 1;
+    });
+
+    const result = Object.values(agrupado).sort((a, b) => b.data.localeCompare(a.data));
+    const total = result.length;
+    const paginado = result.slice((page - 1) * pageSize, page * pageSize);
+
+    return { 
+      success: true, 
+      data: paginado,
+      total,
+      faturamentoTotal: result.reduce((acc, curr) => acc + curr.total, 0)
+    };
   } catch (error) {
     console.error("Erro ao buscar relatório de ordens de serviço:", error);
     return {

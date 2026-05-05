@@ -80,7 +80,7 @@ export function Header({ userName, userEmail }: HeaderProps) {
                   { label: "OS", icon: ClipboardList, color: "bg-blue-100 text-blue-600", href: "/ordens-servico" },
                   { label: "Financeiro", icon: Banknote, color: "bg-emerald-100 text-emerald-600", href: "/financeiro" },
                   { label: "Clientes", icon: Users, color: "bg-indigo-100 text-indigo-600", href: "/cadastros/clientes" },
-                  { label: "Estoque", icon: Box, color: "bg-orange-100 text-orange-600", href: "/estoque" },
+                  { label: "Estoque", icon: Box, color: "bg-orange-100 text-orange-600", href: "/estoque/movimentacoes" },
                   { label: "Config", icon: Settings, color: "bg-gray-100 text-gray-600", href: "/configuracoes/gerais" },
                 ].map((app, i) => (
                   <Link key={i} href={app.href} className="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-gray-50 transition-colors group">
