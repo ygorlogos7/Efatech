@@ -349,6 +349,10 @@ export async function saveVendaConfig(formData: FormData) {
 }
 export async function updateSituacaoVenda(id: number, status: string) {
   try {
+    if (status !== "Concluída" && status !== "Aberta") {
+      return { success: false, error: "Situação inválida." };
+    }
+
     const situacao = await prisma.vendaSituacao.findFirst({
       where: { Nome: status }
     });

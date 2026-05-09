@@ -83,11 +83,6 @@ export function VendaActions({ item, baseUrl, tipo }: VendaActionsProps) {
                 icon: <RefreshCw className="w-3.5 h-3.5 text-amber-500" />,
                 onClick: () => handleUpdateStatus("Aberta")
             },
-            { 
-                label: "Marcar como Cancelada", 
-                icon: <X className="w-3.5 h-3.5 text-red-500" />,
-                onClick: () => handleUpdateStatus("Cancelada")
-            },
         ]
     },
     {
