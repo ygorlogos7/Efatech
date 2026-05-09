@@ -71,7 +71,11 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
   const [selectedVendedor, setSelectedVendedor] = useState<string>(initialData?.Vendedor || "");
   const [selectedFormaPagamentoId, setSelectedFormaPagamentoId] = useState<number | null>(initialData?.FormaPagamentoId || null);
   const [garantia, setGarantia] = useState<string>(initialData?.Garantia || "");
-  const [situacao, setSituacao] = useState<string>(initialData?.Ativo === true ? "Concluída" : "Aberta");
+  const [situacao, setSituacao] = useState<string>(
+    initialData 
+      ? (initialData.Ativo === true ? "Concluída" : "Aberta") 
+      : "Concluída"
+  );
   const [dataVenda, setDataVenda] = useState<string>(
     initialData?.DataVenda
       ? new Date(initialData.DataVenda).toISOString().split("T")[0]
@@ -281,11 +285,11 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
   return (
     <form action={handleSubmit} className="space-y-6 max-w-[95%] mx-auto pb-20 font-sans text-gray-700">
       
-      {/* 1. Status Alert (Top) */}
-      {initialData && initialData.Ativo === false && (
+      {/* 1. Status Alert (Top) - Aparece se a venda estiver Concluída (Ativo: true) */}
+      {initialData && initialData.Ativo === true && (
         <div className="bg-[#fcf8e3] border border-[#faebcc] p-3 rounded text-[#8a6d3b] text-sm flex items-center gap-2 shadow-sm">
           <AlertCircle className="w-4 h-4" />
-          <span>Algumas informações não poderão ser alteradas, pois esta venda encontra-se com a situação <strong>Concluída</strong>.</span>
+          <span>Esta venda encontra-se com a situação <strong>Concluída</strong>. Algumas informações financeiras podem estar protegidas.</span>
         </div>
       )}
 

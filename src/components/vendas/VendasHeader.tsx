@@ -96,7 +96,7 @@ export function VendasHeader({ tipo, title, items }: VendasHeaderProps) {
       TotalServicos: item.TotalServicos.toFixed(2).replace('.', ','),
       Desconto: item.Desconto.toFixed(2).replace('.', ','),
       Total: item.Total.toFixed(2).replace('.', ','),
-      Ativo: item.Ativo ? 'Concluída' : 'Cancelada',
+      Ativo: item.Ativo ? 'Concluída' : 'Aberta',
     }));
     
     downloadCsv(`vendas_${tipo}.csv`, rows, columns);

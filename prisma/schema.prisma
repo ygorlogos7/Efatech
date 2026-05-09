@@ -758,6 +758,7 @@ model Vendas {
   FormaPagamentoId  Int?
   EmpresaId         Int?
   Itens             VendaItens[]
+  Situacao          VendaSituacao? @relation(fields: [SituacaoId], references: [Id])
   Cliente           Clientes?    @relation(fields: [ClienteId], references: [Id])
   FormaPagamento    FormaPagamento? @relation(fields: [FormaPagamentoId], references: [Id])
   Empresa           Empresa?     @relation(fields: [EmpresaId], references: [Id])
@@ -809,6 +810,7 @@ model VendaSituacao {
   Nome  String
   Cor   String?
   Ativo Boolean @default(true)
+  Vendas Vendas[]
 }
 
 model CaixaSessao {

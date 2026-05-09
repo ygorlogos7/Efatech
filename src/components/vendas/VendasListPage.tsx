@@ -20,7 +20,7 @@ interface VendasListPageProps {
 }
 
 export async function VendasListPage({ tipo, title, page = 1, pesquisa = "" }: VendasListPageProps) {
-  const { success, data: items, total = 0 } = await getVendas(tipo, page, 20, pesquisa);
+  const { success, data: items, total = 0, error } = await getVendas(tipo, page, 20, pesquisa);
   const from = total === 0 ? 0 : (page - 1) * 20 + 1;
   const to = total === 0 ? 0 : Math.min(page * 20, total);
 
@@ -44,7 +44,14 @@ export async function VendasListPage({ tipo, title, page = 1, pesquisa = "" }: V
             </tr>
           </thead>
           <tbody>
-            {!success || !items || items.length === 0 ? (
+            {!success ? (
+              <tr>
+                <td colSpan={10} className="text-center py-16 text-red-500">
+                  <h5 className="text-lg font-medium">Erro ao carregar vendas.</h5>
+                  <p className="text-sm">{error || "Erro desconhecido."}</p>
+                </td>
+              </tr>
+            ) : !items || items.length === 0 ? (
               <tr>
                 <td colSpan={tipo === "balcao" ? 7 : 8} className="text-center py-16 text-gray-500">
                   <ShoppingBasket className="w-12 h-12 mx-auto mb-3 opacity-30" />
@@ -61,8 +68,8 @@ export async function VendasListPage({ tipo, title, page = 1, pesquisa = "" }: V
                   <td className="py-3 px-4 text-right text-red-500">- R$ {item.Desconto.toFixed(2).replace(".", ",")}</td>
                   <td className="py-3 px-4 text-right font-bold text-green-700">R$ {item.Total.toFixed(2).replace(".", ",")}</td>
                   <td className="py-3 px-4 text-center">
-                    <span className={`inline-block px-2.5 py-1 text-[11px] font-medium rounded border ${item.Ativo ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-600 border-red-200"}`}>
-                      {item.Ativo ? "Concluída" : "Cancelada"}
+                    <span className={`inline-block px-2.5 py-1 text-[11px] font-medium rounded border ${item.Ativo ? "bg-green-50 text-green-700 border-green-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}>
+                      {item.Ativo ? "Concluída" : "Aberta"}
                     </span>
                   </td>
                   <td className="py-3 px-6 text-right">

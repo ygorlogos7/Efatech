@@ -23,7 +23,7 @@ export function ExportButtons({ items }: { items: any[] }) {
             TotalServicos: item.TotalServicos.toFixed(2).replace('.', ',') + ' R$',
             Desconto: item.Desconto.toFixed(2).replace('.', ','),
             Total: item.Total.toFixed(2).replace('.', ',') + ' R$',
-            Ativo: item.Ativo ? 'Concluída' : 'Cancelada',
+            Ativo: item.Ativo ? 'Concluída' : 'Aberta',
           }));
           downloadCsv('vendas.csv', rows, columns);
         }}
@@ -42,7 +42,7 @@ export function ExportButtons({ items }: { items: any[] }) {
                 `Serviços: R$ ${item.TotalServicos.toFixed(2).replace('.', ',')}`,
                 `Desconto: R$ ${item.Desconto.toFixed(2).replace('.', ',')}`,
                 `Valor: R$ ${item.Total.toFixed(2).replace('.', ',')}`,
-                `Status: ${item.Ativo ? 'Concluída' : 'Cancelada'}`,
+                `Status: ${item.Ativo ? 'Concluída' : 'Aberta'}`,
               ].join('\n');
             })
             .join('\n\n');

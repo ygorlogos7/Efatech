@@ -44,9 +44,9 @@ export async function getVendas(tipo?: string, page: number = 1, pageSize: numbe
     const total = await prisma.vendas.count({ where: whereClause });
     
     return { success: true, data: items.map(toNum), total };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in getVendas:", error);
-    return { success: false, error: "Falha ao buscar vendas." };
+    return { success: false, error: `Falha ao buscar vendas: ${error.message}` };
   }
 }
 
@@ -347,17 +347,26 @@ export async function saveVendaConfig(formData: FormData) {
     return { success: false, error: "Falha ao salvar." };
   }
 }
-export async function updateSituacaoVenda(id: number, ativo: boolean) {
+export async function updateSituacaoVenda(id: number, status: string) {
   try {
-    await prisma.venda.update({
-      where: { Id: id },
-      data: { Ativo: ativo }
+    const situacao = await prisma.vendaSituacao.findFirst({
+      where: { Nome: status }
     });
+
+    await prisma.vendas.update({
+      where: { Id: id },
+      data: { 
+        Ativo: status === "Concluída",
+        SituacaoId: situacao?.Id || null
+      }
+    });
+
     revalidatePath("/vendas/produtos");
     revalidatePath("/vendas/balcao");
     revalidatePath("/vendas/servicos");
     return { success: true };
   } catch (error) {
+    console.error("Erro ao alterar situação:", error);
     return { success: false, error: "Falha ao alterar situação da venda." };
   }
 }

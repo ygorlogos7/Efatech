@@ -16,9 +16,9 @@ interface VendaActionsProps {
 export function VendaActions({ item, baseUrl, tipo }: VendaActionsProps) {
   const [isPending, startTransition] = useTransition();
 
-  const handleUpdateStatus = (ativo: boolean) => {
+  const handleUpdateStatus = (status: string) => {
     startTransition(async () => {
-      const res = await updateSituacaoVenda(item.Id, ativo);
+      const res = await updateSituacaoVenda(item.Id, status);
       if (!res.success) {
         alert(res.error);
       }
@@ -74,14 +74,19 @@ export function VendaActions({ item, baseUrl, tipo }: VendaActionsProps) {
         icon: <CheckSquare className="w-4 h-4" />,
         subItems: [
             { 
-                label: "Marcar como Aberto", 
+                label: "Marcar como Concluída", 
                 icon: <Check className="w-3.5 h-3.5 text-green-500" />,
-                onClick: () => handleUpdateStatus(true)
+                onClick: () => handleUpdateStatus("Concluída")
             },
             { 
-                label: "Marcar como Encerrado", 
+                label: "Marcar como Aberta", 
+                icon: <RefreshCw className="w-3.5 h-3.5 text-amber-500" />,
+                onClick: () => handleUpdateStatus("Aberta")
+            },
+            { 
+                label: "Marcar como Cancelada", 
                 icon: <X className="w-3.5 h-3.5 text-red-500" />,
-                onClick: () => handleUpdateStatus(false)
+                onClick: () => handleUpdateStatus("Cancelada")
             },
         ]
     },
