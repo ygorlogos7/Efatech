@@ -122,3 +122,27 @@ export async function deleteProduto(id: number) {
     return { success: false, error: "Falha ao deletar produto." };
   }
 }
+
+export async function quickCreateProduto(formData: FormData) {
+  try {
+    const nome = formData.get("Nome") as string;
+    const preco = Number(formData.get("Preco") || 0);
+    const estoque = Number(formData.get("EstoqueInitial") || 0);
+    const codigo = formData.get("Codigo") as string || `PROD-${Date.now()}`;
+
+    const res = await prisma.produtos.create({
+      data: {
+        Cod_Nome: nome,
+        Cod_Preco: preco,
+        Cod_Estoque: estoque,
+        Cod_CodigoBarras: codigo,
+        Ativo: true,
+      }
+    });
+
+    return { success: true, data: { ...res, Cod_Preco: Number(res.Cod_Preco) } };
+  } catch (error: any) {
+    console.error("Erro no quickCreateProduto:", error);
+    return { success: false, error: error.message };
+  }
+}

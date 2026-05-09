@@ -90,9 +90,33 @@ export async function getVendaById(id: number) {
 export async function createVenda(tipo: string, formData: FormData) {
   try {
     const total = Number(formData.get("Total") || 0);
-    const clienteId = formData.get("ClienteId") ? Number(formData.get("ClienteId")) : null;
     const itensJson = formData.get("Itens") as string;
     const itens = itensJson ? JSON.parse(itensJson) : [];
+    const dataVendaRaw = formData.get("DataVenda") as string | null;
+    const dataVenda = dataVendaRaw ? new Date(dataVendaRaw) : new Date();
+    let clienteId = formData.get("ClienteId") ? Number(formData.get("ClienteId")) : null;
+
+    const clienteNome = formData.get("ClienteNome") as string;
+    const clienteTelefone = formData.get("ClienteTelefone") as string;
+    const clienteCPF = formData.get("ClienteCPF") as string;
+    const clienteEmail = formData.get("ClienteEmail") as string;
+
+    // Se não tiver ID mas tiver Nome, cria um novo cliente
+    if (!clienteId && clienteNome) {
+      const novoCliente = await prisma.clientes.create({
+        data: {
+          Nome: clienteNome,
+          Telefone: clienteTelefone || null,
+          CPFCNPJ: clienteCPF || null,
+          Email: clienteEmail || null,
+          TipoCliente: "F", // Padrão
+          Ativo: true,
+          VendedorResponsavel: formData.get("Vendedor") as string || "Johnny Andrade Ferreira",
+          PermitirExcederLimite: false
+        }
+      });
+      clienteId = novoCliente.Id;
+    }
 
     // Buscar caixa aberto para vincular
     const caixaAberto = await prisma.caixaSessao.findFirst({
@@ -106,6 +130,7 @@ export async function createVenda(tipo: string, formData: FormData) {
       data: {
         Tipo: tipo,
         ClienteId: clienteId,
+        DataVenda: dataVenda,
         TotalProdutos: Number(formData.get("TotalProdutos") || 0),
         TotalServicos: Number(formData.get("TotalServicos") || 0),
         Desconto: Number(formData.get("Desconto") || 0),
@@ -114,7 +139,9 @@ export async function createVenda(tipo: string, formData: FormData) {
         Vendedor: formData.get("Vendedor") as string | null,
         EmpresaId: formData.get("EmpresaId") ? Number(formData.get("EmpresaId")) : null,
         AssinaturaCliente: formData.get("AssinaturaCliente") as string | null,
-        Ativo: true,
+        Garantia: formData.get("Garantia") as string | null,
+        CanalId: formData.get("CanalId") ? Number(formData.get("CanalId")) : null,
+        Ativo: formData.get("Situacao") === "Concluída", // Concluída = true para aparecer na lista
         CaixaSessaoId: caixaAberto?.Id || null, // Vínculo com o caixa
         FormaPagamentoId: formData.get("FormaPagamentoId") ? Number(formData.get("FormaPagamentoId")) : null,
         Itens: {
@@ -129,13 +156,22 @@ export async function createVenda(tipo: string, formData: FormData) {
 
     console.log(">>> [VENDA] CRIADA COM SUCESSO! ID:", venda.Id);
 
-    // Revalidação em background (opcional)
-    // revalidatePath("/vendas/balcao"); 
-
-    return { success: true, id: venda.Id };
+    return { success: true, id: venda.Id, data: venda };
   } catch (error: any) {
     console.error(">>> [VENDA] ERRO NO SERVIDOR:", error.message);
     return { success: false, error: error.message };
+  }
+}
+
+export async function getProximoNumeroVenda() {
+  try {
+    const ultima = await prisma.vendas.findFirst({
+      orderBy: { Numero: "desc" },
+      select: { Numero: true }
+    });
+    return { success: true, proximo: (ultima?.Numero || 0) + 1 };
+  } catch (error) {
+    return { success: true, proximo: 1 };
   }
 }
 
@@ -155,7 +191,7 @@ export async function updateVenda(id: number, tipo: string, formData: FormData) 
         CanalId: formData.get("CanalId") ? Number(formData.get("CanalId")) : null,
         EmpresaId: formData.get("EmpresaId") ? Number(formData.get("EmpresaId")) : null,
         FormaPagamentoId: formData.get("FormaPagamentoId") ? Number(formData.get("FormaPagamentoId")) : null,
-        Ativo: formData.get("Ativo") !== "false",
+        Ativo: formData.get("Situacao") === "Concluída",
       },
     });
     await logAction("Atualizar Venda", MODULO, `Venda ID: ${id} (${tipo}) atualizada para R$ ${total.toFixed(2)}.`);

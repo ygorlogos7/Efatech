@@ -17,7 +17,8 @@ import {
   Monitor,
   CheckCircle2,
   QrCode,
-  ArrowLeft
+  ArrowLeft,
+  ChevronDown
 } from "lucide-react";
 import Link from "next/link";
 
@@ -42,8 +43,16 @@ export function VendaView({ venda, tipo }: VendaViewProps) {
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-800">Venda de Balcão #{venda.Numero}</h1>
-              <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Concretizada</span>
+              <h1 className="text-2xl font-bold text-gray-800">
+                {tipo === "balcao" ? "Venda de Balcão" : "Venda de Produtos"} #{venda.Numero}
+              </h1>
+              <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                venda.Ativo 
+                ? "bg-green-100 text-green-700 border-green-200" 
+                : "bg-amber-100 text-amber-700 border-amber-200"
+              }`}>
+                {venda.Ativo ? "Concluída" : "Aberta"}
+              </span>
             </div>
             <p className="text-xs text-gray-400 mt-1">
               Finalizada em {new Date(venda.CreatedAt).toLocaleString("pt-BR")} por <span className="font-medium text-gray-600">{venda.Vendedor || "Sistema"}</span>
@@ -53,7 +62,7 @@ export function VendaView({ venda, tipo }: VendaViewProps) {
         
         <div className="flex items-center gap-2">
            <Link 
-              href={`/vendas/balcao`}
+              href={`/vendas/${tipo}`}
               className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 text-sm font-medium rounded-md border border-gray-200 transition-colors"
            >
               <ArrowLeft className="w-4 h-4" /> Voltar
@@ -132,10 +141,6 @@ export function VendaView({ venda, tipo }: VendaViewProps) {
                     <QrCode className="w-20 h-20 text-gray-300" />
                  </div>
                  <p className="text-[10px] font-bold text-gray-400 uppercase mb-4">Nº venda: {venda.Numero}</p>
-                 <div className="grid grid-cols-2 gap-2 w-full">
-                    <button className="bg-gray-100 hover:bg-gray-200 text-gray-600 text-[10px] font-bold py-2 rounded border border-gray-200">IMPRIMIR A4</button>
-                    <button className="bg-gray-100 hover:bg-gray-200 text-gray-600 text-[10px] font-bold py-2 rounded border border-gray-200">TERMICA 80MM</button>
-                 </div>
               </div>
            </div>
 
@@ -225,11 +230,48 @@ export function VendaView({ venda, tipo }: VendaViewProps) {
              </div>
            )}
 
-           {/* Tab Content: Placeholder others */}
-           {activeTab !== "produtos" && (
+           {/* Tab Content: Pagamentos */}
+           {activeTab === "pagamentos" && (
+             <div className="bg-white rounded-b-md shadow-sm border border-gray-200 p-6 animate-in fade-in duration-300">
+               <div className="flex items-center gap-2 mb-6 border-b pb-3">
+                 <DollarSign className="w-5 h-5 text-gray-500" />
+                 <h3 className="font-bold text-gray-700 text-sm uppercase">Pagamentos Realizados</h3>
+               </div>
+
+               <table className="w-full border-collapse text-[11px]">
+                 <thead>
+                   <tr className="bg-[#f5f8fa] text-gray-500 uppercase font-black tracking-widest border font-bold">
+                     <th className="px-3 py-2 border text-left">Forma de Pagamento</th>
+                     <th className="px-3 py-2 border text-center w-32">Data</th>
+                     <th className="px-3 py-2 border text-right w-40">Valor Pago</th>
+                   </tr>
+                 </thead>
+                 <tbody>
+                   <tr className="border hover:bg-gray-50 transition-colors">
+                     <td className="px-3 py-4 border">
+                       <p className="font-bold text-gray-800 uppercase">{venda.FormaPagamento?.Nome || "Não informada"}</p>
+                     </td>
+                     <td className="px-3 py-4 border text-center font-medium">
+                       {new Date(venda.DataVenda).toLocaleDateString("pt-BR")}
+                     </td>
+                     <td className="px-3 py-4 border text-right font-black text-gray-900 text-sm">
+                       R$ {Number(venda.Total).toFixed(2).replace(".", ",")}
+                     </td>
+                   </tr>
+                   <tr className="bg-emerald-50/30">
+                     <td colSpan={2} className="px-3 py-3 border text-right font-bold text-gray-500 uppercase tracking-tighter text-[10px]">Total Recebido:</td>
+                     <td className="px-3 py-3 border text-right font-black text-emerald-600 text-base">
+                       R$ {Number(venda.Total).toFixed(2).replace(".", ",")}
+                     </td>
+                   </tr>
+                 </tbody>
+               </table>
+             </div>
+           )}
+
+           {(activeTab === "historico" || activeTab === "interacoes") && (
              <div className="bg-white rounded-b-md shadow-sm border border-gray-200 p-12 text-center animate-in slide-in-from-top-1 duration-300">
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
-                   {activeTab === "pagamentos" && <DollarSign className="w-8 h-8 text-gray-200" />}
                    {activeTab === "historico" && <History className="w-8 h-8 text-gray-200" />}
                    {activeTab === "interacoes" && <MessageSquare className="w-8 h-8 text-gray-200" />}
                 </div>

@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
+import { logAction } from "@/lib/logger";
 
 // Função auxiliar para converter Decimal do Prisma para Number antes de enviar para o cliente
 function serializeCaixa(caixa: any) {
@@ -87,7 +88,6 @@ export async function abrirCaixa(formData: FormData) {
             Valor: valorAbertura,
             Vencimento: new Date(),
             Recebimento: new Date(),
-            Status: "Recebido",
             Observacoes: `Gerado na abertura do caixa #${novoCaixa.Id}`,
           }
         });
@@ -103,7 +103,19 @@ export async function abrirCaixa(formData: FormData) {
     return { success: true, data: serializeCaixa(result) };
   } catch (error: any) {
     console.error(">>> [CAIXA] ERRO CRÍTICO NA ABERTURA:", error);
-    return { success: false, error: `Falha na operação: ${error.message}` };
+    
+    // Registrar erro no log do sistema de forma silenciosa para o dev ver depois
+    await logAction(
+      "ERRO_ABERTURA_CAIXA",
+      "CAIXA",
+      `Erro técnico ao abrir caixa: ${error.message}`,
+      "ERRO"
+    );
+
+    return { 
+      success: false, 
+      error: "Erro ao processar abertura: Verifique se o Funcionário e a Forma de Pagamento foram selecionados corretamente. A falha foi registrada para suporte técnico." 
+    };
   }
 }
 
@@ -658,5 +670,18 @@ export async function lancarSuprimento(formData: FormData) {
   } catch (error) {
     console.error("Erro ao lançar suprimento:", error);
     return { success: false, error: "Falha técnica ao lançar suprimento." };
+  }
+}
+
+export async function deletarCaixaSessao(id: number) {
+  try {
+    await prisma.caixaSessao.delete({
+      where: { Id: id }
+    });
+    revalidatePath("/financeiro/opcoes/caixas");
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao deletar sessão de caixa:", error);
+    return { success: false, error: "Falha ao deletar. Certifique-se que não existem movimentos vinculados." };
   }
 }

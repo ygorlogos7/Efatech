@@ -50,10 +50,32 @@ export default function AbrirCaixaPage() {
     };
     loadData();
   }, []);
+  
+  const handleValorChange = (val: string) => {
+    // Remove tudo que não é dígito
+    const clean = val.replace(/\D/g, "");
+    if (!clean || clean === "00") {
+        setFormData({ ...formData, valorAbertura: "0,00" });
+        return;
+    }
+    
+    // Converte para centavos e formata
+    const cents = parseInt(clean, 10);
+    const formatted = (cents / 100).toLocaleString("pt-BR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    setFormData({ ...formData, valorAbertura: formatted });
+  };
 
   const handleOpen = () => {
     if (!formData.funcionarioId) {
-        notifyError("Selecione um funcionário.");
+        notifyError("Campo obrigatório: Selecione o Funcionário que está operando o caixa.");
+        return;
+    }
+
+    if (gerarRecebimento && !formData.formaPgtoId) {
+        notifyError("Para gerar o recebimento de abertura, você deve selecionar a 'Forma de pagamento' no bloco de Dados Financeiros.");
         return;
     }
 
@@ -139,8 +161,8 @@ export default function AbrirCaixaPage() {
                     <input 
                       type="text" 
                       value={formData.valorAbertura}
-                      onChange={(e) => setFormData({...formData, valorAbertura: e.target.value})}
-                      className="w-full h-10 border border-gray-300 rounded px-3 text-[13px] text-right bg-[#f9f9f9] outline-none focus:border-blue-400 transition-colors text-gray-500 font-medium"
+                      onChange={(e) => handleValorChange(e.target.value)}
+                      className="w-full h-10 border border-gray-300 rounded px-3 text-[13px] text-right bg-white outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 transition-all text-gray-700 font-bold"
                       placeholder="0,00"
                     />
                 </div>

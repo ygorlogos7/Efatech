@@ -36,7 +36,7 @@ export async function VendasListPage({ tipo, title, page = 1, pesquisa = "" }: V
               <th className="py-3 px-4 w-[80px]">Venda Nº</th>
               <th className="py-3 px-4">Data</th>
               <th className="py-3 px-4 text-right">Produtos</th>
-              {tipo !== "balcao" && <th className="py-3 px-4 text-right">Serviços</th>}
+              <th className="py-3 px-4 text-right">Serviços</th>
               <th className="py-3 px-4 text-right">Desconto</th>
               <th className="py-3 px-4 text-right pr-10">Valor</th>
               <th className="py-3 px-4 text-center">Status</th>
@@ -57,7 +57,7 @@ export async function VendasListPage({ tipo, title, page = 1, pesquisa = "" }: V
                   <td className="py-3 px-4 font-bold text-gray-900">{item.Numero}</td>
                   <td className="py-3 px-4 text-gray-600">{new Date(item.DataVenda).toLocaleDateString("pt-BR")}</td>
                   <td className="py-3 px-4 text-right text-gray-600 font-medium">R$ {item.TotalProdutos.toFixed(2).replace(".", ",")}</td>
-                  {tipo !== "balcao" && <td className="py-3 px-4 text-right text-gray-600">R$ {item.TotalServicos.toFixed(2).replace(".", ",")}</td>}
+                  <td className="py-3 px-4 text-right text-gray-600">R$ {item.TotalServicos.toFixed(2).replace(".", ",")}</td>
                   <td className="py-3 px-4 text-right text-red-500">- R$ {item.Desconto.toFixed(2).replace(".", ",")}</td>
                   <td className="py-3 px-4 text-right font-bold text-green-700">R$ {item.Total.toFixed(2).replace(".", ",")}</td>
                   <td className="py-3 px-4 text-center">

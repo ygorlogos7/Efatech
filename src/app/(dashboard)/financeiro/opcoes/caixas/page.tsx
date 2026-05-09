@@ -17,13 +17,15 @@ import {
   ChevronDown,
   ShoppingBasket,
   FileText,
-  Package
+  Package,
+  Trash2
 } from "lucide-react";
-import { getCaixaSessoes } from "@/actions/caixa";
+import { getCaixaSessoes, deletarCaixaSessao } from "@/actions/caixa";
 import { getFuncionarios } from "@/actions/funcionarios";
 import { CloseCashierModal } from "@/components/vendas/CloseCashierModal";
 import { MovimentacaoCaixaModal } from "@/components/financeiro/MovimentacaoCaixaModal";
 import { ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { ConfirmDeleteModal } from "@/components/common/ConfirmDeleteModal";
 
 export default function CaixasPage() {
   const router = useRouter();
@@ -31,6 +33,7 @@ export default function CaixasPage() {
   const [isPending, startTransition] = useTransition();
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
   const [closeCaixaId, setCloseCaixaId] = useState<number | null>(null);
+  const [deleteCaixaId, setDeleteCaixaId] = useState<number | null>(null);
   const [movimentacao, setMovimentacao] = useState<{ id: number; type: "sangria" | "suprimento" } | null>(null);
   
   // Estados para Busca Avançada
@@ -103,6 +106,27 @@ export default function CaixasPage() {
     }
   };
 
+  const handleDeleteSession = async (id: number) => {
+    setDeleteCaixaId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteCaixaId) return;
+    
+    startTransition(async () => {
+      const resp = await deletarCaixaSessao(deleteCaixaId);
+      if (resp.success) {
+        setDeleteCaixaId(null);
+        loadSessions();
+      } else {
+        alert(resp.error);
+        setDeleteCaixaId(null);
+      }
+    });
+  };
+
+  const hasOpenSession = sessions.some(s => s.Status === "Aberto");
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header & Breadcrumbs Container */}
@@ -127,10 +151,12 @@ export default function CaixasPage() {
         <div className="flex justify-between items-center mb-6">
           <button 
             onClick={() => router.push("/financeiro/caixas/abrir")}
-            className="flex items-center gap-2 bg-[#00a859] hover:bg-green-700 text-white px-4 h-9 rounded text-[13px] font-medium shadow-sm transition-all active:scale-[0.98]"
+            className={`flex items-center gap-2 text-white px-4 h-9 rounded text-[13px] font-medium shadow-sm transition-all active:scale-[0.98] ${
+              hasOpenSession ? "bg-red-600 hover:bg-red-700 animate-pulse" : "bg-[#00a859] hover:bg-green-700"
+            }`}
           >
             <ShoppingBasket className="w-4 h-4" />
-            Abrir caixa
+            {hasOpenSession ? "CAIXA ABERTO" : "Abrir caixa"}
           </button>
           
           <button 
@@ -329,10 +355,20 @@ export default function CaixasPage() {
                                  window.open(`/financeiro/caixas/print/${session.Id}?type=completo`, "_blank");
                                  setActiveDropdownId(null);
                                }}
-                               className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-gray-700 hover:bg-gray-50 text-left"
+                               className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-gray-700 hover:bg-gray-50 text-left border-b border-gray-50"
                              >
                                <CheckCircle2 className="w-4 h-4 text-orange-600" />
                                Resumo Completo (Geral)
+                             </button>
+                             <button
+                               onClick={() => {
+                                 handleDeleteSession(session.Id);
+                                 setActiveDropdownId(null);
+                               }}
+                               className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-red-600 hover:bg-red-50 text-left font-bold"
+                             >
+                               <Trash2 className="w-4 h-4 text-red-600" />
+                               Deletar Abertura
                              </button>
                           </div>
                         )}
@@ -362,6 +398,14 @@ export default function CaixasPage() {
           }}
           sessionId={movimentacao?.id || 0}
           type={movimentacao?.type || "sangria"}
+        />
+
+        <ConfirmDeleteModal
+          isOpen={deleteCaixaId !== null}
+          onClose={() => setDeleteCaixaId(null)}
+          onConfirm={confirmDelete}
+          isPending={isPending}
+          message="Tem certeza que deseja deletar esta abertura de caixa? Esta ação não pode ser desfeita e removerá o vínculo com as vendas deste período."
         />
       </div>
     </div>

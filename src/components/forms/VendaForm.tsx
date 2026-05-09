@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useTransition, useState, useEffect } from "react";
-import { createVenda, updateVenda } from "@/actions/vendas";
+import { createVenda, updateVenda, getProximoNumeroVenda } from "@/actions/vendas";
 import { getClientes, quickCreateCliente } from "@/actions/clientes";
-import { getProdutos } from "@/actions/produtos";
+import { getProdutos, quickCreateProduto } from "@/actions/produtos";
 import { getFuncionarios } from "@/actions/funcionarios";
 import { getVendaCanais } from "@/actions/vendas";
 import { getFormasPagamento } from "@/actions/financeiro";
@@ -14,24 +14,18 @@ import {
   FileText, 
   Check, 
   X, 
-  Search, 
-  Plus, 
   Trash2, 
   User,
   Package,
-  MapPin,
-  Mail,
-  Smartphone,
-  CreditCard,
   UserCheck,
   Calendar,
   AlertCircle,
-  Truck,
   FileSearch,
-  ExternalLink,
   Pencil,
   Building2,
-  PlusCircle
+  PlusCircle,
+  Plus,
+  Search
 } from "lucide-react";
 import Link from "next/link";
 import { useNotification } from "@/hooks/use-notification";
@@ -48,7 +42,9 @@ interface VendaItem {
   Nome: string;
   Quantidade: number;
   Preco: number;
+  Desconto: number;
   ValorTotal: number;
+  Estoque: number;
 }
 
 export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormProps) {
@@ -59,29 +55,39 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
   const [clientes, setClientes] = useState<any[]>([]);
   const [produtos, setProdutos] = useState<any[]>([]);
   const [funcionarios, setFuncionarios] = useState<any[]>([]);
-  const [canais, setCanais] = useState<any[]>([]);
   const [formasPagamento, setFormasPagamento] = useState<any[]>([]);
   const [empresas, setEmpresas] = useState<any[]>([]);
+  const [proximoNumero, setProximoNumero] = useState<number | null>(null);
   
-  const [showQuickClienteModal, setShowQuickClienteModal] = useState(false);
   const [showQuickEmpresaModal, setShowQuickEmpresaModal] = useState(false);
 
   const [selectedClienteId, setSelectedClienteId] = useState<number | null>(initialData?.ClienteId || null);
+  const [searchCli, setSearchCli] = useState(initialData?.Cliente?.Nome || "");
+  const [clienteTelefone, setClienteTelefone] = useState(initialData?.Cliente?.Telefone || "");
+  const [clienteCPF, setClienteCPF] = useState(initialData?.Cliente?.CPFCNPJ || "");
+  const [clienteEmail, setClienteEmail] = useState(initialData?.Cliente?.Email || "");
+
   const [selectedEmpresaId, setSelectedEmpresaId] = useState<number | null>(initialData?.EmpresaId || null);
   const [selectedVendedor, setSelectedVendedor] = useState<string>(initialData?.Vendedor || "");
-  const [selectedCanalId, setSelectedCanalId] = useState<number | null>(initialData?.CanalId || null);
   const [selectedFormaPagamentoId, setSelectedFormaPagamentoId] = useState<number | null>(initialData?.FormaPagamentoId || null);
   const [garantia, setGarantia] = useState<string>(initialData?.Garantia || "");
+  const [situacao, setSituacao] = useState<string>(initialData?.Ativo === true ? "Concluída" : "Aberta");
+  const [dataVenda, setDataVenda] = useState<string>(
+    initialData?.DataVenda
+      ? new Date(initialData.DataVenda).toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0]
+  );
   const [items, setItems] = useState<VendaItem[]>(initialData?.Itens?.map((i: any) => ({
     ProdutoId: i.ProdutoId,
     Nome: i.Produtos?.Cod_Nome || "Produto",
     Quantidade: Number(i.Quantidade),
     Preco: Number(i.Produtos?.Cod_Preco || 0),
-    ValorTotal: Number(i.ValorTotal)
+    Desconto: Number(i.Desconto || 0),
+    ValorTotal: Number(i.ValorTotal),
+    Estoque: Number(i.Produtos?.Cod_Estoque || 0)
   })) || []);
   const [signature, setSignature] = useState<string>(initialData?.AssinaturaCliente || "");
   const [searchProd, setSearchProd] = useState("");
-  const [searchCli, setSearchCli] = useState("");
 
   const isEdit = !!initialData && !isReadOnly;
 
@@ -103,9 +109,6 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
         }
       }
 
-      const canalRes = await getVendaCanais();
-      if (canalRes.success) setCanais(canalRes.data || []);
-
       const formaRes = await getFormasPagamento();
       if (formaRes.success) setFormasPagamento(formaRes.data || []);
 
@@ -116,6 +119,11 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
         if (!initialData?.EmpresaId && emps.length > 0) {
           setSelectedEmpresaId(emps[0].Id);
         }
+      }
+
+      if (!initialData) {
+        const numRes = await getProximoNumeroVenda();
+        if (numRes.success) setProximoNumero(numRes.proximo);
       }
     };
     loadData();
@@ -144,8 +152,10 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
   const addItem = (produto: any) => {
     const existing = items.find(i => i.ProdutoId === produto.Id);
     if (existing) {
+      const newQty = existing.Quantidade + 1;
+      const total = (newQty * existing.Preco) - existing.Desconto;
       setItems(items.map(i => i.ProdutoId === produto.Id 
-        ? { ...i, Quantidade: i.Quantidade + 1, ValorTotal: (i.Quantidade + 1) * i.Preco } 
+        ? { ...i, Quantidade: newQty, ValorTotal: total } 
         : i));
     } else {
       setItems([...items, {
@@ -153,7 +163,9 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
         Nome: produto.Cod_Nome,
         Quantidade: 1,
         Preco: Number(produto.Cod_Preco),
-        ValorTotal: Number(produto.Cod_Preco)
+        Desconto: 0,
+        ValorTotal: Number(produto.Cod_Preco),
+        Estoque: Number(produto.Cod_Estoque || 0)
       }]);
     }
     setSearchProd("");
@@ -164,10 +176,36 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
   };
 
   const updateQty = (id: number, qty: number) => {
-    if (qty < 1) return;
-    setItems(items.map(i => i.ProdutoId === id 
-      ? { ...i, Quantidade: qty, ValorTotal: qty * i.Preco } 
-      : i));
+    if (qty < 0) return;
+    setItems(items.map(i => {
+      if (i.ProdutoId === id) {
+        const total = (qty * i.Preco) - i.Desconto;
+        return { ...i, Quantidade: qty, ValorTotal: total };
+      }
+      return i;
+    }));
+  };
+
+  const updatePrice = (id: number, price: number) => {
+    if (price < 0) return;
+    setItems(items.map(i => {
+      if (i.ProdutoId === id) {
+        const total = (i.Quantidade * price) - i.Desconto;
+        return { ...i, Preco: price, ValorTotal: total };
+      }
+      return i;
+    }));
+  };
+
+  const updateDiscount = (id: number, discount: number) => {
+    if (discount < 0) return;
+    setItems(items.map(i => {
+      if (i.ProdutoId === id) {
+        const total = (i.Quantidade * i.Preco) - discount;
+        return { ...i, Desconto: discount, ValorTotal: total };
+      }
+      return i;
+    }));
   };
 
   const totalProdutos = items.reduce((acc, i) => acc + i.ValorTotal, 0);
@@ -191,15 +229,21 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
     formData.append("Itens", JSON.stringify(items));
     formData.append("AssinaturaCliente", signature);
     formData.append("ClienteId", selectedClienteId ? String(selectedClienteId) : "");
+    formData.append("ClienteNome", searchCli);
+    formData.append("ClienteTelefone", clienteTelefone);
+    formData.append("ClienteCPF", clienteCPF);
+    formData.append("ClienteEmail", clienteEmail);
+
     if (selectedFormaPagamentoId) formData.append("FormaPagamentoId", String(selectedFormaPagamentoId));
     formData.append("TotalProdutos", totalProdutos.toString());
     formData.append("TotalServicos", "0");
     formData.append("Total", totalGeral.toString());
     formData.append("Desconto", desconto.toString());
     formData.append("Vendedor", selectedVendedor);
-    formData.append("CanalId", selectedCanalId ? String(selectedCanalId) : "");
     formData.append("EmpresaId", selectedEmpresaId ? String(selectedEmpresaId) : "");
     formData.append("Garantia", garantia);
+    formData.append("Situacao", situacao);
+    formData.append("DataVenda", dataVenda);
 
     startTransition(async () => {
       let r;
@@ -212,27 +256,12 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
       if (r?.success && (r as any).data) {
         success(isEdit ? "Venda atualizada com sucesso!" : "Venda registrada com sucesso!");
         if (!isEdit) {
-          window.location.href = `/vendas/${tipo}/print/${(r as any).data.Id}`;
+          window.location.href = `/vendas/${tipo}`;
         }
       } else {
         error((r as any)?.error || "Erro ao salvar venda.");
       }
     });
-  };
-
-  const handleQuickCreateCliente = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const res = await quickCreateCliente(formData);
-    if (res.success && res.data) {
-      setClientes([...clientes, res.data]);
-      setSelectedClienteId(res.data.Id);
-      setSearchCli(res.data.Nome);
-      setShowQuickClienteModal(false);
-      success("Cliente cadastrado com sucesso!");
-    } else {
-      error(res.error || "Erro ao cadastrar cliente.");
-    }
   };
 
   const handleQuickCreateEmpresa = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -253,29 +282,54 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
     <form action={handleSubmit} className="space-y-6 max-w-[95%] mx-auto pb-20 font-sans text-gray-700">
       
       {/* 1. Status Alert (Top) */}
-      {initialData?.Ativo && (
+      {initialData && initialData.Ativo === false && (
         <div className="bg-[#fcf8e3] border border-[#faebcc] p-3 rounded text-[#8a6d3b] text-sm flex items-center gap-2 shadow-sm">
           <AlertCircle className="w-4 h-4" />
-          <span>Algumas informações não poderão ser alteradas, pois esta venda encontra-se com a situação <strong>Concretizada</strong>.</span>
+          <span>Algumas informações não poderão ser alteradas, pois esta venda encontra-se com a situação <strong>Concluída</strong>.</span>
         </div>
       )}
 
       {/* 2. Card: Dados Gerais */}
-      <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-[#fcfcfc] px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+      <div className="bg-white rounded-md shadow-sm border border-gray-200">
+        <div className="bg-[#fcfcfc] px-4 py-3 border-b border-gray-100 flex items-center gap-2 rounded-t-md">
           <Pencil className="w-4 h-4 text-gray-500" />
           <h3 className="font-bold text-gray-700 text-sm uppercase tracking-tight">Dados gerais</h3>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-5">
             <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500">Empresa / Filial *</label>
+              <label className="font-semibold text-gray-500">Número</label>
+              <div className="flex bg-gray-50 border border-gray-200 rounded overflow-hidden">
+                <input
+                  readOnly
+                  value={initialData?.Numero ? `#${initialData.Numero}` : (proximoNumero ? `#${proximoNumero}` : "Gerando...")}
+                  className="w-full bg-transparent p-2 outline-none font-bold text-emerald-600"
+                />
+                <div className="bg-white border-l border-gray-200 p-2"><FileSearch className="w-3 h-3 text-gray-400" /></div>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-500">Data *</label>
+              <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-emerald-400">
+                <input
+                  type="date"
+                  value={dataVenda}
+                  onChange={(e) => setDataVenda(e.target.value)}
+                  className="w-full p-2 outline-none bg-white font-bold"
+                  required
+                />
+                <div className="bg-white border-l border-gray-200 p-2"><Calendar className="w-3 h-3 text-gray-400" /></div>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-500">Empresa</label>
               <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm">
                 <select 
                   className="w-full p-2 outline-none bg-white font-bold"
                   value={selectedEmpresaId || ""}
                   onChange={(e) => setSelectedEmpresaId(Number(e.target.value))}
-                  required
                 >
                   <option value="">Selecione...</option>
                   {empresas.map(emp => (
@@ -287,33 +341,86 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
             </div>
 
             <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500 font-bold text-red-500">Data *</label>
-              <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm">
-                 <input type="text" readOnly value={new Date(initialData?.DataVenda || Date.now()).toLocaleDateString("pt-BR")} className="w-full p-2 outline-none" />
-                 <div className="bg-white border-l border-gray-200 p-2"><Calendar className="w-3 h-3 text-gray-400" /></div>
-              </div>
+              <label className="font-semibold text-gray-500">Situação</label>
+              <select
+                className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm transition-all focus:ring-1 focus:ring-emerald-400 font-bold"
+                value={situacao}
+                onChange={(e) => setSituacao(e.target.value)}
+              >
+                <option value="Aberta">Aberta</option>
+                <option value="Concluída">Concluída</option>
+              </select>
             </div>
 
-            <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500">Cliente *</label>
+            <div className="space-y-1.5 text-xs col-span-2 relative">
+              <label className="font-semibold text-gray-500">Nome do Cliente *</label>
               <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-emerald-400 transition-all">
                 <input 
                   type="text" 
-                  placeholder="Pesquisar cliente..." 
+                  placeholder="Pesquisar ou cadastrar novo cliente..." 
                   className="w-full p-2 outline-none bg-white font-bold"
-                  value={searchCli || selectedCliente?.Nome || ""}
-                  onChange={(e) => setSearchCli(e.target.value)}
+                  value={searchCli}
+                  onChange={(e) => {
+                    setSearchCli(e.target.value);
+                    if (e.target.value === "") {
+                      setSelectedClienteId(null);
+                      setClienteTelefone("");
+                      setClienteCPF("");
+                      setClienteEmail("");
+                    }
+                  }}
                 />
-                <button type="button" onClick={() => setShowQuickClienteModal(true)} className="bg-emerald-50 border-l border-gray-200 p-2 hover:bg-emerald-100 transition-colors" title="Novo Cliente"><PlusCircle className="w-3.5 h-3.5 text-emerald-600" /></button>
-                <button type="button" onClick={() => { setSelectedClienteId(null); setSearchCli(""); }} className="bg-white border-l border-gray-200 p-2 hover:bg-gray-50"><Trash2 className="w-3 h-3 text-gray-400" /></button>
-                {searchCli && !selectedClienteId && (
-                   <div className="absolute z-50 mt-10 bg-white border border-gray-200 shadow-xl rounded w-[300px] max-h-60 overflow-y-auto">
-                      {clientes.filter(c => c.Nome.toLowerCase().includes(searchCli.toLowerCase())).map(c => (
-                        <div key={c.Id} onClick={() => { setSelectedClienteId(c.Id); setSearchCli(c.Nome); }} className="p-2 hover:bg-emerald-50 cursor-pointer border-b text-sm font-bold">{c.Nome}</div>
-                      ))}
-                   </div>
-                )}
+                <button type="button" onClick={() => { setSelectedClienteId(null); setSearchCli(""); setClienteTelefone(""); setClienteCPF(""); setClienteEmail(""); }} className="bg-white border-l border-gray-200 p-2 hover:bg-gray-50"><Trash2 className="w-3 h-3 text-gray-400" /></button>
               </div>
+              {searchCli && !selectedClienteId && (
+                <div className="absolute z-[100] top-full left-0 right-0 bg-white border border-gray-300 shadow-2xl rounded-md mt-1 max-h-60 overflow-y-auto ring-1 ring-black/5">
+                  {clientes.filter(c => c.Nome.toLowerCase().includes(searchCli.toLowerCase())).map(c => (
+                    <div key={c.Id} onClick={() => { 
+                      setSelectedClienteId(c.Id); 
+                      setSearchCli(c.Nome);
+                      setClienteTelefone(c.Telefone || "");
+                      setClienteCPF(c.CPFCNPJ || "");
+                      setClienteEmail(c.Email || "");
+                    }} className="p-3 hover:bg-emerald-50 cursor-pointer border-b last:border-0 text-sm font-bold flex flex-col">
+                       <span>{c.Nome}</span>
+                       {c.CPFCNPJ && <span className="text-[10px] text-gray-400 font-normal">{c.CPFCNPJ}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-500">Telefone</label>
+              <input 
+                type="text" 
+                placeholder="(00) 00000-0000"
+                className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm font-bold focus:ring-1 focus:ring-emerald-400"
+                value={clienteTelefone}
+                onChange={(e) => setClienteTelefone(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-500">CPF / CNPJ</label>
+              <input 
+                type="text" 
+                placeholder="000.000.000-00"
+                className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm font-bold focus:ring-1 focus:ring-emerald-400"
+                value={clienteCPF}
+                onChange={(e) => setClienteCPF(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5 text-xs col-span-2">
+              <label className="font-semibold text-gray-500">E-mail</label>
+              <input 
+                type="email" 
+                placeholder="cliente@email.com"
+                className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm font-bold focus:ring-1 focus:ring-emerald-400"
+                value={clienteEmail}
+                onChange={(e) => setClienteEmail(e.target.value)}
+              />
             </div>
 
             <div className="space-y-1.5 text-xs">
@@ -331,48 +438,13 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
                 <div className="bg-white border-l border-gray-200 p-2"><User className="w-3 h-3 text-gray-400" /></div>
               </div>
             </div>
-
-            <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500">Situação *</label>
-              <select className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm transition-all focus:ring-1 focus:ring-emerald-400 font-bold">
-                <option value="Aberta">Aberta</option>
-                <option value="Concretizada">Concretizada</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500 font-bold text-red-500">Canal de venda *</label>
-              <select 
-                className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm font-bold"
-                value={selectedCanalId || ""}
-                onChange={(e) => setSelectedCanalId(Number(e.target.value))}
-              >
-                <option value="">Selecione...</option>
-                {canais.map(c => (
-                   <option key={c.Id} value={c.Id}>{c.Nome}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500">Número</label>
-              <div className="flex bg-gray-50 border border-gray-200 rounded overflow-hidden">
-                <input readOnly value={initialData?.Numero || "NOVA"} className="w-full bg-transparent p-2 outline-none font-bold text-gray-500" />
-                <div className="bg-white border-l border-gray-200 p-2"><FileSearch className="w-3 h-3 text-gray-400" /></div>
-              </div>
-            </div>
-            
-            <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500">Centro de custo</label>
-              <input readOnly placeholder="Digite para buscar" className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm placeholder:text-gray-400" />
-            </div>
           </div>
         </div>
       </div>
 
       {/* 3. Card: Produtos */}
-      <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-[#fcfcfc] px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+      <div className="bg-white rounded-md shadow-sm border border-gray-200 relative z-20">
+        <div className="bg-[#fcfcfc] px-4 py-3 border-b border-gray-100 flex items-center gap-2 rounded-t-md">
           <Package className="w-4 h-4 text-gray-500" />
           <h3 className="font-bold text-gray-700 text-sm uppercase tracking-tight">Produtos</h3>
         </div>
@@ -381,7 +453,7 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
               <thead>
                 <tr className="border bg-gray-50 text-gray-500 uppercase font-black tracking-widest leading-loose">
                   <th className="px-3 border text-left font-bold py-1">Produto *</th>
-                  <th className="px-3 border text-left font-bold py-1">Detalhes</th>
+                  <th className="px-3 border text-center font-bold py-1 w-20">Estoque</th>
                   <th className="px-3 border text-center font-bold py-1 w-20 text-red-500">Quant.*</th>
                   <th className="px-3 border text-center font-bold py-1 w-24 text-red-500">Valor*</th>
                   <th className="px-3 border text-center font-bold py-1 w-32">Desconto</th>
@@ -393,86 +465,163 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
                 {items.map((item) => (
                   <tr key={item.ProdutoId} className="border text-xs">
                     <td className="p-2 border">
-                      <div className="flex bg-gray-50 rounded border px-2 py-1 items-center justify-between">
-                         <span className="uppercase text-[10px] font-bold text-gray-400">{item.Nome}</span>
-                         <Trash2 className="w-3 h-3 text-gray-400" />
-                      </div>
+                       <span className="uppercase text-[11px] font-black text-gray-700">{item.Nome}</span>
                     </td>
-                    <td className="p-2 border"><input className="w-full bg-gray-50 border rounded p-1 outline-none h-8" /></td>
+                    <td className="p-2 border text-center font-bold text-emerald-600 bg-emerald-50/30">{item.Estoque}</td>
                     <td className="p-2 border">
                       <input 
                         type="number" 
-                        value={item.Quantidade} 
-                        onChange={(e) => updateQty(item.ProdutoId, Number(e.target.value))}
-                        className="w-full bg-gray-50 border rounded p-1 text-center font-bold h-8" 
+                        value={item.Quantidade === 0 ? "" : item.Quantidade} 
+                        onChange={(e) => updateQty(item.ProdutoId, e.target.value === "" ? 0 : Number(e.target.value))}
+                        onFocus={(e) => e.target.select()}
+                        className="w-full border-2 border-gray-100 rounded p-1 text-center font-bold h-8 focus:border-emerald-500 outline-none transition-all" 
                       />
                     </td>
-                    <td className="p-2 border"><input readOnly value={item.Preco.toFixed(2)} className="w-full bg-gray-100 border rounded p-1 text-right h-8" /></td>
                     <td className="p-2 border">
-                      <div className="flex bg-gray-50 border rounded p-1 items-center h-8">
-                        <input className="w-full bg-transparent outline-none text-right px-1" value="0,00" readOnly />
+                      <input 
+                        type="number" 
+                        step="0.01"
+                        value={item.Preco === 0 ? "" : item.Preco} 
+                        onChange={(e) => updatePrice(item.ProdutoId, e.target.value === "" ? 0 : Number(e.target.value))}
+                        onFocus={(e) => e.target.select()}
+                        className="w-full border-2 border-gray-100 rounded p-1 text-right font-bold h-8 focus:border-emerald-500 outline-none transition-all" 
+                      />
+                    </td>
+                    <td className="p-2 border">
+                      <div className="flex border-2 border-gray-100 rounded p-1 items-center h-8 focus-within:border-emerald-500 transition-all bg-white">
+                        <input 
+                          type="number"
+                          step="0.01"
+                          className="w-full bg-transparent outline-none text-right px-1 font-bold" 
+                          value={item.Desconto === 0 ? "" : item.Desconto} 
+                          onChange={(e) => updateDiscount(item.ProdutoId, e.target.value === "" ? 0 : Number(e.target.value))}
+                          onFocus={(e) => e.target.select()}
+                        />
                         <span className="text-[9px] text-gray-400 ml-1">R$</span>
                       </div>
                     </td>
-                    <td className="p-2 border text-right font-bold bg-gray-50 text-gray-500 pr-3">{item.ValorTotal.toFixed(2).replace(".", ",")}</td>
+                    <td className="p-2 border text-right font-black bg-gray-50 text-gray-800 pr-3 text-[13px]">R$ {item.ValorTotal.toFixed(2).replace(".", ",")}</td>
                     <td className="p-2 border text-center">
-                      <button type="button" onClick={() => removeItem(item.ProdutoId)} className="bg-red-400 text-white p-1 rounded hover:bg-red-500 transition-colors">
-                        <X className="w-3.5 h-3.5" />
+                      <button type="button" onClick={() => removeItem(item.ProdutoId)} className="bg-red-400 text-white p-1.5 rounded-md hover:bg-red-500 transition-colors shadow-sm">
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
            </table>
-           <div className="relative w-fit">
-              <input 
-                type="text" 
-                placeholder="➕ Adicionar produto" 
-                className="bg-[#607d8b] hover:bg-[#455a64] text-white text-[11px] font-bold px-4 py-2 rounded-md transition-all outline-none cursor-pointer placeholder:text-white"
-                value={searchProd}
-                onChange={(e) => setSearchProd(e.target.value)}
-              />
-              {searchProd && (
-                <div className="absolute z-50 bg-white border border-gray-200 shadow-xl rounded mt-1 w-[300px] max-h-60 overflow-y-auto">
-                    {produtos.filter(p => p.Cod_Nome.toLowerCase().includes(searchProd.toLowerCase())).map(p => (
-                      <div key={p.Id} onClick={() => addItem(p)} className="p-2 hover:bg-emerald-50 cursor-pointer border-b text-sm font-bold">{p.Cod_Nome}</div>
-                    ))}
-                </div>
-              )}
+
+           <div className="bg-emerald-50/50 border-2 border-emerald-100/50 rounded-lg p-4 mb-4">
+              <div className="flex items-end gap-3">
+                  <div className="flex-1 space-y-1">
+                    <label className="text-[10px] font-black text-emerald-700 uppercase flex items-center gap-1">
+                      <Search className="w-3 h-3" /> Pesquisar Produto
+                    </label>
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        placeholder="Nome ou código do produto..." 
+                        className="w-full bg-white border border-emerald-200 rounded-lg px-4 py-2.5 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                        value={searchProd}
+                        onChange={(e) => setSearchProd(e.target.value)}
+                      />
+                      {searchProd && (
+                        <div className="absolute z-50 bg-white border border-gray-200 shadow-2xl rounded-lg mt-1 w-full min-w-[450px] max-h-72 overflow-y-auto ring-1 ring-black/5 animate-in slide-in-from-top-2 duration-200">
+                            {produtos.filter(p => 
+                              p.Cod_Nome.toLowerCase().includes(searchProd.toLowerCase()) || 
+                              (p.Cod_CodigoBarras && p.Cod_CodigoBarras.toLowerCase().includes(searchProd.toLowerCase())) ||
+                              p.Id.toString().includes(searchProd)
+                            ).map(p => (
+                              <div key={p.Id} onClick={() => addItem(p)} className="p-3 hover:bg-emerald-50 cursor-pointer border-b last:border-0 text-sm font-bold flex justify-between items-center group transition-colors">
+                                 <div className="flex items-center gap-3">
+                                   <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center text-gray-400 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors">
+                                     <Package className="w-4 h-4" />
+                                   </div>
+                                   <div className="flex flex-col">
+                                     <span className="group-hover:text-emerald-700 transition-colors uppercase text-[12px]">{p.Cod_Nome}</span>
+                                     <span className="text-[10px] text-gray-400 font-normal">SKU: {p.Cod_CodigoBarras || p.Id}</span>
+                                   </div>
+                                 </div>
+                                 <div className="flex items-center gap-4">
+                                   <div className="text-right border-r pr-4 border-gray-100">
+                                     <div className="text-[10px] text-gray-400 uppercase font-black">Preço</div>
+                                     <div className="text-emerald-600 font-black text-sm">R$ {p.Cod_Preco.toFixed(2)}</div>
+                                   </div>
+                                   <div className="text-right min-w-[70px]">
+                                     <div className="text-[10px] text-gray-400 uppercase font-black">Estoque</div>
+                                     <div className={`text-sm font-black ${p.Cod_Estoque > 0 ? "text-blue-600" : "text-red-500"}`}>{p.Cod_Estoque} <span className="text-[9px] font-normal text-gray-400">un</span></div>
+                                   </div>
+                                 </div>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="h-12 border-l border-emerald-200 mx-4 hidden lg:block self-end"></div>
+
+                  <div className="flex items-end gap-2 flex-wrap md:flex-nowrap pb-0.5">
+                     <div className="space-y-1">
+                       <label className="text-[10px] font-black text-gray-500 uppercase flex items-center gap-1">
+                         <PlusCircle className="w-3 h-3" /> Novo Produto
+                       </label>
+                       <input id="newProdNome" className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold w-48 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition-all" placeholder="Nome do item..." />
+                     </div>
+                     <div className="space-y-1 w-24">
+                       <label className="text-[10px] font-black text-gray-500 uppercase">Preço (R$)</label>
+                       <input id="newProdPreco" type="number" step="0.01" onFocus={(e) => e.target.select()} className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold w-full outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition-all text-right" placeholder="0.00" />
+                     </div>
+                     <div className="space-y-1 w-20">
+                       <label className="text-[10px] font-black text-gray-500 uppercase">Estoque</label>
+                       <input id="newProdEstoque" type="number" onFocus={(e) => e.target.select()} className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold w-full outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition-all text-center" placeholder="0" />
+                     </div>
+                     <button 
+                        type="button" 
+                        onClick={async () => {
+                          const nomeInput = document.getElementById("newProdNome") as HTMLInputElement;
+                          const precoInput = document.getElementById("newProdPreco") as HTMLInputElement;
+                          const estoqueInput = document.getElementById("newProdEstoque") as HTMLInputElement;
+                          
+                          const nome = nomeInput.value;
+                          const preco = precoInput.value;
+                          const estoque = estoqueInput.value;
+                          
+                          if (!nome) { error("Nome do produto é obrigatório."); return; }
+                          
+                          const formData = new FormData();
+                          formData.append("Nome", nome);
+                          formData.append("Preco", preco);
+                          formData.append("EstoqueInitial", estoque);
+                          
+                          const res = await quickCreateProduto(formData);
+                          if (res.success && res.data) {
+                            setProdutos([...produtos, res.data]);
+                            addItem(res.data);
+                            nomeInput.value = "";
+                            precoInput.value = "";
+                            estoqueInput.value = "";
+                            success("Produto cadastrado e adicionado!");
+                          } else {
+                            error(res.error || "Erro ao cadastrar produto.");
+                          }
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white p-2.5 rounded-lg transition-all shadow-md active:scale-95 flex items-center justify-center" 
+                        title="Cadastrar e Adicionar"
+                     >
+                       <Plus className="w-5 h-5" />
+                     </button>
+                  </div>
+              </div>
            </div>
         </div>
       </div>
 
-      {/* 4. Card: Serviços (Vazio similar à imagem) */}
-      <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-[#fcfcfc] px-4 py-3 border-b border-gray-100 flex items-center gap-2">
-          <Truck className="w-4 h-4 text-gray-500" />
-          <h3 className="font-bold text-gray-700 text-sm uppercase tracking-tight">Serviços</h3>
-        </div>
-        <div className="p-4">
-           <table className="w-full border-collapse text-[11px] text-gray-600 mb-4 opacity-50">
-              <thead>
-                <tr className="border bg-gray-50 text-gray-500 uppercase font-black tracking-widest whitespace-nowrap">
-                   <th className="px-3 border text-left font-bold py-1">Serviço *</th>
-                   <th className="px-3 border text-left font-bold py-1">Detalhes</th>
-                   <th className="px-3 border text-center font-bold py-1 w-20">Quant.*</th>
-                   <th className="px-3 border text-center font-bold py-1 w-24">Valor*</th>
-                   <th className="px-3 border text-center font-bold py-1 w-32">Desconto</th>
-                   <th className="px-3 border text-center font-bold py-1 w-32">Subtotal</th>
-                   <th className="px-3 border text-center font-bold py-1 w-12">Ação</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td colSpan={7} className="text-center py-2 italic bg-gray-100/30">Nenhum serviço adicionado</td></tr>
-              </tbody>
-           </table>
-           <button type="button" className="bg-[#607d8b] text-white text-[11px] font-bold px-4 py-2 rounded-md opacity-70">➕ Adicionar serviço</button>
-        </div>
-      </div>
+
 
       {/* 5. Card: Garantia */}
-      <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-[#fcfcfc] px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+      <div className="bg-white rounded-md shadow-sm border border-gray-200">
+        <div className="bg-[#fcfcfc] px-4 py-3 border-b border-gray-100 flex items-center gap-2 rounded-t-md">
           <Calendar className="w-4 h-4 text-gray-500" />
           <h3 className="font-bold text-gray-700 text-sm uppercase tracking-tight">Termos de Garantia</h3>
         </div>
@@ -534,40 +683,39 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
              </select>
            </div>
 
-           <div className="grid grid-cols-5 gap-1 text-[11px] text-center border bg-gray-100 border-gray-200 uppercase font-black tracking-tighter text-gray-500">
-             <div className="py-1 border-r border-gray-200">Produtos</div>
-             <div className="py-1 border-r border-gray-200">Serviços</div>
-             <div className="py-1 border-r border-gray-200 text-red-500">Desc R$</div>
-             <div className="py-1 border-r border-gray-200">Desc %</div>
-             <div className="py-1">Valor Total *</div>
-           </div>
-           <div className="grid grid-cols-5 gap-1 mb-2">
-             <input readOnly value={totalProdutos.toFixed(2)} className="bg-gray-50 border rounded p-2 text-right text-xs" />
-             <input readOnly value="0,00" className="bg-gray-100 border rounded p-2 text-right text-xs" />
-             <input 
-              type="number" 
-              value={desconto} 
-              onChange={(e) => setDesconto(Number(e.target.value))}
-              className="bg-white border-2 border-orange-200 rounded p-2 text-right text-xs font-bold" 
-             />
-             <input readOnly value="0,00" className="bg-gray-100 border rounded p-2 text-right text-xs" />
-             <input readOnly value={totalGeral.toFixed(2)} className="bg-gray-200 border border-gray-400 rounded p-2 text-right text-sm font-black text-gray-900" />
-           </div>
+            <div className="grid grid-cols-2 gap-2 text-[11px] text-center border bg-gray-100 border-gray-200 uppercase font-black tracking-tighter text-gray-500">
+              <div className="py-1 border-r border-gray-200 text-red-500">Desconto Geral (R$)</div>
+              <div className="py-1">Valor Total Final *</div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <div className="relative">
+                <input 
+                  type="number" 
+                  value={desconto === 0 ? "" : desconto} 
+                  onChange={(e) => setDesconto(e.target.value === "" ? 0 : Number(e.target.value))}
+                  onFocus={(e) => e.target.select()}
+                  className="w-full bg-white border-2 border-orange-200 rounded p-2 text-right text-sm font-bold focus:border-orange-400 outline-none transition-all shadow-inner" 
+                />
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-orange-400 font-black">R$</span>
+              </div>
+              <div className="relative">
+                <input 
+                  readOnly 
+                  value={totalGeral.toFixed(2).replace(".", ",")} 
+                  className="w-full bg-gray-100 border-2 border-gray-300 rounded p-2 text-right text-base font-black text-gray-900 shadow-sm" 
+                />
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-black">R$</span>
+              </div>
+            </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-4">
-             <h3 className="font-bold text-gray-700 text-xs uppercase mb-2 flex items-center gap-1"><FileText className="w-3 h-3" /> Observações</h3>
-             <textarea 
-              name="Observacoes"
-              defaultValue={initialData?.Observacoes || ""}
-              className="w-full border border-gray-300 rounded p-2 text-xs outline-none focus:ring-1 focus:ring-blue-400 h-24" 
-             />
-           </div>
-           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-4">
-             <h3 className="font-bold text-gray-700 text-xs uppercase mb-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Observações Internas</h3>
-             <textarea className="w-full border border-gray-300 rounded p-2 text-xs outline-none h-24 bg-gray-50" />
-           </div>
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-4">
+          <h3 className="font-bold text-gray-700 text-xs uppercase mb-2 flex items-center gap-1"><FileText className="w-3 h-3" /> Observações</h3>
+          <textarea 
+            name="Observacoes"
+            defaultValue={initialData?.Observacoes || ""}
+            className="w-full border border-gray-300 rounded p-2 text-xs outline-none focus:ring-1 focus:ring-blue-400 h-24" 
+          />
         </div>
       </div>
 
@@ -588,41 +736,7 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
         </Link>
       </div>
 
-      {/* MODAL CADASTRO RÁPIDO: CLIENTE */}
-      {showQuickClienteModal && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100 animate-in zoom-in-95 duration-200">
-            <div className="bg-emerald-600 p-4 text-white flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <UserCheck className="w-5 h-5" />
-                <h3 className="font-black uppercase tracking-tighter">Cadastro Rápido: Cliente</h3>
-              </div>
-              <button onClick={() => setShowQuickClienteModal(false)}><X className="w-5 h-5" /></button>
-            </div>
-            <form onSubmit={handleQuickCreateCliente} className="p-6 space-y-4">
-               <div>
-                 <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Nome / Razão Social *</label>
-                 <input name="Nome" required className="w-full border-2 border-gray-100 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-all font-bold" placeholder="Digite o nome completo..." />
-               </div>
-               <div className="grid grid-cols-2 gap-4">
-                 <div>
-                   <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">CPF / CNPJ</label>
-                   <input name="CPFCNPJ" className="w-full border-2 border-gray-100 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-all font-bold" placeholder="000.000.000-00" />
-                 </div>
-                 <div>
-                   <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Telefone</label>
-                   <input name="Telefone" className="w-full border-2 border-gray-100 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-all font-bold" placeholder="(00) 0000-0000" />
-                 </div>
-               </div>
-               <div>
-                 <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">E-mail</label>
-                 <input name="Email" type="email" className="w-full border-2 border-gray-100 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-all font-bold" placeholder="exemplo@email.com" />
-               </div>
-               <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-black uppercase tracking-widest shadow-lg transition-all active:scale-95">Salvar e Selecionar</button>
-            </form>
-          </div>
-        </div>
-      )}
+
 
       {/* MODAL CADASTRO RÁPIDO: EMPRESA */}
       {showQuickEmpresaModal && (
