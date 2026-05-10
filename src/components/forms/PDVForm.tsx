@@ -135,6 +135,7 @@ export function PDVForm({ tipo, onClose }: PDVFormProps) {
       formData.append("Desconto", "0");
       formData.append("Vendedor", "Balcão");
       formData.append("FormaPagamentoId", selectedFormaPagamentoId.toString());
+      formData.append("Situacao", "Concluída");
 
       if (clientePadrao) {
         formData.append("ClienteId", clientePadrao.Id.toString());

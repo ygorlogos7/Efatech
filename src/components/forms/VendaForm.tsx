@@ -351,8 +351,8 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
                 value={situacao}
                 onChange={(e) => setSituacao(e.target.value)}
               >
-                <option value="Aberta">Aberta</option>
                 <option value="Concluída">Concluída</option>
+                <option value="Aberta">Aberta</option>
               </select>
             </div>
 

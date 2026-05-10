@@ -141,7 +141,7 @@ export async function createVenda(tipo: string, formData: FormData) {
         AssinaturaCliente: formData.get("AssinaturaCliente") as string | null,
         Garantia: formData.get("Garantia") as string | null,
         CanalId: formData.get("CanalId") ? Number(formData.get("CanalId")) : null,
-        Ativo: formData.get("Situacao") === "Concluída", // Concluída = true para aparecer na lista
+        Ativo: formData.get("Situacao") ? formData.get("Situacao") === "Concluída" : true,
         CaixaSessaoId: caixaAberto?.Id || null, // Vínculo com o caixa
         FormaPagamentoId: formData.get("FormaPagamentoId") ? Number(formData.get("FormaPagamentoId")) : null,
         Itens: {
