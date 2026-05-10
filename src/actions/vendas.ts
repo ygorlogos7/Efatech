@@ -60,6 +60,7 @@ export async function getVendaById(id: number) {
             Endereco: true
           }
         },
+        Empresa: true,
         Itens: {
           include: {
             Produtos: true

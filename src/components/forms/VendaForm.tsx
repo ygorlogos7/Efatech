@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useTransition, useState, useEffect } from "react";
+import React, { useTransition, useState, useEffect, useRef } from "react";
 import { createVenda, updateVenda, getProximoNumeroVenda } from "@/actions/vendas";
 import { getClientes, quickCreateCliente } from "@/actions/clientes";
 import { getProdutos, quickCreateProduto } from "@/actions/produtos";
 import { getFuncionarios } from "@/actions/funcionarios";
 import { getVendaCanais } from "@/actions/vendas";
 import { getFormasPagamento } from "@/actions/financeiro";
-import { getEmpresas, quickCreateEmpresa } from "@/actions/empresas";
+import { getEmpresas } from "@/actions/empresas";
 import { 
   ShoppingBasket, 
   DollarSign, 
@@ -58,8 +58,15 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
   const [formasPagamento, setFormasPagamento] = useState<any[]>([]);
   const [empresas, setEmpresas] = useState<any[]>([]);
   const [proximoNumero, setProximoNumero] = useState<number | null>(null);
-  
-  const [showQuickEmpresaModal, setShowQuickEmpresaModal] = useState(false);
+
+  const [empresaRazaoSocial, setEmpresaRazaoSocial] = useState("");
+  const [empresaNomeFantasia, setEmpresaNomeFantasia] = useState("");
+  const [empresaCnpj, setEmpresaCnpj] = useState("");
+  const [empresaIE, setEmpresaIE] = useState("");
+  const [empresaEmailComercial, setEmpresaEmailComercial] = useState("");
+  const [empresaTelefoneComercial, setEmpresaTelefoneComercial] = useState("");
+
+  const lastHydratedEmpresaIdRef = useRef<number | null>(null);
 
   const [selectedClienteId, setSelectedClienteId] = useState<number | null>(initialData?.ClienteId || null);
   const [searchCli, setSearchCli] = useState(initialData?.Cliente?.Nome || "");
@@ -146,12 +153,34 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
         c.Nome.toUpperCase().includes("PADRAO")
       );
 
-      if (clienteAvulso && selectedClienteId !== clienteAvulso.Id) {
+      if (clienteAvulso && !selectedClienteId) {
         setSelectedClienteId(clienteAvulso.Id);
         setSearchCli(clienteAvulso.Nome);
       }
     }
   }, [items, clientes, selectedClienteId]);
+
+  useEffect(() => {
+    if (!selectedEmpresaId) {
+      lastHydratedEmpresaIdRef.current = null;
+      return;
+    }
+    const emp = empresas.find((e) => e.Id === selectedEmpresaId);
+    if (!emp) return;
+
+    const selectionChanged =
+      lastHydratedEmpresaIdRef.current === null ||
+      lastHydratedEmpresaIdRef.current !== selectedEmpresaId;
+    if (!selectionChanged) return;
+
+    lastHydratedEmpresaIdRef.current = selectedEmpresaId;
+    setEmpresaRazaoSocial(emp.RazaoSocial || "");
+    setEmpresaNomeFantasia(emp.NomeFantasia || "");
+    setEmpresaCnpj(emp.Cnpj || "");
+    setEmpresaIE(emp.InscricaoEstadual || "");
+    setEmpresaEmailComercial(emp.Email || "");
+    setEmpresaTelefoneComercial(emp.Telefone || "");
+  }, [selectedEmpresaId, empresas]);
 
   const addItem = (produto: any) => {
     const existing = items.find(i => i.ProdutoId === produto.Id);
@@ -268,20 +297,6 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
     });
   };
 
-  const handleQuickCreateEmpresa = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const res = await quickCreateEmpresa(formData);
-    if (res.success && res.data) {
-      setEmpresas([...empresas, res.data]);
-      setSelectedEmpresaId(res.data.Id);
-      setShowQuickEmpresaModal(false);
-      success("Empresa cadastrada com sucesso!");
-    } else {
-      error(res.error || "Erro ao cadastrar empresa.");
-    }
-  };
-
   return (
     <form action={handleSubmit} className="space-y-6 max-w-[95%] mx-auto pb-20 font-sans text-gray-700">
       
@@ -293,7 +308,7 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
         </div>
       )}
 
-      {/* 2. Card: Dados Gerais */}
+      {/* 2. Card: Dados gerais */}
       <div className="bg-white rounded-md shadow-sm border border-gray-200">
         <div className="bg-[#fcfcfc] px-4 py-3 border-b border-gray-100 flex items-center gap-2 rounded-t-md">
           <Pencil className="w-4 h-4 text-gray-500" />
@@ -302,7 +317,7 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-5">
             <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500">Número</label>
+              <label className="font-semibold text-gray-600">Número</label>
               <div className="flex bg-gray-50 border border-gray-200 rounded overflow-hidden">
                 <input
                   readOnly
@@ -312,57 +327,40 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
                 <div className="bg-white border-l border-gray-200 p-2"><FileSearch className="w-3 h-3 text-gray-400" /></div>
               </div>
             </div>
-
-            <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500">Data *</label>
-              <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-emerald-400">
-                <input
-                  type="date"
-                  value={dataVenda}
-                  onChange={(e) => setDataVenda(e.target.value)}
-                  className="w-full p-2 outline-none bg-white font-bold"
-                  required
-                />
-                <div className="bg-white border-l border-gray-200 p-2"><Calendar className="w-3 h-3 text-gray-400" /></div>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500">Empresa</label>
+            <div className="space-y-1.5 text-xs lg:col-span-2">
+              <label className="font-semibold text-gray-600">Vendedor / Responsável</label>
               <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm">
-                <select 
-                  className="w-full p-2 outline-none bg-white font-bold"
-                  value={selectedEmpresaId || ""}
-                  onChange={(e) => setSelectedEmpresaId(Number(e.target.value))}
+                <select
+                  className="w-full p-2 outline-none bg-white cursor-pointer font-bold"
+                  value={selectedVendedor}
+                  onChange={(e) => setSelectedVendedor(e.target.value)}
                 >
-                  <option value="">Selecione...</option>
-                  {empresas.map(emp => (
-                    <option key={emp.Id} value={emp.Id}>{emp.RazaoSocial}</option>
+                  {funcionarios.map(f => (
+                    <option key={f.Id} value={f.Nome}>{f.Nome}</option>
                   ))}
                 </select>
-                <button type="button" onClick={() => setShowQuickEmpresaModal(true)} className="bg-emerald-50 border-l border-gray-200 p-2 hover:bg-emerald-100 transition-colors" title="Cadastrar Empresa"><PlusCircle className="w-3.5 h-3.5 text-emerald-600" /></button>
+                <div className="bg-white border-l border-gray-200 p-2"><User className="w-3 h-3 text-gray-400" /></div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
 
-            <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500">Situação</label>
-              <select
-                className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm transition-all focus:ring-1 focus:ring-emerald-400 font-bold"
-                value={situacao}
-                onChange={(e) => setSituacao(e.target.value)}
-              >
-                <option value="Concluída">Concluída</option>
-                <option value="Aberta">Aberta</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5 text-xs col-span-2 relative">
-              <label className="font-semibold text-gray-500">Nome do Cliente *</label>
-              <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-emerald-400 transition-all">
-                <input 
-                  type="text" 
-                  placeholder="Pesquisar ou cadastrar novo cliente..." 
-                  className="w-full p-2 outline-none bg-white font-bold"
+      {/* 2b. Card: Dados do cliente */}
+      <div className="bg-white rounded-md shadow-sm border border-gray-200">
+        <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2 rounded-t-md">
+          <User className="w-4 h-4 text-gray-600" />
+          <h3 className="font-bold text-gray-800 text-sm">Dados do cliente</h3>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
+            <div className="space-y-1.5 text-xs lg:col-span-2 relative">
+              <label className="font-semibold text-gray-600">Nome *</label>
+              <div className="flex border border-gray-300 rounded-md overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-emerald-400 transition-all">
+                <input
+                  type="text"
+                  placeholder="Digite o nome do cliente"
+                  className="w-full p-2.5 outline-none bg-white font-bold text-sm"
                   value={searchCli}
                   onChange={(e) => {
                     setSearchCli(e.target.value);
@@ -379,15 +377,15 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
               {searchCli && !selectedClienteId && (
                 <div className="absolute z-[100] top-full left-0 right-0 bg-white border border-gray-300 shadow-2xl rounded-md mt-1 max-h-60 overflow-y-auto ring-1 ring-black/5">
                   {clientes.filter(c => c.Nome.toLowerCase().includes(searchCli.toLowerCase())).map(c => (
-                    <div key={c.Id} onClick={() => { 
-                      setSelectedClienteId(c.Id); 
+                    <div key={c.Id} onClick={() => {
+                      setSelectedClienteId(c.Id);
                       setSearchCli(c.Nome);
                       setClienteTelefone(c.Telefone || "");
                       setClienteCPF(c.CPFCNPJ || "");
                       setClienteEmail(c.Email || "");
                     }} className="p-3 hover:bg-emerald-50 cursor-pointer border-b last:border-0 text-sm font-bold flex flex-col">
-                       <span>{c.Nome}</span>
-                       {c.CPFCNPJ && <span className="text-[10px] text-gray-400 font-normal">{c.CPFCNPJ}</span>}
+                      <span>{c.Nome}</span>
+                      {c.CPFCNPJ && <span className="text-[10px] text-gray-400 font-normal">{c.CPFCNPJ}</span>}
                     </div>
                   ))}
                 </div>
@@ -395,52 +393,160 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
             </div>
 
             <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500">Telefone</label>
-              <input 
-                type="text" 
+              <label className="font-semibold text-gray-600">Telefone principal</label>
+              <input
+                type="text"
                 placeholder="(00) 00000-0000"
-                className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm font-bold focus:ring-1 focus:ring-emerald-400"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
                 value={clienteTelefone}
                 onChange={(e) => setClienteTelefone(e.target.value)}
               />
             </div>
 
             <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500">CPF / CNPJ</label>
-              <input 
-                type="text" 
+              <label className="font-semibold text-gray-600">CPF / CNPJ</label>
+              <input
+                type="text"
                 placeholder="000.000.000-00"
-                className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm font-bold focus:ring-1 focus:ring-emerald-400"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
                 value={clienteCPF}
                 onChange={(e) => setClienteCPF(e.target.value)}
               />
             </div>
 
-            <div className="space-y-1.5 text-xs col-span-2">
-              <label className="font-semibold text-gray-500">E-mail</label>
-              <input 
-                type="email" 
+            <div className="space-y-1.5 text-xs lg:col-span-2">
+              <label className="font-semibold text-gray-600">E-mail</label>
+              <input
+                type="email"
                 placeholder="cliente@email.com"
-                className="w-full border border-gray-300 rounded p-2 outline-none shadow-sm font-bold focus:ring-1 focus:ring-emerald-400"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
                 value={clienteEmail}
                 onChange={(e) => setClienteEmail(e.target.value)}
               />
             </div>
 
             <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-gray-500">Vendedor / Responsável</label>
-              <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm">
-                <select 
-                  className="w-full p-2 outline-none bg-white cursor-pointer"
-                  value={selectedVendedor}
-                  onChange={(e) => setSelectedVendedor(e.target.value)}
-                >
-                  {funcionarios.map(f => (
-                    <option key={f.Id} value={f.Nome}>{f.Nome}</option>
-                  ))}
-                </select>
-                <div className="bg-white border-l border-gray-200 p-2"><User className="w-3 h-3 text-gray-400" /></div>
+              <label className="font-semibold text-gray-600">Data da venda *</label>
+              <div className="flex border border-gray-300 rounded-md overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-emerald-400">
+                <input
+                  type="date"
+                  value={dataVenda}
+                  onChange={(e) => setDataVenda(e.target.value)}
+                  className="w-full p-2.5 outline-none bg-white font-bold text-sm"
+                  required
+                />
+                <div className="bg-white border-l border-gray-200 p-2 flex items-center"><Calendar className="w-3.5 h-3.5 text-gray-400" /></div>
               </div>
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-600">Situação</label>
+              <select
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm transition-all focus:ring-1 focus:ring-emerald-400 font-bold text-sm"
+                value={situacao}
+                onChange={(e) => setSituacao(e.target.value)}
+              >
+                <option value="Concluída">Concluída</option>
+                <option value="Aberta">Aberta</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-md shadow-sm border border-gray-200">
+        <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2 rounded-t-md">
+          <Building2 className="w-4 h-4 text-gray-600" />
+          <h3 className="font-bold text-gray-800 text-sm">Dados da empresa</h3>
+        </div>
+        <div className="p-6 space-y-5">
+          <div className="space-y-1.5 text-xs">
+            <label className="font-semibold text-gray-600">Empresa cadastrada</label>
+            <select
+              className="w-full p-2.5 outline-none bg-white font-bold text-sm border border-gray-300 rounded-md shadow-sm"
+              value={selectedEmpresaId ?? ""}
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw === "") {
+                  setSelectedEmpresaId(null);
+                  setEmpresaRazaoSocial("");
+                  setEmpresaNomeFantasia("");
+                  setEmpresaCnpj("");
+                  setEmpresaIE("");
+                  setEmpresaEmailComercial("");
+                  setEmpresaTelefoneComercial("");
+                  return;
+                }
+                setSelectedEmpresaId(Number(raw));
+              }}
+            >
+              <option value="">Selecione...</option>
+              {empresas.map(emp => (
+                <option key={emp.Id} value={emp.Id}>{emp.RazaoSocial}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
+            <div className="space-y-1.5 text-xs lg:col-span-2">
+              <label className="font-semibold text-gray-600">Razão social *</label>
+              <input
+                type="text"
+                placeholder="Razão social da empresa"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
+                value={empresaRazaoSocial}
+                onChange={(e) => setEmpresaRazaoSocial(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-600">Nome fantasia</label>
+              <input
+                type="text"
+                placeholder="Nome comercial"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
+                value={empresaNomeFantasia}
+                onChange={(e) => setEmpresaNomeFantasia(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-600">CNPJ</label>
+              <input
+                type="text"
+                placeholder="00.000.000/0000-00"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
+                value={empresaCnpj}
+                onChange={(e) => setEmpresaCnpj(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-600">Inscrição estadual</label>
+              <input
+                type="text"
+                placeholder="I.E."
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
+                value={empresaIE}
+                onChange={(e) => setEmpresaIE(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 text-xs lg:col-span-2">
+              <label className="font-semibold text-gray-600">E-mail comercial</label>
+              <input
+                type="email"
+                placeholder="contato@empresa.com.br"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
+                value={empresaEmailComercial}
+                onChange={(e) => setEmpresaEmailComercial(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-600">Telefone</label>
+              <input
+                type="text"
+                placeholder="(00) 00000-0000"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
+                value={empresaTelefoneComercial}
+                onChange={(e) => setEmpresaTelefoneComercial(e.target.value)}
+              />
             </div>
           </div>
         </div>
@@ -740,41 +846,6 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
         </Link>
       </div>
 
-
-
-      {/* MODAL CADASTRO RÁPIDO: EMPRESA */}
-      {showQuickEmpresaModal && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-emerald-600 p-4 text-white flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <Building2 className="w-5 h-5" />
-              <h3 className="font-black uppercase tracking-tighter">Cadastro Rápido: Empresa</h3>
-            </div>
-            <button onClick={() => setShowQuickEmpresaModal(false)}><X className="w-5 h-5" /></button>
-          </div>
-          <form onSubmit={handleQuickCreateEmpresa} className="p-6 space-y-4">
-             <div>
-               <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Razão Social *</label>
-               <input name="RazaoSocial" required className="w-full border-2 border-gray-100 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-all font-bold" placeholder="Nome jurídico da empresa..." />
-             </div>
-             <div>
-               <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Nome Fantasia</label>
-               <input name="NomeFantasia" className="w-full border-2 border-gray-100 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-all font-bold" placeholder="Nome comercial..." />
-             </div>
-             <div className="grid grid-cols-2 gap-4">
-               <div>
-                 <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">CNPJ</label>
-                 <input name="Cnpj" className="w-full border-2 border-gray-100 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-all font-bold" placeholder="00.000.000/0000-00" />
-               </div>
-               <div>
-                 <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Telefone</label>
-                 <input name="Telefone" className="w-full border-2 border-gray-100 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-all font-bold" placeholder="(00) 0000-0000" />
-               </div>
-             </div>
-             <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-black uppercase tracking-widest shadow-lg transition-all active:scale-95">Salvar e Selecionar</button>
-          </form>
-        </div>
-      )}
 
     </form>
   );

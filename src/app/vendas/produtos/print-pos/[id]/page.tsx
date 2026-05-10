@@ -1,5 +1,6 @@
 import { getVendaById } from "@/actions/vendas";
 import { getEmpresa } from "@/actions/configuracoes";
+import { formatCnpjCupom } from "@/lib/cupom-cliente-empresa";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -143,6 +144,18 @@ export default async function PrintVendaPage({ params }: { params: Promise<{ id:
                       <span className="f-label-tiny">TELEFONE:</span>
                       <span className="f-value-client">{cliente?.Telefone || "(---) ---- ----"}</span>
                   </div>
+                  {venda.Empresa && (
+                    <>
+                      <div>
+                        <span className="f-label-tiny">EMPRESA CLIENTE:</span>
+                        <span className="f-value-client uppercase">{venda.Empresa.RazaoSocial}</span>
+                      </div>
+                      <div>
+                        <span className="f-label-tiny">CNPJ:</span>
+                        <span className="f-value-client">{formatCnpjCupom(venda.Empresa.Cnpj)}</span>
+                      </div>
+                    </>
+                  )}
               </div>
           </div>
 

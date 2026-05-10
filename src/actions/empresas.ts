@@ -111,13 +111,20 @@ export async function deleteEmpresa(id: number) {
   }
 }
 export async function quickCreateEmpresa(formData: FormData) {
-  const razao = formData.get("RazaoSocial") as string;
+  const razao = (formData.get("RazaoSocial") as string)?.trim();
+  if (!razao) {
+    return { success: false as const, error: "Informe a razão social da empresa." };
+  }
   try {
+    const cnpjTrim = ((formData.get("Cnpj") as string) || "").trim();
+    const nfTrim = ((formData.get("NomeFantasia") as string) || "").trim();
     const data = {
       RazaoSocial: razao,
-      NomeFantasia: formData.get("NomeFantasia") as string || razao,
-      Cnpj: formData.get("Cnpj") as string | null,
-      Telefone: formData.get("Telefone") as string | null,
+      NomeFantasia: nfTrim || razao,
+      Cnpj: cnpjTrim || `TEMP-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      InscricaoEstadual: ((formData.get("InscricaoEstadual") as string) || "").trim() || null,
+      Email: ((formData.get("Email") as string) || "").trim() || null,
+      Telefone: ((formData.get("Telefone") as string) || "").trim() || null,
       Ativo: true,
     };
 

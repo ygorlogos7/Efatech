@@ -29,6 +29,12 @@ export default async function PrintOSPage({ params }: PageProps) {
     }
 
     const os = osRes.data;
+    /** Um único campo "Equipamento" no formulário: ex. `CELULAR MOTOROLA G5 PLUS` → aparelho / marca / modelo. */
+    const eqParts = (os.Equipamento || "").trim().split(/\s+/).filter(Boolean);
+    const equipAparelho = eqParts[0] || "CELULAR";
+    const equipMarca = eqParts.length >= 2 ? eqParts[1] : "—";
+    const equipModelo = eqParts.length >= 3 ? eqParts.slice(2).join(" ") : "—";
+
     const empresa = empRes.data || {
         RazaoSocial: "EFATECH ASSISTÊNCIA TÉCNICA E ACESSÓRIOS",
         Cnpj: "41.092.084/0001-18",
@@ -170,9 +176,9 @@ export default async function PrintOSPage({ params }: PageProps) {
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="text-[14px]">{os.Equipamento?.split(" ")[0] || "CELULAR"}</td>
-                            <td className="text-[14px]">APPLE</td>
-                            <td className="text-[14px]">{os.Equipamento?.split(" ").slice(1).join(" ") || "11"}</td>
+                            <td className="text-[14px]">{equipAparelho}</td>
+                            <td className="text-[14px]">{equipMarca}</td>
+                            <td className="text-[14px]">{equipModelo}</td>
                         </tr>
                     </tbody>
                 </table>
