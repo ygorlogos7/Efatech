@@ -218,10 +218,11 @@ export async function getRelatorioOrdensServico(filtros?: any, page: number = 1,
 
 export async function getRelatorioCadastros(filtros?: any) {
   try {
-    const [clientes, fornecedores, funcionarios] = await Promise.all([
+    const [clientes, fornecedores, funcionarios, produtos] = await Promise.all([
       prisma.clientes.count({ where: { Ativo: true } }),
       prisma.fornecedor.count({ where: { Ativo: true } }),
       prisma.funcionario.count({ where: { Ativo: true } }),
+      prisma.produtos.count({ where: { Ativo: true } }),
     ]);
 
     return {
@@ -230,6 +231,7 @@ export async function getRelatorioCadastros(filtros?: any) {
         clientes,
         fornecedores,
         funcionarios,
+        produtos,
       },
     };
   } catch (error) {
