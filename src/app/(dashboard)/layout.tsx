@@ -20,7 +20,7 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex flex-col h-screen overflow-hidden bg-[#f4f7f6]">
+      <div className="flex flex-col h-screen overflow-hidden bg-[#f4f7f9]">
         {/* Top Header Navigation */}
         <Header userName={session.user.name || undefined} userEmail={session.user.email || undefined} />
 

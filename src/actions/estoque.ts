@@ -166,39 +166,3 @@ export async function createTrocaDevolucao(formData: FormData) {
     return { success: true };
   } catch { return { success: false, error: "Falha ao criar." }; }
 }
-
-// ---- Opções: Situações ----
-export async function getEstoqueSituacoes() {
-  try {
-    const items = await prisma.estoqueSituacao.findMany({ orderBy: { Nome: "asc" } });
-    return { success: true, data: items };
-  } catch { return { success: false, error: "Falha ao buscar." }; }
-}
-
-export async function createEstoqueSituacao(formData: FormData) {
-  try {
-    await prisma.estoqueSituacao.create({
-      data: { Nome: formData.get("Nome") as string, Cor: formData.get("Cor") as string || null, Ativo: true }
-    });
-    revalidatePath("/estoque/opcoes/situacoes");
-    return { success: true };
-  } catch { return { success: false, error: "Falha ao criar." }; }
-}
-
-// ---- Opções: Locais ----
-export async function getEstoqueLocais() {
-  try {
-    const items = await prisma.estoqueLocal.findMany({ orderBy: { Nome: "asc" } });
-    return { success: true, data: items };
-  } catch { return { success: false, error: "Falha ao buscar." }; }
-}
-
-export async function createEstoqueLocal(formData: FormData) {
-  try {
-    await prisma.estoqueLocal.create({
-      data: { Nome: formData.get("Nome") as string, Ativo: true }
-    });
-    revalidatePath("/estoque/opcoes/locais");
-    return { success: true };
-  } catch { return { success: false, error: "Falha ao criar." }; }
-}

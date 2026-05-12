@@ -238,19 +238,6 @@ export async function getRelatorioCadastros(filtros?: any) {
   }
 }
 
-export async function getRelatorioContratos(filtros?: any) {
-  try {
-    const contratos = await prisma.contrato.findMany({
-      orderBy: { CreatedAt: "desc" },
-      take: 100,
-    });
-    return { success: true, data: contratos };
-  } catch (error) {
-    console.error("Erro ao buscar relatório de contratos:", error);
-    return { success: false, error: "Erro ao buscar relatório de contratos" };
-  }
-}
-
 export async function getRelatorioNotasFiscais(filtros?: any) {
   try {
     const [notasFiscais, notasCompra] = await Promise.all([

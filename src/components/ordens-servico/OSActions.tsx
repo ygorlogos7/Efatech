@@ -2,32 +2,22 @@
 
 import React, { useTransition } from "react";
 import { MoreActionsDropdown, ActionItem } from "@/components/common/MoreActionsDropdown";
-import { updateSituacaoOS, updateSituacaoIdOS } from "@/actions/ordensServico";
+import { updateSituacaoOS } from "@/actions/ordensServico";
 import { sendEmailAction } from "@/actions/mail";
-import { CheckSquare, DollarSign, Printer, Share2, Mail, MessageCircle, FileText, RefreshCw, Coins, Check, X, Loader2 } from "lucide-react";
+import { CheckSquare, DollarSign, Printer, Share2, Mail, MessageCircle, FileText, Coins, Check, X, Loader2 } from "lucide-react";
 import { getWhatsAppLink } from "@/lib/whatsapp";
 
 interface OSActionsProps {
   item: any;
   baseUrl: string;
-  situacoes?: any[];
 }
 
-export function OSActions({ item, baseUrl, situacoes = [] }: OSActionsProps) {
+export function OSActions({ item, baseUrl }: OSActionsProps) {
   const [isPending, startTransition] = useTransition();
 
   const handleUpdateStatus = (ativo: boolean) => {
     startTransition(async () => {
       const res = await updateSituacaoOS(item.Id, ativo);
-      if (!res.success) {
-        alert(res.error);
-      }
-    });
-  };
-
-  const handleUpdateSituacaoId = (situacaoId: number | null) => {
-    startTransition(async () => {
-      const res = await updateSituacaoIdOS(item.Id, situacaoId);
       if (!res.success) {
         alert(res.error);
       }
@@ -79,40 +69,34 @@ export function OSActions({ item, baseUrl, situacoes = [] }: OSActionsProps) {
       ]
     },
     { label: "Link de cobrança", icon: <DollarSign className="w-4 h-4" /> },
-    { 
-        label: "Alterar situação", 
-        icon: <CheckSquare className="w-4 h-4" />,
-        subItems: [
-            ...situacoes.map(sit => ({
-                label: sit.Nome,
-                icon: <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: sit.Cor || "#6c757d" }} />,
-                onClick: () => handleUpdateSituacaoId(sit.Id)
-            })),
-            ...(situacoes.length > 0 ? [{ type: "divider" as const }] : []),
-            { 
-                label: "Marcar como Aberto", 
-                icon: <Check className="w-3.5 h-3.5 text-green-500" />,
-                onClick: () => handleUpdateStatus(true)
-            },
-            { 
-                label: "Marcar como Encerrado", 
-                icon: <X className="w-3.5 h-3.5 text-red-500" />,
-                onClick: () => handleUpdateStatus(false)
-            },
-        ]
+    {
+      label: "Alterar situação",
+      icon: <CheckSquare className="w-4 h-4" />,
+      subItems: [
+        {
+          label: "Marcar como Aberto",
+          icon: <Check className="w-3.5 h-3.5 text-green-500" />,
+          onClick: () => handleUpdateStatus(true)
+        },
+        {
+          label: "Marcar como Encerrado",
+          icon: <X className="w-3.5 h-3.5 text-red-500" />,
+          onClick: () => handleUpdateStatus(false)
+        },
+      ]
     },
     {
       label: "Compartilhar",
       icon: <Share2 className="w-4 h-4" />,
       subItems: [
-        { 
-            label: isPending ? "Enviando..." : "Via E-mail", 
-            icon: isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />,
-            onClick: handleSendEmail,
-            disabled: isPending
+        {
+          label: isPending ? "Enviando..." : "Via E-mail",
+          icon: isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />,
+          onClick: handleSendEmail,
+          disabled: isPending
         },
-        { 
-          label: "Via WhatsApp", 
+        {
+          label: "Via WhatsApp",
           icon: <MessageCircle className="w-3.5 h-3.5" />,
           href: getWhatsAppLink(item.Cliente?.TelefoneCelular || item.Cliente?.Telefone || item.Cliente?.TelefoneComercial, `Olá ${item.Cliente?.Nome || ""}, sua ordem de serviço #${item.Numero} está pronta. Você pode visualizá-la e baixá-lo em PDF através deste link: ${baseUrl}/ordens-servico/print/${item.Id}/a4`) || undefined,
           alertMessage: !(item.Cliente?.TelefoneCelular || item.Cliente?.Telefone || item.Cliente?.TelefoneComercial) ? "Este cliente não possui telefone/celular cadastrado!" : undefined,

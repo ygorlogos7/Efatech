@@ -137,53 +137,6 @@ export async function createFormaPagamento(formData: FormData) {
   }
 }
 
-// ---- Plano de Contas ----
-export async function getPlanoContas() {
-  try {
-    const items = await prisma.planoConta.findMany({ orderBy: { Nome: "asc" } });
-    return { success: true, data: items };
-  } catch (error) {
-    return { success: false, error: "Falha ao buscar plano de contas." };
-  }
-}
-
-export async function createPlanoConta(formData: FormData) {
-  try {
-    await prisma.planoConta.create({
-      data: {
-        Nome: formData.get("Nome") as string,
-        Tipo: formData.get("Tipo") as string,
-      }
-    });
-    revalidatePath("/financeiro/opcoes/plano-contas");
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: "Falha ao criar plano de conta." };
-  }
-}
-
-// ---- Centros de Custo ----
-export async function getCentrosCusto() {
-  try {
-    const items = await prisma.centroCusto.findMany({ orderBy: { Nome: "asc" } });
-    return { success: true, data: items };
-  } catch (error) {
-    return { success: false, error: "Falha ao buscar centros de custo." };
-  }
-}
-
-export async function createCentroCusto(formData: FormData) {
-  try {
-    await prisma.centroCusto.create({
-      data: { Nome: formData.get("Nome") as string }
-    });
-    revalidatePath("/financeiro/opcoes/centros-custo");
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: "Falha ao criar centro de custo." };
-  }
-}
-
 // ---- Boletos ----
 export async function getBoletos() {
   try {

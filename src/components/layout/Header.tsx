@@ -49,7 +49,7 @@ export function Header({ userName, userEmail }: HeaderProps) {
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-1.5 text-xl font-bold tracking-tight select-none">
           <span>Efatech</span>
-          <span className="text-[#38b473]">PRO</span>
+          <span className="text-[#28a745]">PRO</span>
         </div>
         <button 
           onClick={toggleSidebar}
@@ -103,14 +103,14 @@ export function Header({ userName, userEmail }: HeaderProps) {
             className={`p-1.5 rounded-md transition-colors relative ${activeDropdown === 'bell' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700/50'}`}
           >
             <Bell className="w-[18px] h-[18px]" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-[#38b473] rounded-full border border-[#1a1c23]"></span>
+            <span className="absolute top-1 right-1 w-2 h-2 bg-[#28a745] rounded-full border border-[#1a1c23]"></span>
           </button>
 
           {activeDropdown === 'bell' && (
             <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden text-gray-800 animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
                 <h3 className="font-bold text-sm">Notificações</h3>
-                <span className="text-[10px] bg-[#38b473]/10 text-[#38b473] px-2 py-0.5 rounded-full font-bold">4 NOVAS</span>
+                <span className="text-[10px] bg-[#28a745]/10 text-[#28a745] px-2 py-0.5 rounded-full font-bold">4 NOVAS</span>
               </div>
               <div className="max-h-80 overflow-y-auto">
                 {[
@@ -130,7 +130,7 @@ export function Header({ userName, userEmail }: HeaderProps) {
                   </div>
                 ))}
               </div>
-              <button className="w-full py-3 text-center text-xs font-bold text-gray-400 hover:bg-gray-50 hover:text-[#38b473] transition-colors">
+              <button className="w-full py-3 text-center text-xs font-bold text-gray-400 hover:bg-gray-50 hover:text-[#28a745] transition-colors">
                 Ver todas as notificações
               </button>
             </div>

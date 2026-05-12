@@ -23,11 +23,6 @@ export async function getOrdensServico(searchQuery?: string, page: number = 1, p
       take: pageSize,
       skip: skip,
     });
-    
-    // Manual join for situations to avoid prisma generate issues
-    const situacoes = await prisma.ordemServicoSituacao.findMany({
-      where: { Ativo: true }
-    });
 
     const total = await prisma.ordensServico.count({ where: whereClause });
     return { 
@@ -35,7 +30,6 @@ export async function getOrdensServico(searchQuery?: string, page: number = 1, p
         data: items.map(i => ({ 
             ...i, 
             Total: Number(i.Total),
-            Situacao: situacoes.find(s => s.Id === i.SituacaoId)
         })), 
         total 
     };
@@ -173,107 +167,11 @@ export async function deleteOrdemServico(id: number) {
   }
 }
 
-// --- Situações OS ---
-export async function getOSSituacoes() {
-  try {
-    const items = await prisma.ordemServicoSituacao.findMany({ orderBy: { Nome: "asc" } });
-    return { success: true, data: items };
-  } catch (error) {
-    return { success: false, error: "Falha ao buscar situações." };
-  }
-}
-
-export async function createOSSituacao(formData: FormData) {
-  try {
-    await prisma.ordemServicoSituacao.create({
-      data: {
-        Nome: formData.get("Nome") as string,
-        Cor: formData.get("Cor") as string || null,
-        Ativo: true,
-      }
-    });
-    revalidatePath("/ordens-servico/opcoes/situacoes");
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: "Falha ao criar situação." };
-  }
-}
-
-// --- Modelos de Email OS ---
-export async function getOSModelosEmail() {
-  try {
-    const items = await prisma.ordemServicoModeloEmail.findMany({ orderBy: { Nome: "asc" } });
-    return { success: true, data: items };
-  } catch (error) {
-    return { success: false, error: "Falha ao buscar modelos." };
-  }
-}
-
-export async function createOSModeloEmail(formData: FormData) {
-  try {
-    await prisma.ordemServicoModeloEmail.create({
-      data: {
-        Nome: formData.get("Nome") as string,
-        Assunto: formData.get("Assunto") as string,
-        Corpo: formData.get("Corpo") as string,
-        Ativo: true,
-      }
-    });
-    revalidatePath("/ordens-servico/opcoes/modelos-email");
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: "Falha ao criar modelo." };
-  }
-}
-
-// --- Config OS ---
-export async function getOSConfig() {
-  try {
-    const config = await prisma.ordemServicoConfig.findFirst();
-    return { success: true, data: config };
-  } catch (error) {
-    return { success: false, error: "Falha ao buscar configurações." };
-  }
-}
-
-export async function saveOSConfig(formData: FormData) {
-  try {
-    const data = {
-      ValidadePadraoEmDias: parseInt(formData.get("ValidadePadraoEmDias") as string) || 7,
-      MensagemRodape: formData.get("MensagemRodape") as string || null,
-      NumeracaoAutomatica: formData.get("NumeracaoAutomatica") === "true",
-      EmailPadrao: formData.get("EmailPadrao") as string || null,
-    };
-    const existing = await prisma.ordemServicoConfig.findFirst();
-    if (existing) {
-      await prisma.ordemServicoConfig.update({ where: { Id: existing.Id }, data });
-    } else {
-      await prisma.ordemServicoConfig.create({ data });
-    }
-    revalidatePath("/ordens-servico/opcoes/configuracoes");
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: "Falha ao salvar." };
-  }
-}
 export async function updateSituacaoOS(id: number, ativo: boolean) {
   try {
     await prisma.ordensServico.update({
       where: { Id: id },
       data: { Ativo: ativo }
-    });
-    revalidatePath("/ordens-servico");
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: "Falha ao alterar situação da OS." };
-  }
-}
-
-export async function updateSituacaoIdOS(id: number, situacaoId: number | null) {
-  try {
-    await prisma.ordensServico.update({
-      where: { Id: id },
-      data: { SituacaoId: situacaoId }
     });
     revalidatePath("/ordens-servico");
     return { success: true };

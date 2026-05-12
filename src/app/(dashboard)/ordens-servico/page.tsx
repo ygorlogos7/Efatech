@@ -4,7 +4,6 @@ import { SearchIcon, PlusCircle, Edit2, ClipboardList, Printer, Eye, Share2, Fil
 import { getOrdensServico } from "@/actions/ordensServico";
 import { DeleteOSButton } from "@/components/forms/DeleteOSButton";
 import { headers } from "next/headers";
-import { prisma } from "@/lib/prisma";
 import { OSActions } from "@/components/ordens-servico/OSActions";
 
 export default async function OrdensServicoPage({
@@ -22,12 +21,7 @@ export default async function OrdensServicoPage({
   const pesquisa = resolvedParams?.pesquisa || "";
   const page = Number(resolvedParams?.page) || 1;
   const { success, data: items, total = 0 } = await getOrdensServico(pesquisa, page, 20);
-  
-  // Buscar situações para o dropdown
-  const { data: situacoes = [] } = await prisma.ordemServicoSituacao.findMany({ 
-    where: { Ativo: true },
-    orderBy: { Nome: "asc" }
-  }).then(res => ({ data: res })).catch(() => ({ data: [] }));
+
   const from = total === 0 ? 0 : (page - 1) * 20 + 1;
   const to = total === 0 ? 0 : Math.min(page * 20, total);
 
@@ -100,15 +94,9 @@ export default async function OrdensServicoPage({
                   <td className="py-3 px-4 text-gray-700" suppressHydrationWarning>{item.DataPrevisao ? new Date(item.DataPrevisao).toLocaleDateString("pt-BR") : "-"}</td>
                   <td className="py-3 px-4 text-right font-bold text-green-700">R$ {item.Total.toFixed(2).replace(".", ",")}</td>
                   <td className="py-3 px-4 text-center">
-                    {item.Situacao ? (
-                      <span className="inline-block px-2.5 py-1 text-[10px] font-black uppercase rounded text-white shadow-sm" style={{ backgroundColor: item.Situacao.Cor || "#6c757d" }}>
-                        {item.Situacao.Nome}
-                      </span>
-                    ) : (
-                      <span className={`inline-block px-2.5 py-1 text-[11px] font-medium rounded border ${item.Ativo ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-gray-100 text-gray-600 border-gray-200"}`}>
-                        {item.Ativo ? "Aberta" : "Encerrada"}
-                      </span>
-                    )}
+                    <span className={`inline-block px-2.5 py-1 text-[11px] font-medium rounded border ${item.Ativo ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                      {item.Ativo ? "Aberta" : "Encerrada"}
+                    </span>
                   </td>
                   <td className="py-3 px-4 text-right">
                     <div className="flex justify-end items-center gap-1">
@@ -127,7 +115,7 @@ export default async function OrdensServicoPage({
                         <Edit2 className="w-3.5 h-3.5" />
                       </Link>
                       <DeleteOSButton id={item.Id} numero={item.Numero} />
-                      <OSActions item={item} baseUrl={baseUrl} situacoes={situacoes} />
+                      <OSActions item={item} baseUrl={baseUrl} />
                     </div>
                   </td>
                 </tr>

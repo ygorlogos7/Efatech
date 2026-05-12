@@ -2,7 +2,15 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1a2b3c;
+  /* Dashboard / Bootstrap-like accents */
+  --dash-success: #28a745;
+  --dash-success-dark: #218838;
+  --dash-danger: #dc3545;
+  --dash-danger-dark: #c82333;
+  --dash-primary: #007bff;
+  --dash-primary-dark: #0069d9;
+  --dash-page-bg: #f4f7f9;
 }
 
 @theme inline {
@@ -11,19 +19,19 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* Efatech Theme Colors */
-  --color-primary-green: #38b473;
-  --color-hover-green: #2e965f;
-  --color-bg-page: #f4f7f6;
-  --color-text-dark: #171717;
-  --color-text-gray: #7f8c8d;
-  --color-border-color: #dcdcdc;
+  /* Efatech — alinhado a cards “financeiro” claros (verde / vermelho / azul Bootstrap) */
+  --color-primary-green: #28a745;
+  --color-hover-green: #218838;
+  --color-bg-page: #f4f7f9;
+  --color-text-dark: #1a2b3c;
+  --color-text-gray: #5a6c7d;
+  --color-border-color: #e1e8ed;
 }
 
 body {
-  background: #f4f7f6;
-  color: #171717;
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  background: var(--dash-page-bg);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", Roboto, Arial, Helvetica, sans-serif;
 }
 
 /* ── CUSTOM SCROLLBARS ── */

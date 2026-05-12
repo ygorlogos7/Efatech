@@ -107,10 +107,6 @@ export function VendaView({ venda, tipo }: VendaViewProps) {
                        <span className="font-bold">{new Date(venda.DataVenda).toLocaleDateString("pt-BR")}</span>
                     </div>
                     <div className="flex justify-between">
-                       <span className="text-gray-400 font-bold uppercase">Canal de venda:</span>
-                       <span className="font-bold text-gray-500">Presencial</span>
-                    </div>
-                    <div className="flex justify-between">
                        <span className="text-gray-400 font-bold uppercase">Cadastrado por:</span>
                        <span className="text-blue-600 font-bold hover:underline cursor-pointer">{venda.Vendedor || "Sistema"}</span>
                     </div>

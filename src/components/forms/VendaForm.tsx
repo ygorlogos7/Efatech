@@ -5,7 +5,6 @@ import { createVenda, updateVenda, getProximoNumeroVenda } from "@/actions/venda
 import { getClientes, quickCreateCliente } from "@/actions/clientes";
 import { getProdutos, quickCreateProduto } from "@/actions/produtos";
 import { getFuncionarios } from "@/actions/funcionarios";
-import { getVendaCanais } from "@/actions/vendas";
 import { getFormasPagamento } from "@/actions/financeiro";
 import { getEmpresas } from "@/actions/empresas";
 import { 

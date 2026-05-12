@@ -219,7 +219,6 @@ model Orcamento {
   DataEmissao   DateTime  @default(now())
   DataValidade  DateTime?
   ClienteId     Int?
-  SituacaoId    Int?
   Observacoes   String?
   TotalProdutos Decimal   @default(0)
   TotalServicos Decimal   @default(0)
@@ -230,25 +229,6 @@ model Orcamento {
   UpdatedAt     DateTime  @default(now()) @updatedAt
   Descricao     String?
   Clientes      Clientes? @relation(fields: [ClienteId], references: [Id])
-  Situacao      OrcamentoSituacao? @relation(fields: [SituacaoId], references: [Id])
-}
-
-model OrcamentoSituacao {
-  Id                 Int         @id @default(autoincrement())
-  Nome               String
-  Cor                String?
-  Ativo              Boolean     @default(true)
-  ExibirNaListagem   Boolean     @default(true)
-  TransformarEmVenda Boolean     @default(false)
-  Orcamentos         Orcamento[]
-}
-
-model OrcamentoModeloEmail {
-  Id      Int     @id @default(autoincrement())
-  Nome    String
-  Assunto String
-  Corpo   String
-  Ativo   Boolean @default(true)
 }
 
 model OrcamentoConfig {
@@ -340,34 +320,23 @@ model EstoqueTrocaDevolucao {
   CreatedAt      DateTime @default(now())
 }
 
-model EstoqueLocal {
-  Id    Int     @id @default(autoincrement())
-  Nome  String
-  Ativo Boolean @default(true)
-}
-
-model EstoqueSituacao {
-  Id    Int     @id @default(autoincrement())
-  Nome  String
-  Cor   String?
-  Ativo Boolean @default(true)
-}
-
 model ContaPagar {
-  Id            Int       @id @default(autoincrement())
-  Descricao     String
-  Valor         Decimal
-  Vencimento    DateTime
-  Pagamento     DateTime?
-  FornecedorId  Int?
-  SituacaoId    Int?
-  PlanoContaId  Int?
-  CentroCustoId Int?
-  FormaPgtoId   Int?
-  CaixaId       Int?
-  Observacoes   String?
-  CreatedAt     DateTime  @default(now())
-  UpdatedAt     DateTime  @updatedAt
+  Id             Int          @id @default(autoincrement())
+  Descricao      String
+  Valor          Decimal
+  Vencimento     DateTime
+  Pagamento      DateTime?
+  FornecedorId   Int?
+  SituacaoId     Int?
+  PlanoContaId   Int?
+  CentroCustoId  Int?
+  FormaPgtoId    Int?
+  CaixaId        Int?
+  CaixaSessaoId  Int?
+  CaixaSessao    CaixaSessao? @relation(fields: [CaixaSessaoId], references: [Id])
+  Observacoes    String?
+  CreatedAt      DateTime     @default(now())
+  UpdatedAt      DateTime     @updatedAt
 }
 
 model ContaReceber {
@@ -429,13 +398,6 @@ model CentroCusto {
   Ativo Boolean @default(true)
 }
 
-model FinanceiroSituacao {
-  Id    Int     @id @default(autoincrement())
-  Nome  String
-  Cor   String?
-  Ativo Boolean @default(true)
-}
-
 model TransferenciaFinanceira {
   Id          Int      @id @default(autoincrement())
   Valor       Decimal
@@ -456,20 +418,6 @@ model BoletoBancario {
   Status         String   @default("pendente")
   ContaReceberId Int?
   CreatedAt      DateTime @default(now())
-}
-
-model TabelaRateio {
-  Id    Int     @id @default(autoincrement())
-  Nome  String
-  Ativo Boolean @default(true)
-}
-
-model FinanceiroConfig {
-  Id                 Int     @id @default(1)
-  MultaAtraso        Decimal @default(0)
-  JurosMensal        Decimal @default(0)
-  DiasProtesto       Int     @default(0)
-  InstrucoesCobranca String?
 }
 
 model NotaFiscal {
@@ -693,7 +641,6 @@ model OrdensServico {
   DataFechamento    DateTime?
   ClienteId         Int?
   TecnicoId         Int?
-  SituacaoId        Int?
   Equipamento       String?
   Defeito           String?
   Solucao           String?
@@ -708,31 +655,6 @@ model OrdensServico {
   FormaPagamentoId  Int?
   Cliente           Clientes? @relation(fields: [ClienteId], references: [Id])
   FormaPagamento    FormaPagamento? @relation(fields: [FormaPagamentoId], references: [Id])
-  Situacao          OrdemServicoSituacao? @relation(fields: [SituacaoId], references: [Id])
-}
-
-model OrdemServicoConfig {
-  Id                   Int     @id @default(autoincrement())
-  ValidadePadraoEmDias Int     @default(7)
-  MensagemRodape       String?
-  NumeracaoAutomatica  Boolean @default(true)
-  EmailPadrao          String?
-}
-
-model OrdemServicoModeloEmail {
-  Id      Int     @id @default(autoincrement())
-  Nome    String
-  Assunto String
-  Corpo   String
-  Ativo   Boolean @default(true)
-}
-
-model OrdemServicoSituacao {
-  Id            Int             @id @default(autoincrement())
-  Nome          String
-  Cor           String?
-  Ativo         Boolean         @default(true)
-  OrdensServico OrdensServico[]
 }
 
 model Vendas {
@@ -741,8 +663,6 @@ model Vendas {
   Tipo              String       @default("produtos")
   DataVenda         DateTime     @default(now())
   ClienteId         Int?
-  SituacaoId        Int?
-  CanalId           Int?
   TotalProdutos     Decimal      @default(0)
   TotalServicos     Decimal      @default(0)
   Desconto          Decimal      @default(0)
@@ -758,7 +678,6 @@ model Vendas {
   FormaPagamentoId  Int?
   EmpresaId         Int?
   Itens             VendaItens[]
-  Situacao          VendaSituacao? @relation(fields: [SituacaoId], references: [Id])
   Cliente           Clientes?    @relation(fields: [ClienteId], references: [Id])
   FormaPagamento    FormaPagamento? @relation(fields: [FormaPagamentoId], references: [Id])
   Empresa           Empresa?     @relation(fields: [EmpresaId], references: [Id])
@@ -782,45 +701,15 @@ model VendaBalanca {
   Ativo  Boolean @default(true)
 }
 
-model VendaCanal {
-  Id    Int     @id @default(autoincrement())
-  Nome  String
-  Ativo Boolean @default(true)
-}
-
-model VendaConfig {
-  Id                  Int     @id @default(autoincrement())
-  MensagemRodape      String?
-  NumeracaoAutomatica Boolean @default(true)
-  EmailPadrao         String?
-  PermitirDesconto    Boolean @default(true)
-  DescontoMaximo      Decimal @default(100)
-}
-
-model VendaModeloEmail {
-  Id      Int     @id @default(autoincrement())
-  Nome    String
-  Assunto String
-  Corpo   String
-  Ativo   Boolean @default(true)
-}
-
-model VendaSituacao {
-  Id    Int     @id @default(autoincrement())
-  Nome  String
-  Cor   String?
-  Ativo Boolean @default(true)
-  Vendas Vendas[]
-}
-
 model CaixaSessao {
-  Id              Int       @id @default(autoincrement())
+  Id              Int          @id @default(autoincrement())
   CaixaId         Int?
   UsuarioId       Int?
-  DataAbertura    DateTime? @default(now()) @db.Timestamptz(6)
-  DataFechamento  DateTime? @db.Timestamptz(6)
-  ValorAbertura   Decimal   @default(0.00) @db.Decimal(18, 2)
-  ValorFechamento Decimal?  @db.Decimal(18, 2)
-  Status          String?   @default("Aberto") @db.VarChar(20)
+  DataAbertura    DateTime?    @default(now()) @db.Timestamptz(6)
+  DataFechamento  DateTime?    @db.Timestamptz(6)
+  ValorAbertura   Decimal      @default(0.00) @db.Decimal(18, 2)
+  ValorFechamento Decimal?     @db.Decimal(18, 2)
+  Status          String?      @default("Aberto") @db.VarChar(20)
   Observacoes     String?
+  ContasPagar     ContaPagar[]
 }

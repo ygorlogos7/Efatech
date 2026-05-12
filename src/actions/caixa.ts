@@ -1,6 +1,13 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import {
+  SANGRIA_FORMA_RELATORIO,
+  fetchSangriasPorCaixaSessao,
+  sumValorSangriasPorCaixaSessao,
+  vincularSangriasLegadasAoCaixa,
+  setContaPagarCaixaSessaoId,
+} from "@/lib/caixaSangria";
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { logAction } from "@/lib/logger";
 
@@ -151,8 +158,7 @@ export async function fecharCaixa(id: number, valorFechamento: number) {
       data: { CaixaSessaoId: id }
     });
 
-    // Contas a Pagar (Sangrias) - Se tivermos campo CaixaSessaoId ou similar no futuro.
-    // Por enquanto usamos a data como critério de busca, mas vamos registrar o fechamento.
+    await vincularSangriasLegadasAoCaixa(id, dataAbertura, dataFechamento);
 
     // 3. Atualizar a sessão
     const caixa = await prisma.caixaSessao.update({
@@ -226,7 +232,7 @@ export async function getCaixaSessoes(filters?: { usuarioId?: string | number, d
         startOfDay.setHours(0, 0, 0, 0);
         
         // Busca paralela para agilizar
-        const [vendas, oss, sangrias, suprimentos] = await Promise.all([
+        const [vendas, oss, sangriaValorSum, suprimentos] = await Promise.all([
           prisma.vendas.aggregate({
             where: { 
               OR: [
@@ -246,10 +252,7 @@ export async function getCaixaSessoes(filters?: { usuarioId?: string | number, d
             },
             _sum: { Total: true }
           }),
-          prisma.contaPagar.aggregate({
-            where: { CreatedAt: { gte: startOfDay, lte: dataFim } },
-            _sum: { Valor: true }
-          }),
+          sumValorSangriasPorCaixaSessao(s.Id, dataAbertura, dataFim),
           prisma.contaReceber.aggregate({
             where: { 
               CreatedAt: { gte: startOfDay, lte: dataFim },
@@ -260,7 +263,7 @@ export async function getCaixaSessoes(filters?: { usuarioId?: string | number, d
         ]);
 
         const totalEntradas = Number(vendas._sum.Total || 0) + Number(oss._sum.Total || 0) + Number(suprimentos._sum.Valor || 0);
-        const totalSaidas = Number(sangrias._sum.Valor || 0);
+        const totalSaidas = sangriaValorSum;
         const saldoAtual = Number(s.ValorAbertura) + totalEntradas - totalSaidas;
 
         return {
@@ -346,12 +349,8 @@ export async function getCaixaSessaoDetalhes(id: number) {
       include: { FormaPagamento: true }
     });
 
-    // 3. Buscar Sangrias (Contas a Pagar no período)
-    const sangrias = await prisma.contaPagar.findMany({
-      where: {
-        CreatedAt: { gte: dataAbertura, lte: dataFechamento }
-      }
-    });
+    const sangriasRaw = await fetchSangriasPorCaixaSessao(id, dataAbertura, dataFechamento);
+    const sangrias = sangriasRaw as Array<{ Valor: unknown; Descricao?: string; [key: string]: unknown }>;
 
     // 4. Buscar Suprimentos/Recebimentos (Contas a Receber no período, exceto as automáticas de abertura para não duplicar)
     const suprimentos = await prisma.contaReceber.findMany({
@@ -383,7 +382,7 @@ export async function getCaixaSessaoDetalhes(id: number) {
     });
 
     sangrias.forEach(s => {
-      const forma = "Dinheiro à Vista";
+      const forma = SANGRIA_FORMA_RELATORIO;
       if (!consolidado[forma]) consolidado[forma] = { Recebido: 0, Pago: 0 };
       consolidado[forma].Pago += Number(s.Valor);
     });
@@ -507,17 +506,20 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
 
     // 3. Sangrias e Suprimentos
     console.log(">>> [PRINT] Buscando Sangrias/Suprimentos...");
-    const sangriasRaw = await prisma.contaPagar.findMany({
-      where: { CreatedAt: { gte: dataAbertura, lte: dataFechamento } }
-    });
+    const sangriasRaw = await fetchSangriasPorCaixaSessao(id, dataAbertura, dataFechamento);
     const suprimentosRaw = await prisma.contaReceber.findMany({
-      where: { 
+      where: {
         CreatedAt: { gte: dataAbertura, lte: dataFechamento },
-        NOT: { Descricao: { contains: "Abertura de caixa" } }
-      }
+        NOT: { Descricao: { contains: "Abertura de caixa" } },
+      },
     });
 
-    const sangrias = sangriasRaw.map(s => ({ Forma: "Dinheiro à Vista", Pago: Number(s.Valor), Total: Number(s.Valor) }));
+    const sangrias = sangriasRaw.map((s: Record<string, unknown>) => ({
+      Forma: SANGRIA_FORMA_RELATORIO,
+      Pago: Number(s.Valor ?? s.valor),
+      APagar: 0,
+      Total: Number(s.Valor ?? s.valor),
+    }));
     const suprimentos = suprimentosRaw.map(s => ({ Forma: "Dinheiro à Vista", Recebido: Number(s.Valor), Total: Number(s.Valor) }));
 
     console.log(">>> [PRINT] Consolidando valores...");
@@ -526,6 +528,7 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
     const addValues = (arr: any[], mode: 'entrada' | 'saida') => {
       arr.forEach(item => {
         const nome = item.Forma || "Diversos";
+        // NaoRecebido: reservado p/ contas "à receber" no futuro; hoje o relatório só preenche Recebido/Pago/Total.
         if (!formasFinal[nome]) formasFinal[nome] = { Nome: nome, NaoRecebido: 0, Recebido: 0, Pago: 0, Total: 0 };
         if (mode === 'entrada') {
            formasFinal[nome].Recebido += Number(item.Recebido || item.Total || 0);
@@ -583,7 +586,7 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
 export async function getCaixaResumoSimples(id: number) {
   try {
     const details = await getCaixaSessaoDetalhes(id);
-    if (!details.success) return details;
+    if (!details.success || !details.data) return details;
 
     const data = details.data;
     
@@ -615,11 +618,13 @@ export async function lancarSangria(formData: FormData) {
   try {
     const valor = Number(formData.get("valor"));
     const descricao = formData.get("descricao") as string || "Sangria de caixa";
-    const sessionId = formData.get("sessionId") ? Number(formData.get("sessionId")) : null;
+    const rawSid = formData.get("sessionId");
+    const parsedSid = rawSid != null && String(rawSid).trim() !== "" ? Number(rawSid) : NaN;
+    const sessionId = !isNaN(parsedSid) && parsedSid > 0 ? parsedSid : null;
 
     if (isNaN(valor) || valor <= 0) return { success: false, error: "Valor inválido." };
 
-    await prisma.contaPagar.create({
+    const created = await prisma.contaPagar.create({
       data: {
         Descricao: descricao,
         Valor: valor,
@@ -627,10 +632,11 @@ export async function lancarSangria(formData: FormData) {
         Pagamento: new Date(),
         SituacaoId: 1, // Liquidado
         PlanoContaId: 1, // Geral
-        FormaPgtoId: 1,  // Dinheiro
+        FormaPgtoId: 1, // Dinheiro
         Observacoes: sessionId ? `Sangria vinculada ao caixa #${sessionId}` : "Sangria manual",
-      }
+      },
     });
+    if (sessionId) await setContaPagarCaixaSessaoId(created.Id, sessionId);
 
     revalidatePath("/financeiro/opcoes/caixas");
     revalidatePath("/financeiro/fluxo-caixa");

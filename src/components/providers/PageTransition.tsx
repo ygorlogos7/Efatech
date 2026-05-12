@@ -82,12 +82,12 @@ function TransitionPortal({ container, isOut }: { container: HTMLElement; isOut:
         <img src="/images/transition.png" alt="Efatech" width="200" height="200" style="object-fit:contain;filter:drop-shadow(0 0 40px rgba(0,176,80,0.4));" />
         <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
           <p style="color:rgba(255,255,255,0.9);font-size:20px;font-weight:600;letter-spacing:3px;margin:0;font-family:inherit;">
-            Efatech <span style="color:#00b050;">PRO</span>
+            Efatech <span style="color:#28a745;">PRO</span>
           </p>
           <div style="display:flex;gap:6px;">
-            <span style="width:8px;height:8px;border-radius:50%;background:#00b050;animation:efatechDot 0.8s ease-in-out infinite 0s;"></span>
-            <span style="width:8px;height:8px;border-radius:50%;background:#00b050;animation:efatechDot 0.8s ease-in-out infinite 0.15s;"></span>
-            <span style="width:8px;height:8px;border-radius:50%;background:#00b050;animation:efatechDot 0.8s ease-in-out infinite 0.3s;"></span>
+            <span style="width:8px;height:8px;border-radius:50%;background:#28a745;animation:efatechDot 0.8s ease-in-out infinite 0s;"></span>
+            <span style="width:8px;height:8px;border-radius:50%;background:#28a745;animation:efatechDot 0.8s ease-in-out infinite 0.15s;"></span>
+            <span style="width:8px;height:8px;border-radius:50%;background:#28a745;animation:efatechDot 0.8s ease-in-out infinite 0.3s;"></span>
           </div>
         </div>
       </div>

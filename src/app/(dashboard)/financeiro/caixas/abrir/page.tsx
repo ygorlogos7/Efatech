@@ -15,7 +15,7 @@ import {
   ChevronDown
 } from "lucide-react";
 import { getFuncionarios } from "@/actions/funcionarios";
-import { getFormasPagamento, getPlanoContas } from "@/actions/financeiro";
+import { getFormasPagamento } from "@/actions/financeiro";
 import { abrirCaixa } from "@/actions/caixa";
 import { useNotification } from "@/hooks/use-notification";
 

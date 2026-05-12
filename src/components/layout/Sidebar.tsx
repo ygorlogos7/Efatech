@@ -17,7 +17,6 @@ import {
   Box,
   DollarSign,
   Receipt,
-  FileSignature,
   ChevronDown,
   Smartphone,
   MessageSquare,
@@ -27,10 +26,8 @@ import {
   Briefcase,
   Truck,
   Copy,
-  MapPin,
   Tag,
   HandCoins,
-  Network,
   FlaskConical,
   GitBranch,
   Barcode,
@@ -43,9 +40,7 @@ import {
   BarChart2,
   Landmark,
   CreditCard,
-  TreePine,
   RefreshCw,
-  Percent,
   Upload,
   Download,
   Banknote,
@@ -117,8 +112,6 @@ const MENU_ITEMS = [
     subItems: [
       { href: "/orcamentos/produtos", label: "Produtos", icon: Box },
       { href: "/orcamentos/servicos", label: "Serviços", icon: Wrench },
-      { href: "/orcamentos/opcoes/situacoes", label: "Situações", icon: ClipboardList },
-      { href: "/orcamentos/opcoes/modelos-email", label: "Modelos de e-mail", icon: Receipt },
     ]
   },
   { 
@@ -130,9 +123,6 @@ const MENU_ITEMS = [
     subItems: [
       { href: "/ordens-servico", label: "Gerenciar O.S.", icon: ClipboardList },
       { href: "/ordens-servico/painel", label: "Painel", icon: LineChart },
-      { href: "/ordens-servico/opcoes/situacoes", label: "Situações", icon: ClipboardList },
-      { href: "/ordens-servico/opcoes/modelos-email", label: "Modelos de e-mail", icon: Receipt },
-      { href: "/ordens-servico/opcoes/configuracoes", label: "Configurações", icon: Settings },
     ]
   },
   { 
@@ -145,10 +135,6 @@ const MENU_ITEMS = [
       { href: "/vendas/produtos", label: "Produtos", icon: Box },
       { href: "/vendas/balcao", label: "Balcão", icon: Package },
       { href: "/vendas/servicos", label: "Serviços", icon: Wrench },
-      { href: "/vendas/opcoes/situacoes", label: "Situações", icon: ClipboardList },
-      { href: "/vendas/opcoes/canais", label: "Canais", icon: Megaphone },
-      { href: "/vendas/opcoes/modelos-email", label: "Modelos de e-mail", icon: Receipt },
-      { href: "/vendas/opcoes/configuracoes", label: "Configurações", icon: Settings },
     ]
   },
   {
@@ -174,8 +160,6 @@ const MENU_ITEMS = [
         ]
       },
       { href: "/estoque/trocas-devolucoes", label: "Trocas e devoluções", icon: RotateCcw },
-      { href: "/estoque/opcoes/situacoes", label: "Situações", icon: ClipboardList },
-      { href: "/estoque/opcoes/locais", label: "Locais de estoque", icon: MapPin },
     ]
   },
   {
@@ -204,14 +188,7 @@ const MENU_ITEMS = [
       { href: "/financeiro/opcoes/caixas", label: "Caixas", icon: PiggyBank },
       { href: "/financeiro/opcoes/contas-bancarias", label: "Contas bancárias", icon: Landmark },
       { href: "/financeiro/opcoes/formas-pagamento", label: "Formas de pagamento", icon: CreditCard },
-      { href: "/financeiro/opcoes/plano-contas", label: "Plano de contas", icon: TreePine },
-      { href: "/financeiro/opcoes/situacoes", label: "Situações", icon: ClipboardList },
-      { href: "/financeiro/opcoes/centros-custo", label: "Centros de custos", icon: Network },
-      { href: "/financeiro/opcoes/conciliacao", label: "Conciliação bancária", icon: RefreshCw },
       { href: "/financeiro/opcoes/transferencias", label: "Transferências", icon: ArrowLeftRight },
-      { href: "/financeiro/opcoes/modelos-email", label: "Modelos de e-mails", icon: Receipt },
-      { href: "/financeiro/opcoes/tabelas-rateio", label: "Tabelas de rateios", icon: Percent },
-      { href: "/financeiro/opcoes/configuracoes", label: "Configurações", icon: Settings },
     ]
   },
   {
@@ -233,21 +210,6 @@ const MENU_ITEMS = [
       { href: "/notas/opcoes/modelos-email", label: "Modelos de e-mails", icon: Mail },
       { href: "/notas/opcoes/intermediadores", label: "Intermediadores", icon: UserPlus },
       { href: "/notas/opcoes/configuracoes", label: "Configurações", icon: Settings },
-    ]
-  },
-  {
-    id: "contratos",
-    href: "#",
-    label: "Contratos",
-    icon: FileSignature,
-    hasSubmenu: true,
-    subItems: [
-      { href: "/contratos/servicos", label: "Serviços", icon: Wrench },
-      { href: "/contratos/locacoes", label: "Locações", icon: ArrowLeftRight },
-      { href: "/contratos/assinaturas", label: "Assinaturas", icon: RefreshCw },
-      { href: "/contratos/opcoes/situacoes-contratos", label: "Situações de contratos", icon: List },
-      { href: "/contratos/opcoes/situacoes-locacoes", label: "Situações de locações", icon: List },
-      { href: "/contratos/opcoes/configuracoes", label: "Configurações", icon: Settings },
     ]
   },
   {
@@ -277,7 +239,6 @@ const MENU_ITEMS = [
       { href: "/relatorios/ordens-servico", label: "Ordens de serviços", icon: Wrench },
       { href: "/relatorios/estoque", label: "Estoque", icon: Box },
       { href: "/relatorios/financeiro", label: "Financeiro", icon: DollarSign },
-      { href: "/relatorios/contratos", label: "Contratos", icon: FileSignature },
       { href: "/relatorios/notas-fiscais", label: "Notas fiscais", icon: Receipt },
       { href: "/relatorios/logs", label: "Logs do sistema", icon: ClipboardList },
     ]
@@ -337,15 +298,15 @@ export function Sidebar() {
                 className={cn(
                   "flex items-center justify-between px-4 py-3 rounded-md text-sm transition-colors group",
                   isActive
-                    ? "text-[#38b473] bg-green-50/50 font-medium"
-                    : (isExpanded ? "text-[#38b473] font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900")
+                    ? "text-[#28a745] bg-green-50/50 font-medium"
+                    : (isExpanded ? "text-[#28a745] font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900")
                 )}
               >
                 <div className="flex items-center gap-3">
                   <item.icon
                     className={cn(
                       "w-[18px] h-[18px]",
-                      (isActive || isExpanded) ? "text-[#38b473]" : "text-gray-400 group-hover:text-gray-600"
+                      (isActive || isExpanded) ? "text-[#28a745]" : "text-gray-400 group-hover:text-gray-600"
                     )}
                   />
                   <span>{item.label}</span>
@@ -353,7 +314,7 @@ export function Sidebar() {
                 {item.hasSubmenu && (
                   <ChevronDown className={cn(
                     "w-4 h-4 transition-transform",
-                    isExpanded ? "rotate-180 text-[#38b473]" : "text-gray-400"
+                    isExpanded ? "rotate-180 text-[#28a745]" : "text-gray-400"
                   )} />
                 )}
               </Link>
@@ -373,13 +334,13 @@ export function Sidebar() {
                           className={cn(
                             "flex items-center gap-3 py-2.5 px-3 rounded-md text-[13px] transition-colors",
                             isSubActive 
-                              ? "text-[#38b473] font-medium" 
-                              : (isSubExpanded ? "text-[#38b473]" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900")
+                              ? "text-[#28a745] font-medium" 
+                              : (isSubExpanded ? "text-[#28a745]" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900")
                           )}
                         >
-                          <sub.icon className={cn("w-4 h-4", (isSubActive || isSubExpanded) ? "text-[#38b473]" : "text-gray-400")} />
+                          <sub.icon className={cn("w-4 h-4", (isSubActive || isSubExpanded) ? "text-[#28a745]" : "text-gray-400")} />
                           <span className="flex-1 cursor-pointer">{sub.label}</span>
-                          {sub.hasSubmenu && <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isSubExpanded ? "rotate-180 text-[#38b473]" : "text-gray-400")} />}
+                          {sub.hasSubmenu && <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isSubExpanded ? "rotate-180 text-[#28a745]" : "text-gray-400")} />}
                         </Link>
 
                         {/* Mapeando subitens Nível 2 (Opções Auxiliares) */}

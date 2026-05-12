@@ -2,7 +2,7 @@
 
 import React, { useTransition } from "react";
 import { MoreActionsDropdown, ActionItem } from "@/components/common/MoreActionsDropdown";
-import { updateSituacaoOrcamento, updateSituacaoIdOrcamento } from "@/actions/orcamentos";
+import { updateSituacaoOrcamento } from "@/actions/orcamentos";
 import { sendEmailAction } from "@/actions/mail";
 import { CheckSquare, DollarSign, Printer, Share2, Mail, MessageCircle, FileText, RefreshCw, Coins, Check, X, Loader2 } from "lucide-react";
 import { getWhatsAppLink } from "@/lib/whatsapp";
@@ -11,24 +11,14 @@ interface OrcamentoActionsProps {
   item: any;
   baseUrl: string;
   tipo?: "produtos" | "servicos";
-  situacoes?: any[];
 }
 
-export function OrcamentoActions({ item, baseUrl, tipo = "servicos", situacoes = [] }: OrcamentoActionsProps) {
+export function OrcamentoActions({ item, baseUrl, tipo = "servicos" }: OrcamentoActionsProps) {
   const [isPending, startTransition] = useTransition();
 
   const handleUpdateStatus = (ativo: boolean) => {
     startTransition(async () => {
       const res = await updateSituacaoOrcamento(item.Id, ativo);
-      if (!res.success) {
-        alert(res.error);
-      }
-    });
-  };
-
-  const handleUpdateSituacaoId = (situacaoId: number | null) => {
-    startTransition(async () => {
-      const res = await updateSituacaoIdOrcamento(item.Id, situacaoId);
       if (!res.success) {
         alert(res.error);
       }
@@ -79,27 +69,21 @@ export function OrcamentoActions({ item, baseUrl, tipo = "servicos", situacoes =
         { label: "Cupom", href: `/orcamentos/${tipo}/print/${item.Id}` },
       ]
     },
-    { 
-        label: "Alterar situação", 
-        icon: <CheckSquare className="w-4 h-4" />,
-        subItems: [
-            ...situacoes.map(sit => ({
-                label: sit.Nome,
-                icon: <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: sit.Cor || "#6c757d" }} />,
-                onClick: () => handleUpdateSituacaoId(sit.Id)
-            })),
-            ...(situacoes.length > 0 ? [{ type: "divider" as const }] : []),
-            { 
-                label: "Marcar como Aberto", 
-                icon: <Check className="w-3.5 h-3.5 text-green-500" />,
-                onClick: () => handleUpdateStatus(true)
-            },
-            { 
-                label: "Marcar como Encerrado", 
-                icon: <X className="w-3.5 h-3.5 text-red-500" />,
-                onClick: () => handleUpdateStatus(false)
-            },
-        ]
+    {
+      label: "Alterar situação",
+      icon: <CheckSquare className="w-4 h-4" />,
+      subItems: [
+        {
+          label: "Marcar como Aberto",
+          icon: <Check className="w-3.5 h-3.5 text-green-500" />,
+          onClick: () => handleUpdateStatus(true)
+        },
+        {
+          label: "Marcar como Encerrado",
+          icon: <X className="w-3.5 h-3.5 text-red-500" />,
+          onClick: () => handleUpdateStatus(false)
+        },
+      ]
     },
     {
       label: "Compartilhar",

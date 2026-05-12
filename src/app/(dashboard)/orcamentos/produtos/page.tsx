@@ -7,7 +7,6 @@ import { DeleteOrcamentoButton } from "@/components/forms/DeleteOrcamentoButton"
 import { getWhatsAppLink } from "@/lib/whatsapp";
 import { headers } from "next/headers";
 import { OrcamentoActions } from "@/components/orcamentos/OrcamentoActions";
-import { prisma } from "@/lib/prisma";
 
 export default async function OrcamentosProdutosPage({
   searchParams,
@@ -25,11 +24,6 @@ export default async function OrcamentosProdutosPage({
   const page = Number(resolvedParams?.page) || 1;
   const { success, data: items, total = 0 } = await getOrcamentosProdutos(pesquisa, page, 20);
 
-  // Buscar situações para o dropdown
-  const { data: situacoes = [] } = await prisma.orcamentoSituacao.findMany({ 
-    where: { Ativo: true },
-    orderBy: { Nome: "asc" }
-  }).then(res => ({ data: res })).catch(() => ({ data: [] }));
   const from = total === 0 ? 0 : (page - 1) * 20 + 1;
   const to = total === 0 ? 0 : Math.min(page * 20, total);
 
@@ -86,7 +80,7 @@ export default async function OrcamentosProdutosPage({
           <tbody>
             {!success || !items || items.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-16 text-gray-500">
+                <td colSpan={7} className="text-center py-16 text-gray-500">
                   <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
                   <h5 className="text-lg font-medium text-gray-700">Nenhum orçamento de produtos encontrado.</h5>
                 </td>
@@ -100,15 +94,9 @@ export default async function OrcamentosProdutosPage({
                   <td className="py-3 px-4 text-right font-medium">R$ {item.TotalProdutos.toFixed(2).replace(".", ",")}</td>
                   <td className="py-3 px-4 text-right font-bold text-green-700">R$ {item.Total.toFixed(2).replace(".", ",")}</td>
                   <td className="py-3 px-4 text-center">
-                    {item.Situacao ? (
-                      <span className="inline-block px-2.5 py-1 text-[10px] font-black uppercase rounded text-white shadow-sm" style={{ backgroundColor: item.Situacao.Cor || "#6c757d" }}>
-                        {item.Situacao.Nome}
-                      </span>
-                    ) : (
-                      <span className={`inline-block px-2.5 py-1 text-[11px] font-medium rounded border ${item.Ativo ? "bg-yellow-50 text-yellow-700 border-yellow-200" : "bg-gray-100 text-gray-600 border-gray-200"}`}>
-                        {item.Ativo ? "Aberto" : "Encerrado"}
-                      </span>
-                    )}
+                    <span className={`inline-block px-2.5 py-1 text-[11px] font-medium rounded border ${item.Ativo ? "bg-yellow-50 text-yellow-700 border-yellow-200" : "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                      {item.Ativo ? "Aberto" : "Encerrado"}
+                    </span>
                   </td>
                   <td className="py-3 px-6 text-right">
                     <div className="flex justify-end gap-1 items-center">
@@ -127,7 +115,7 @@ export default async function OrcamentosProdutosPage({
                         <Edit2 className="w-3.5 h-3.5" />
                       </Link>
                       <DeleteOrcamentoButton id={item.Id} numero={item.Numero} />
-                      <OrcamentoActions item={item} baseUrl={baseUrl} tipo="produtos" situacoes={situacoes} />
+                      <OrcamentoActions item={item} baseUrl={baseUrl} tipo="produtos" />
                     </div>
                   </td>
                 </tr>

@@ -6,6 +6,7 @@ import { getCaixaPrintData } from "@/actions/caixa";
 import { PrintButton } from "@/components/forms/PrintButton";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { RETIRADAS_FORMA_CONSOLIDADO, indiceLinhaParaAlocarSangria } from "@/lib/caixaRelatorioFormas";
 
 export default function CaixaPrintPage() {
   const { id } = useParams();
@@ -39,6 +40,18 @@ export default function CaixaPrintPage() {
   if (!data) return <div className="p-8">Carregando relatório detalhado...</div>;
 
   const { session, abertura, vendas, os, sangrias, consolidadoGeral, saldoReal } = data;
+
+  const valorAberturaNum = Number(abertura?.Recebido ?? session?.ValorAbertura ?? 0);
+  const totalRetiradasNum = Array.isArray(sangrias)
+    ? sangrias.reduce((acc: number, s: any) => acc + Number(s.Total ?? s.Pago ?? 0), 0)
+    : 0;
+  const saldoDinheiroAposRetiradas = valorAberturaNum - totalRetiradasNum;
+  const showLinhaSaldoAposRetiradas = type === "completo" && totalRetiradasNum > 0;
+
+  const consolidadoFormasPagamento = consolidadoGeral.filter((f: any) => f.Nome !== RETIRADAS_FORMA_CONSOLIDADO);
+  const idxSangriaAlvo = indiceLinhaParaAlocarSangria(consolidadoFormasPagamento);
+  const sangriaAlocadaNaLinha = (i: number) =>
+    totalRetiradasNum > 0 && i === idxSangriaAlvo ? totalRetiradasNum : 0;
 
   return (
     <div className="bg-white text-black p-4 font-sans text-[12px] leading-tight max-w-[800px] mx-auto print:max-w-full print:p-0 relative">
@@ -216,10 +229,8 @@ export default function CaixaPrintPage() {
           <table className="w-full border-collapse border border-black text-center">
             <thead className="bg-[#f2f2f2] border-b border-black font-bold text-[10px]">
               <tr>
-                <td className="border-r border-black p-1 text-left">Forma Pagamento</td>
-                <td className="border-r border-black p-1 text-right">Pago</td>
-                <td className="border-r border-black p-1 text-right">À Pagar</td>
-                <td className="p-1 text-right">Total</td>
+                <td className="border-r border-black p-1 text-left">Movimentações de caixa</td>
+                <td className="p-1 text-right">Valor retirado</td>
               </tr>
             </thead>
             <tbody className="text-[10px]">
@@ -227,25 +238,34 @@ export default function CaixaPrintPage() {
                 sangrias.map((s: any, i: number) => (
                   <tr key={i} className="border-b border-black last:border-0">
                     <td className="border-r border-black p-1 text-left">{s.Forma}</td>
-                    <td className="border-r border-black p-1 text-right">{formatCurrency(s.Pago)}</td>
-                    <td className="border-r border-black p-1 text-right">{formatCurrency(s.APagar)}</td>
                     <td className="p-1 text-right text-red-600">-{formatCurrency(s.Total)}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="p-2 text-gray-500 italic">Nenhuma sangria registrada</td>
+                  <td colSpan={2} className="p-2 text-gray-500 italic">Nenhuma sangria registrada</td>
                 </tr>
               )}
             </tbody>
             {sangrias.length > 0 && (
               <tfoot className="font-bold border-t border-black bg-[#f9f9f9] text-[10px]">
                 <tr>
-                  <td className="border-r border-black p-1 text-left">Total</td>
-                  <td className="border-r border-black p-1 text-right">{formatCurrency(sangrias.reduce((acc: number, curr: any) => acc + curr.Pago, 0))}</td>
-                  <td className="border-r border-black p-1 text-right">{formatCurrency(sangrias.reduce((acc: number, curr: any) => acc + curr.APagar, 0))}</td>
-                  <td className="p-1 text-right text-red-600">-{formatCurrency(sangrias.reduce((acc: number, curr: any) => acc + curr.Total, 0))}</td>
+                  <td className="border-r border-black p-1 text-left">Total de saídas / sangrias</td>
+                  <td className="p-1 text-right text-red-600">
+                    -{formatCurrency(sangrias.reduce((acc: number, curr: any) => acc + curr.Total, 0))}
+                  </td>
                 </tr>
+                {showLinhaSaldoAposRetiradas && (
+                  <tr className="bg-[#fafafa] border-t border-dashed border-gray-400 font-semibold">
+                    <td className="border-r border-black p-1 text-left">
+                      Saldo atual{" "}
+                      <span className="font-normal text-gray-600 font-sans">
+                        (abertura {formatCurrency(valorAberturaNum)} − retiradas {formatCurrency(totalRetiradasNum)})
+                      </span>
+                    </td>
+                    <td className="p-1 text-right text-gray-900">{formatCurrency(saldoDinheiroAposRetiradas)}</td>
+                  </tr>
+                )}
               </tfoot>
             )}
           </table>
@@ -258,28 +278,40 @@ export default function CaixaPrintPage() {
         <table className="w-full border-collapse border border-black text-center">
            <thead className="bg-[#f2f2f2] border-b border-black font-bold text-[10px]">
               <tr>
-                <td className="border-r border-black p-1 text-left">Nome</td>
-                <td className="border-r border-black p-1 text-right">Não Pago/recebido</td>
-                <td className="border-r border-black p-1 text-right">Pago/recebido</td>
-                <td className="p-1 text-right">Total</td>
+                <td className="border-r border-black p-1 text-left">Forma de pagamento</td>
+                <td className="border-r border-black p-1 text-right">Entradas (Recebido)</td>
+                <td className="border-r border-black p-1 text-right">Sangria (retiradas)</td>
+                <td className="p-1 text-right">Saldo líquido (Total)</td>
               </tr>
            </thead>
            <tbody className="text-[10px]">
-              {consolidadoGeral.map((f: any, i: number) => (
-                <tr key={i} className="border-b border-black last:border-0">
-                   <td className="border-r border-black p-1 text-left">{f.Nome}</td>
-                   <td className="border-r border-black p-1 text-right">{formatCurrency(f.NaoRecebido)}</td>
-                   <td className="border-r border-black p-1 text-right">{formatCurrency(f.Recebido)}</td>
-                   <td className="p-1 text-right font-bold">{formatCurrency(f.Total)}</td>
-                </tr>
-              ))}
+              {consolidadoFormasPagamento.map((f: any, i: number) => {
+                const s = sangriaAlocadaNaLinha(i);
+                const liquido = Number(f.Total) - s;
+                return (
+                  <tr key={`${f.Nome}-${i}`} className="border-b border-black last:border-0">
+                    <td className="border-r border-black p-1 text-left">{f.Nome}</td>
+                    <td className="border-r border-black p-1 text-right">{formatCurrency(f.Recebido)}</td>
+                    <td className="border-r border-black p-1 text-right">
+                      {s > 0 ? (
+                        <span className="text-red-600">-{formatCurrency(s)}</span>
+                      ) : (
+                        formatCurrency(0)
+                      )}
+                    </td>
+                    <td className="p-1 text-right font-bold">{formatCurrency(liquido)}</td>
+                  </tr>
+                );
+              })}
            </tbody>
            <tfoot className="font-bold border-t border-black bg-[#f9f9f9] text-[10px]">
               <tr>
-                 <td className="border-r border-black p-1 text-left">Total</td>
-                 <td className="border-r border-black p-1 text-right">{formatCurrency(consolidadoGeral.reduce((acc: number, curr: any) => acc + curr.NaoRecebido, 0))}</td>
+                 <td className="border-r border-black p-1 text-left">Total geral</td>
                  <td className="border-r border-black p-1 text-right">{formatCurrency(consolidadoGeral.reduce((acc: number, curr: any) => acc + curr.Recebido, 0))}</td>
-                 <td className="p-1 text-right font-black">{formatCurrency(consolidadoGeral.reduce((acc: number, curr: any) => acc + curr.Total, 0))}</td>
+                 <td className="border-r border-black p-1 text-right text-red-600">
+                   {totalRetiradasNum > 0 ? `-${formatCurrency(totalRetiradasNum)}` : formatCurrency(0)}
+                 </td>
+                 <td className="p-1 text-right font-black">{formatCurrency(saldoReal)}</td>
               </tr>
            </tfoot>
         </table>

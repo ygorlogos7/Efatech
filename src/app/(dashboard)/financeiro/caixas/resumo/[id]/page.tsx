@@ -20,6 +20,7 @@ import {
   ArrowUpCircle
 } from "lucide-react";
 import { getCaixaPrintData } from "@/actions/caixa";
+import { RETIRADAS_FORMA_CONSOLIDADO, indiceLinhaParaAlocarSangria } from "@/lib/caixaRelatorioFormas";
 
 export default function CaixaResumoPage() {
   const { id } = useParams();
@@ -48,6 +49,18 @@ export default function CaixaResumoPage() {
   const totalValue = type === 'completo' ? (totalVendas + totalOS + (suprimentos?.reduce((acc: any, c: any) => acc + c.Total, 0) || 0)) : (type === 'vendas' ? totalVendas : totalOS);
   
   const isCompleto = type === 'completo';
+
+  const valorAberturaNum = Number(abertura?.Recebido ?? session?.ValorAbertura ?? 0);
+  const totalRetiradasNum = Array.isArray(sangrias)
+    ? sangrias.reduce((acc: number, s: any) => acc + Number(s.Total ?? s.Pago ?? 0), 0)
+    : 0;
+  const saldoDinheiroAposRetiradas = valorAberturaNum - totalRetiradasNum;
+  const showLinhaSaldoAposRetiradas = isCompleto && totalRetiradasNum > 0;
+
+  const consolidadoFormasPagamento = consolidadoGeral.filter((f: any) => f.Nome !== RETIRADAS_FORMA_CONSOLIDADO);
+  const idxSangriaAlvo = indiceLinhaParaAlocarSangria(consolidadoFormasPagamento);
+  const sangriaAlocadaNaLinha = (i: number) =>
+    totalRetiradasNum > 0 && i === idxSangriaAlvo ? totalRetiradasNum : 0;
 
   const btnColor = isCompleto ? "bg-orange-600 hover:bg-orange-700" : (type === 'vendas' ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700");
   const borderColor = isCompleto ? "border-orange-100" : (type === 'vendas' ? "border-green-100" : "border-blue-100");
@@ -158,31 +171,43 @@ export default function CaixaResumoPage() {
               <table className="w-full text-sm text-left border-collapse">
                  <thead className="bg-[#fcfcfc] text-[10px] uppercase font-black text-gray-400 tracking-widest border-b border-gray-50">
                     <tr>
-                       <th className="px-8 py-4">Nome da Forma</th>
+                       <th className="px-8 py-4">Forma de pagamento</th>
                        <th className="px-8 py-4 text-right">Entradas (+)</th>
-                       <th className="px-8 py-4 text-right">Saídas (-)</th>
-                       <th className="px-8 py-4 text-right">Total Acumulado</th>
+                       <th className="px-8 py-4 text-right">Sangria (retiradas)</th>
+                       <th className="px-8 py-4 text-right">Saldo líquido (Total)</th>
                     </tr>
                  </thead>
                  <tbody className="divide-y divide-gray-50">
-                    {consolidadoGeral.map((f: any, i: number) => (
-                      <tr key={i} className="group hover:bg-gray-50 transition-colors">
-                         <td className="px-8 py-4">
+                    {consolidadoFormasPagamento.map((f: any, i: number) => {
+                      const s = sangriaAlocadaNaLinha(i);
+                      const liquido = Number(f.Total) - s;
+                      return (
+                        <tr key={`${f.Nome}-${i}`} className="group hover:bg-gray-50 transition-colors">
+                          <td className="px-8 py-4">
                             <span className="font-bold text-gray-800">{f.Nome}</span>
-                         </td>
-                         <td className="px-8 py-4 text-right text-green-600 font-bold">{formatCurrency(f.Recebido)}</td>
-                         <td className="px-8 py-4 text-right text-red-600 font-bold">{formatCurrency(f.Pago)}</td>
-                         <td className="px-8 py-4 text-right">
-                            <span className="font-black text-gray-900">{formatCurrency(f.Total)}</span>
-                         </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-8 py-4 text-right text-green-600 font-bold">{formatCurrency(f.Recebido)}</td>
+                          <td className="px-8 py-4 text-right text-sm">
+                            {s > 0 ? (
+                              <span className="font-bold text-red-600">-{formatCurrency(s)}</span>
+                            ) : (
+                              <span className="font-bold text-gray-500">{formatCurrency(0)}</span>
+                            )}
+                          </td>
+                          <td className="px-8 py-4 text-right">
+                            <span className="font-black text-gray-900">{formatCurrency(liquido)}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                  </tbody>
                  <tfoot className="bg-gray-50/80 backdrop-blur-sm border-t border-gray-100">
                     <tr>
-                       <td className="px-8 py-5 font-black text-gray-500 text-[11px] uppercase tracking-widest">Totais Consolidados</td>
+                       <td className="px-8 py-5 font-black text-gray-500 text-[11px] uppercase tracking-widest">Total geral</td>
                        <td className="px-8 py-5 text-right font-bold text-green-600">{formatCurrency(consolidadoGeral.reduce((acc: number, curr: any) => acc + curr.Recebido, 0))}</td>
-                       <td className="px-8 py-5 text-right font-bold text-red-600">{formatCurrency(consolidadoGeral.reduce((acc: number, curr: any) => acc + curr.Pago, 0))}</td>
+                       <td className="px-8 py-5 text-right font-bold text-red-600">
+                         {totalRetiradasNum > 0 ? `-${formatCurrency(totalRetiradasNum)}` : formatCurrency(0)}
+                       </td>
                        <td className="px-8 py-5 text-right">
                           <span className="font-black text-gray-900 text-lg">{formatCurrency(saldoReal)}</span>
                        </td>
@@ -204,16 +229,16 @@ export default function CaixaResumoPage() {
                 <table className="w-full text-sm text-left border-collapse">
                    <thead className="bg-[#fcfcfc] text-[10px] uppercase font-black text-gray-400 tracking-widest border-b border-gray-50">
                       <tr>
-                         <th className="px-8 py-4">Data/Hora</th>
-                         <th className="px-8 py-4 text-right">Forma</th>
-                         <th className="px-8 py-4 text-right">Valor Total</th>
+                         <th className="px-8 py-4 text-left">Descrição</th>
+                         <th className="px-8 py-4 text-right">Origem</th>
+                         <th className="px-8 py-4 text-right">Valor retirado</th>
                       </tr>
                    </thead>
                    <tbody className="divide-y divide-gray-50">
                       {sangrias.map((item: any, idx: number) => (
                         <tr key={idx} className="group hover:bg-gray-50 transition-colors">
                            <td className="px-8 py-4 whitespace-nowrap">
-                              <span className="font-bold text-gray-700">Sangria #{idx+1}</span>
+                              <span className="font-bold text-gray-700">Retirada #{idx + 1}</span>
                            </td>
                            <td className="px-8 py-4 text-right">
                              <span className="text-[10px] font-black uppercase text-gray-400 bg-white border border-gray-100 px-2 py-1 rounded">Dinheiro</span>
@@ -224,6 +249,29 @@ export default function CaixaResumoPage() {
                         </tr>
                       ))}
                    </tbody>
+                   <tfoot className="bg-gray-50/90 border-t-2 border-gray-200">
+                      <tr>
+                        <td className="px-8 py-4 font-black text-gray-700 text-xs uppercase tracking-wide" colSpan={2}>
+                          Total de saídas / sangrias
+                        </td>
+                        <td className="px-8 py-4 text-right font-black text-red-600">
+                          -{formatCurrency(sangrias.reduce((acc: number, curr: any) => acc + Number(curr.Total ?? curr.Pago ?? 0), 0))}
+                        </td>
+                      </tr>
+                      {showLinhaSaldoAposRetiradas && (
+                        <tr className="border-t border-dashed border-gray-300 bg-white">
+                          <td className="px-8 py-4 font-bold text-gray-800" colSpan={2}>
+                            Saldo atual{" "}
+                            <span className="font-medium text-gray-500 text-xs font-sans normal-case">
+                              (abertura {formatCurrency(valorAberturaNum)} − retiradas {formatCurrency(totalRetiradasNum)})
+                            </span>
+                          </td>
+                          <td className="px-8 py-4 text-right font-black text-gray-900">
+                            {formatCurrency(saldoDinheiroAposRetiradas)}
+                          </td>
+                        </tr>
+                      )}
+                   </tfoot>
                 </table>
              </div>
           </div>

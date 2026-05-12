@@ -32,8 +32,6 @@ export async function getOrcamentosProdutos(searchQuery?: string, page: number =
       skip: skip,
     });
 
-    const situacoes = await prisma.orcamentoSituacao.findMany({ where: { Ativo: true } });
-    
     const total = await prisma.orcamento.count({ where: whereClause });
     return { 
       success: true, 
@@ -43,7 +41,6 @@ export async function getOrcamentosProdutos(searchQuery?: string, page: number =
         TotalServicos: Number(i.TotalServicos), 
         Desconto: Number(i.Desconto), 
         Total: Number(i.Total),
-        Situacao: situacoes.find(s => s.Id === i.SituacaoId)
       })), 
       total 
     };
@@ -79,8 +76,6 @@ export async function getOrcamentosServicos(searchQuery?: string, page: number =
       skip: skip,
     });
 
-    const situacoes = await prisma.orcamentoSituacao.findMany({ where: { Ativo: true } });
-    
     const total = await prisma.orcamento.count({ where: whereClause });
     return { 
       success: true, 
@@ -90,70 +85,11 @@ export async function getOrcamentosServicos(searchQuery?: string, page: number =
         TotalServicos: Number(i.TotalServicos), 
         Desconto: Number(i.Desconto), 
         Total: Number(i.Total),
-        Situacao: situacoes.find(s => s.Id === i.SituacaoId)
       })), 
       total 
     };
   } catch (error) {
     return { success: false, error: "Falha ao buscar orçamentos de serviços." };
-  }
-}
-
-// --- Situações ---
-export async function getOrcamentoSituacoes() {
-  try {
-    const items = await prisma.orcamentoSituacao.findMany({ 
-      orderBy: { Nome: "asc" } 
-    });
-    return { success: true, data: items };
-  } catch (error) {
-    return { success: false, error: "Falha ao buscar situações." };
-  }
-}
-
-export async function createOrcamentoSituacao(formData: FormData) {
-  try {
-    await prisma.orcamentoSituacao.create({
-      data: {
-        Nome: formData.get("Nome") as string,
-        Cor: formData.get("Cor") as string || null,
-        TransformarEmVenda: formData.get("TransformarEmVenda") === "true",
-        ExibirNaListagem: formData.get("ExibirNaListagem") === "true",
-        Ativo: true,
-      }
-    });
-    revalidatePath("/orcamentos/opcoes/situacoes");
-    return { success: true };
-  } catch (error) {
-    console.error("Erro ao criar situação:", error);
-    return { success: false, error: "Falha ao criar situação." };
-  }
-}
-
-// --- Modelos de Email ---
-export async function getModelosEmail() {
-  try {
-    const items = await prisma.orcamentoModeloEmail.findMany({ orderBy: { Nome: "asc" } });
-    return { success: true, data: items };
-  } catch (error) {
-    return { success: false, error: "Falha ao buscar modelos de e-mail." };
-  }
-}
-
-export async function createModeloEmail(formData: FormData) {
-  try {
-    await prisma.orcamentoModeloEmail.create({
-      data: {
-        Nome: formData.get("Nome") as string,
-        Assunto: formData.get("Assunto") as string,
-        Corpo: formData.get("Corpo") as string,
-        Ativo: true,
-      }
-    });
-    revalidatePath("/orcamentos/opcoes/modelos-email");
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: "Falha ao criar modelo." };
   }
 }
 
@@ -310,19 +246,5 @@ export async function updateSituacaoOrcamento(id: number, ativo: boolean) {
     return { success: true };
   } catch (error) {
     return { success: false, error: "Falha ao alterar situação do orçamento." };
-  }
-}
-
-export async function updateSituacaoIdOrcamento(id: number, situacaoId: number | null) {
-  try {
-    await prisma.orcamento.update({
-      where: { Id: id },
-      data: { SituacaoId: situacaoId }
-    });
-    revalidatePath("/orcamentos/produtos");
-    revalidatePath("/orcamentos/servicos");
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: "Falha ao alterar situação." };
   }
 }

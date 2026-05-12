@@ -141,7 +141,6 @@ export async function createVenda(tipo: string, formData: FormData) {
         EmpresaId: formData.get("EmpresaId") ? Number(formData.get("EmpresaId")) : null,
         AssinaturaCliente: formData.get("AssinaturaCliente") as string | null,
         Garantia: formData.get("Garantia") as string | null,
-        CanalId: formData.get("CanalId") ? Number(formData.get("CanalId")) : null,
         Ativo: formData.get("Situacao") ? formData.get("Situacao") === "Concluída" : true,
         CaixaSessaoId: caixaAberto?.Id || null, // Vínculo com o caixa
         FormaPagamentoId: formData.get("FormaPagamentoId") ? Number(formData.get("FormaPagamentoId")) : null,
@@ -189,7 +188,6 @@ export async function updateVenda(id: number, tipo: string, formData: FormData) 
         Observacoes: formData.get("Observacoes") as string | null,
         Vendedor: formData.get("Vendedor") as string | null,
         Garantia: formData.get("Garantia") as string | null,
-        CanalId: formData.get("CanalId") ? Number(formData.get("CanalId")) : null,
         EmpresaId: formData.get("EmpresaId") ? Number(formData.get("EmpresaId")) : null,
         FormaPagamentoId: formData.get("FormaPagamentoId") ? Number(formData.get("FormaPagamentoId")) : null,
         Ativo: formData.get("Situacao") === "Concluída",
@@ -213,77 +211,6 @@ export async function deleteVenda(id: number, tipo: string) {
   } catch (error) {
     await logAction("Deletar Venda", MODULO, `Falha ao remover venda ID: ${id}: ${error}`, "ERRO");
     return { success: false, error: "Falha ao deletar." };
-  }
-}
-
-// --- Situações ---
-export async function getVendaSituacoes() {
-  try {
-    const items = await prisma.vendaSituacao.findMany({ orderBy: { Nome: "asc" } });
-    return { success: true, data: items };
-  } catch (error) {
-    return { success: false, error: "Falha ao buscar situações." };
-  }
-}
-
-export async function createVendaSituacao(formData: FormData) {
-  try {
-    await prisma.vendaSituacao.create({
-      data: { Nome: formData.get("Nome") as string, Cor: (formData.get("Cor") as string) || null, Ativo: true },
-    });
-    revalidatePath("/vendas/opcoes/situacoes");
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: "Falha ao criar." };
-  }
-}
-
-// --- Canais ---
-export async function getVendaCanais() {
-  try {
-    const items = await prisma.vendaCanal.findMany({ orderBy: { Nome: "asc" } });
-    return { success: true, data: items };
-  } catch (error) {
-    return { success: false, error: "Falha ao buscar canais." };
-  }
-}
-
-export async function createVendaCanal(formData: FormData) {
-  try {
-    await prisma.vendaCanal.create({
-      data: { Nome: formData.get("Nome") as string, Ativo: true },
-    });
-    revalidatePath("/vendas/opcoes/canais");
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: "Falha ao criar." };
-  }
-}
-
-// --- Modelos de Email ---
-export async function getVendaModelosEmail() {
-  try {
-    const items = await prisma.vendaModeloEmail.findMany({ orderBy: { Nome: "asc" } });
-    return { success: true, data: items };
-  } catch (error) {
-    return { success: false, error: "Falha ao buscar modelos." };
-  }
-}
-
-export async function createVendaModeloEmail(formData: FormData) {
-  try {
-    await prisma.vendaModeloEmail.create({
-      data: {
-        Nome: formData.get("Nome") as string,
-        Assunto: formData.get("Assunto") as string,
-        Corpo: formData.get("Corpo") as string,
-        Ativo: true,
-      },
-    });
-    revalidatePath("/vendas/opcoes/modelos-email");
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: "Falha ao criar." };
   }
 }
 
@@ -314,55 +241,16 @@ export async function createVendaBalanca(formData: FormData) {
   }
 }
 
-// --- Config ---
-export async function getVendaConfig() {
-  try {
-    const config = await prisma.vendaConfig.findFirst();
-    return {
-      success: true,
-      data: config ? { ...config, DescontoMaximo: Number(config.DescontoMaximo) } : config,
-    };
-  } catch (error) {
-    return { success: false, error: "Falha ao buscar configurações." };
-  }
-}
-
-export async function saveVendaConfig(formData: FormData) {
-  try {
-    const data = {
-      MensagemRodape: (formData.get("MensagemRodape") as string) || null,
-      NumeracaoAutomatica: formData.get("NumeracaoAutomatica") === "true",
-      EmailPadrao: (formData.get("EmailPadrao") as string) || null,
-      PermitirDesconto: formData.get("PermitirDesconto") === "true",
-      DescontoMaximo: Number(formData.get("DescontoMaximo") || 100),
-    };
-    const existing = await prisma.vendaConfig.findFirst();
-    if (existing) {
-      await prisma.vendaConfig.update({ where: { Id: existing.Id }, data });
-    } else {
-      await prisma.vendaConfig.create({ data });
-    }
-    revalidatePath("/vendas/opcoes/configuracoes");
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: "Falha ao salvar." };
-  }
-}
 export async function updateSituacaoVenda(id: number, status: string) {
   try {
     if (status !== "Concluída" && status !== "Aberta") {
       return { success: false, error: "Situação inválida." };
     }
 
-    const situacao = await prisma.vendaSituacao.findFirst({
-      where: { Nome: status }
-    });
-
     await prisma.vendas.update({
       where: { Id: id },
-      data: { 
+      data: {
         Ativo: status === "Concluída",
-        SituacaoId: situacao?.Id || null
       }
     });
 
