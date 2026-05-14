@@ -1,1 +1,1 @@
-Projeto Sistema de ERP Desemvolvimento em Next e React
+Projeto Sistema de ERP Desenvolvido em Next e React
