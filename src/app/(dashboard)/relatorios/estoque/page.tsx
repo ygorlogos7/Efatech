@@ -15,6 +15,13 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { getRelatorioEstoque } from "@/actions/relatorios";
+import { RelatorioFiltroMes } from "@/components/relatorios/RelatorioFiltroMes";
+import {
+  filtrosPeriodoPadrao,
+  mesAnoParaIntervalo,
+} from "@/lib/relatorioPeriodo";
+
+const periodoInicial = filtrosPeriodoPadrao();
 
 type ProdutoRow = {
   Id: number;
@@ -28,13 +35,18 @@ export default function RelatoriosEstoquePage() {
   const [page, setPage] = useState(1);
   const [, startTransition] = useTransition();
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
-  const [filters, setFilters] = useState({ nome: "" });
+  const [filters, setFilters] = useState({
+    mesAno: periodoInicial.mesAno,
+    dataInicio: periodoInicial.dataInicio,
+    dataFim: periodoInicial.dataFim,
+    nome: "",
+  });
 
   const pageSize = 20;
 
-  const load = () => {
+  const load = (f = filters) => {
     startTransition(async () => {
-      const resp = await getRelatorioEstoque(filters);
+      const resp = await getRelatorioEstoque(f);
       if (resp.success && Array.isArray(resp.data)) {
         setItems(resp.data as ProdutoRow[]);
         setPage(1);
@@ -43,8 +55,15 @@ export default function RelatoriosEstoquePage() {
   };
 
   useEffect(() => {
-    load();
+    load(filters);
   }, []);
+
+  const handleMesAnoChange = (mesAno: string) => {
+    const { dataInicio, dataFim } = mesAnoParaIntervalo(mesAno);
+    const next = { ...filters, mesAno, dataInicio, dataFim };
+    setFilters(next);
+    load(next);
+  };
 
   useEffect(() => {
     setPage(1);
@@ -135,6 +154,12 @@ export default function RelatoriosEstoquePage() {
             Busca avançada
           </button>
         </div>
+
+        <RelatorioFiltroMes
+          mesAno={filters.mesAno}
+          onMesAnoChange={handleMesAnoChange}
+          hint="Posição atual do estoque (todos os produtos ativos)."
+        />
 
         {isAdvancedSearchOpen && (
           <div className="bg-white border border-gray-200 rounded p-6 mb-6 shadow-sm">

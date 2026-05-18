@@ -1,15 +1,25 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useEffect, useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { getAtendimentos, createAtendimento } from "@/actions/atendimentos";
-import { Headset, PlusCircle, Search, Filter, MessageSquare, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  Headset,
+  PlusCircle,
+  Search,
+  Home,
+  ChevronRight,
+  CheckCircle2,
+  MessageSquare,
+} from "lucide-react";
 
 export default function CentralAtendimentosPage() {
   const [items, setItems] = useState<any[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [search, setSearch] = useState("");
 
-  React.useEffect(() => {
+  useEffect(() => {
     startTransition(async () => {
       const r = await getAtendimentos();
       if (r.success) setItems(r.data as any[]);
@@ -29,99 +39,227 @@ export default function CentralAtendimentosPage() {
     });
   };
 
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((item) => {
+      const assunto = String(item.Assunto ?? "").toLowerCase();
+      const id = String(item.Id ?? "");
+      return assunto.includes(q) || id.includes(q);
+    });
+  }, [items, search]);
+
+  const prioridadeClass = (p: string) => {
+    const v = (p || "media").toLowerCase();
+    if (v === "urgente" || v === "alta")
+      return "bg-red-50 text-red-700 border-red-100";
+    if (v === "media")
+      return "bg-amber-50 text-amber-800 border-amber-100";
+    return "bg-blue-50 text-blue-700 border-blue-100";
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-3xl font-bold text-gray-900 font-black tracking-tight italic uppercase">Central de Atendimentos</h2>
-        <button onClick={() => setIsAdding(!isAdding)} className="flex items-center gap-1.5 bg-[#1a1c23] hover:bg-black text-white text-sm font-black px-6 py-3 rounded-2xl shadow-xl shadow-black/20 transition-all uppercase tracking-tight">
-          <PlusCircle className="w-4 h-4 text-[#38b473]" /> Novo Chamado
-        </button>
-      </div>
-
-      {isAdding && (
-        <form action={handleAdd} className="bg-white p-8 rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-6 items-end animate-in slide-in-from-top duration-300">
-           <div className="md:col-span-2">
-              <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">Assunto do Chamado *</label>
-              <input type="text" name="Assunto" required className="w-full bg-gray-50 border-0 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#38b473] transition-all font-bold" placeholder="Ex: Erro na impressão de boleto" />
-           </div>
-           <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">Prioridade</label>
-              <select name="Prioridade" className="w-full bg-gray-50 border-0 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#38b473] transition-all font-bold">
-                 <option value="baixa">Baixa</option>
-                 <option value="media">Média</option>
-                 <option value="alta">Alta</option>
-                 <option value="urgente">Urgente</option>
-              </select>
-           </div>
-           <div className="md:col-span-3">
-              <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">Descrição do Problema</label>
-              <textarea name="Descricao" rows={2} className="w-full bg-gray-50 border-0 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#38b473] transition-all font-bold"></textarea>
-           </div>
-           <div className="flex gap-2">
-              <button type="submit" disabled={isPending} className="bg-[#1a1c23] text-white font-black py-3 px-6 rounded-xl text-xs uppercase tracking-widest flex items-center gap-1 hover:bg-black transition-all">
-                 <CheckCircle2 className="w-4 h-4 text-[#38b473]" /> {isPending ? "Criando..." : "Abrir Ticket"}
-              </button>
-              <button type="button" onClick={() => setIsAdding(false)} className="bg-gray-100 text-gray-500 font-bold py-3 px-6 rounded-xl text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
-                 Cancelar
-              </button>
-           </div>
-        </form>
-      )}
-
-      <div className="bg-white p-4 rounded-md shadow-sm border border-gray-100 flex gap-4 items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input type="text" placeholder="Buscar por chamado ou cliente..." className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:border-[#38b473] focus:ring-1" />
+    <div className="min-h-screen bg-white pb-10">
+      <div className="flex justify-between items-center px-4 py-4 border-b border-gray-100 mb-6 bg-white shadow-sm">
+        <div className="flex items-center gap-2">
+          <Headset className="w-5 h-5 text-gray-600" />
+          <h1 className="text-[20px] font-normal text-gray-800">
+            Central de atendimentos
+          </h1>
         </div>
-        <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100">
-          <Filter className="w-4 h-4" /> Filtros
-        </button>
+
+        <div className="flex items-center gap-1.5 text-[12px] text-gray-400">
+          <Link
+            href="/home"
+            className="hover:text-blue-500 flex items-center gap-1.5"
+          >
+            <Home className="w-3.5 h-3.5" />
+            <span>Início</span>
+          </Link>
+          <ChevronRight className="w-3 h-3" />
+          <span className="text-gray-500">Atendimentos</span>
+          <ChevronRight className="w-3 h-3" />
+          <span className="text-gray-400">Central</span>
+        </div>
       </div>
 
-      <div className="bg-white rounded-md shadow-sm overflow-hidden border border-gray-100">
-        <table className="w-full text-sm text-left border-collapse min-w-[900px]">
-          <thead className="bg-[#f8f9fa] border-b border-gray-200 text-gray-700 font-semibold">
-            <tr>
-              <th className="py-3 px-6">ID / Assunto</th>
-              <th className="py-3 px-6">Cliente</th>
-              <th className="py-3 px-4 text-center">Prioridade</th>
-              <th className="py-3 px-4 text-center">Data/Hora</th>
-              <th className="py-3 px-4 text-center">Status</th>
-              <th className="py-3 px-4 text-center">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="text-center py-20 text-gray-500">
-                  <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Headset className="w-8 h-8 opacity-20 text-gray-400"/>
-                  </div>
-                  <h5 className="text-lg font-bold text-gray-700">Central de Tickets Vazia</h5>
-                  <p className="text-sm text-gray-400">Todos os atendimentos foram concluídos ou não há registros.</p>
-                </td>
+      <div className="px-4">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mb-6">
+          <div className="relative flex-1 max-w-xl">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar por assunto ou número do ticket…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full h-9 pl-9 pr-3 border border-gray-200 rounded text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsAdding(!isAdding)}
+            className={`flex items-center justify-center gap-2 px-4 h-9 rounded text-[13px] font-medium shadow-sm transition-all shrink-0 ${isAdding ? "bg-[#333] text-white" : "bg-[#1b2a33] hover:bg-black text-white"}`}
+          >
+            <PlusCircle className="w-4 h-4" />
+            Novo chamado
+          </button>
+        </div>
+
+        {isAdding ? (
+          <form
+            action={handleAdd}
+            className="bg-white border border-gray-200 rounded p-6 mb-6 shadow-sm"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+              <div className="md:col-span-2 space-y-1.5">
+                <label className="text-[12px] font-black text-gray-700 uppercase tracking-wider">
+                  Assunto do chamado *
+                </label>
+                <input
+                  type="text"
+                  name="Assunto"
+                  required
+                  className="w-full h-10 border border-gray-200 rounded px-3 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="Ex.: Erro na impressão de boleto"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[12px] font-black text-gray-700 uppercase tracking-wider">
+                  Prioridade
+                </label>
+                <select
+                  name="Prioridade"
+                  className="w-full h-10 border border-gray-200 rounded px-3 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                >
+                  <option value="baixa">Baixa</option>
+                  <option value="media">Média</option>
+                  <option value="alta">Alta</option>
+                  <option value="urgente">Urgente</option>
+                </select>
+              </div>
+              <div className="md:col-span-2 lg:col-span-3 space-y-1.5">
+                <label className="text-[12px] font-black text-gray-700 uppercase tracking-wider">
+                  Descrição do problema
+                </label>
+                <textarea
+                  name="Descricao"
+                  rows={3}
+                  className="w-full border border-gray-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 border-t border-gray-50 pt-6">
+              <button
+                type="submit"
+                disabled={isPending}
+                className="flex items-center gap-2 bg-[#00a65a] hover:bg-[#008d4c] text-white px-5 h-10 rounded text-[13px] font-bold shadow-sm transition-all active:scale-95 disabled:opacity-60"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                {isPending ? "Criando…" : "Abrir ticket"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAdding(false)}
+                className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 h-10 rounded text-[13px] font-medium"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        ) : null}
+
+        <div className="border border-gray-200 rounded shadow-sm bg-white overflow-hidden">
+          <table className="w-full text-left text-[13px] border-collapse min-w-[800px]">
+            <thead className="bg-[#f9f9f9] border-b border-gray-200">
+              <tr className="text-gray-800 font-bold uppercase tracking-tight text-[11px]">
+                <th className="px-4 py-3 border-r border-gray-200">
+                  ID / Assunto
+                </th>
+                <th className="px-4 py-3 border-r border-gray-200">Cliente</th>
+                <th className="px-4 py-3 border-r border-gray-200 text-center">
+                  Prioridade
+                </th>
+                <th className="px-4 py-3 border-r border-gray-200 text-center">
+                  Data / hora
+                </th>
+                <th className="px-4 py-3 border-r border-gray-200 text-center">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-center">Ações</th>
               </tr>
-            ) : items.map(item => (
-              <tr key={item.Id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                <td className="py-3 px-6">
-                   <div className="font-bold text-gray-900">{item.Assunto}</div>
-                   <div className="text-[10px] text-gray-400 uppercase tracking-tighter">Ticket #{item.Id}</div>
-                </td>
-                <td className="py-3 px-6 font-medium text-gray-700">Cliente Exemplo</td>
-                <td className="py-3 px-4 text-center">
-                   <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded border ${item.Prioridade === "alta" ? "bg-red-50 text-red-700 border-red-100" : "bg-blue-50 text-blue-700 border-blue-100"}`}>
-                      {item.Prioridade.toUpperCase()}
-                   </span>
-                </td>
-                <td className="py-3 px-4 text-center text-gray-600">{new Date(item.DataAbertura).toLocaleString("pt-BR")}</td>
-                <td className="py-3 px-4 text-center font-bold text-blue-600">ABERTO</td>
-                <td className="py-3 px-4 text-center">
-                   <button className="p-1.5 text-[#38b473] hover:bg-green-50 rounded"><MessageSquare className="w-4 h-4" /></button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-16 text-gray-400">
+                    <div className="flex flex-col items-center gap-2">
+                      <Headset className="w-10 h-10 text-gray-300" />
+                      <span className="font-medium text-gray-600">
+                        {items.length === 0
+                          ? "Nenhum chamado aberto."
+                          : "Nenhum resultado para a busca."}
+                      </span>
+                      <span className="text-[12px] text-gray-400">
+                        Use &quot;Novo chamado&quot; para registrar um ticket.
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((item) => (
+                  <tr
+                    key={item.Id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-4 py-3 border-r border-gray-100">
+                      <div className="font-medium text-gray-900">
+                        {item.Assunto}
+                      </div>
+                      <div className="text-[11px] text-gray-400 uppercase tracking-tight">
+                        Ticket #{item.Id}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 border-r border-gray-100 text-gray-600">
+                      —
+                    </td>
+                    <td className="px-4 py-3 border-r border-gray-100 text-center">
+                      <span
+                        className={`inline-flex px-2.5 py-1 text-[11px] font-bold rounded border ${prioridadeClass(item.Prioridade)}`}
+                      >
+                        {(item.Prioridade || "media").toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 border-r border-gray-100 text-center text-gray-600 whitespace-nowrap">
+                      {item.DataAbertura
+                        ? new Date(item.DataAbertura).toLocaleString("pt-BR")
+                        : "—"}
+                    </td>
+                    <td className="px-4 py-3 border-r border-gray-100 text-center font-semibold text-blue-600">
+                      ABERTO
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        type="button"
+                        className="p-1.5 text-gray-500 hover:bg-gray-100 rounded inline-flex"
+                        title="Detalhes (em breve)"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+
+          <div className="px-4 py-3 border-t border-gray-100 bg-white text-xs text-gray-500">
+            {filtered.length === items.length
+              ? `Total: ${items.length} chamado(s)`
+              : `Exibindo ${filtered.length} de ${items.length} chamado(s)`}
+          </div>
+        </div>
       </div>
     </div>
   );

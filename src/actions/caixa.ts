@@ -8,6 +8,12 @@ import {
   vincularSangriasLegadasAoCaixa,
   setContaPagarCaixaSessaoId,
 } from "@/lib/caixaSangria";
+import {
+  FORMA_DINHEIRO_CONSOLIDADO,
+  aplicarSangriaNoConsolidado,
+  normalizarNomeFormaConsolidado,
+  type LinhaFormaConsolidada,
+} from "@/lib/caixaRelatorioFormas";
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { logAction } from "@/lib/logger";
 
@@ -361,40 +367,54 @@ export async function getCaixaSessaoDetalhes(id: number) {
     });
 
     // Agrupar tudo por forma de pagamento para o resumo
-    const consolidado: Record<string, { Recebido: number, Pago: number }> = {};
+    const consolidado: Record<string, { Recebido: number; Pago: number }> = {
+      [FORMA_DINHEIRO_CONSOLIDADO]: {
+        Recebido: Number(session.ValorAbertura),
+        Pago: 0,
+      },
+    };
 
     vendas.forEach(v => {
-      const forma = v.FormaPagamento?.Nome || "Outros";
+      const forma = normalizarNomeFormaConsolidado(v.FormaPagamento?.Nome || "Outros");
       if (!consolidado[forma]) consolidado[forma] = { Recebido: 0, Pago: 0 };
       consolidado[forma].Recebido += Number(v.Total);
     });
 
     os.forEach(o => {
-      const forma = o.FormaPagamento?.Nome || "Outros";
+      const forma = normalizarNomeFormaConsolidado(o.FormaPagamento?.Nome || "Outros");
       if (!consolidado[forma]) consolidado[forma] = { Recebido: 0, Pago: 0 };
       consolidado[forma].Recebido += Number(o.Total);
     });
 
     suprimentos.forEach(s => {
-      const forma = "Dinheiro à Vista"; // Simplificação ou buscar forma real se houver vínculo
+      const forma = FORMA_DINHEIRO_CONSOLIDADO;
       if (!consolidado[forma]) consolidado[forma] = { Recebido: 0, Pago: 0 };
       consolidado[forma].Recebido += Number(s.Valor);
     });
 
-    sangrias.forEach(s => {
-      const forma = SANGRIA_FORMA_RELATORIO;
-      if (!consolidado[forma]) consolidado[forma] = { Recebido: 0, Pago: 0 };
-      consolidado[forma].Pago += Number(s.Valor);
-    });
+    const totalSangriasSessao = sangrias.reduce(
+      (acc, s) => acc + Number(s.Valor),
+      0
+    );
+    const formasDetalhe: Record<string, LinhaFormaConsolidada> = {};
+    for (const [forma, valores] of Object.entries(consolidado)) {
+      formasDetalhe[forma] = {
+        Nome: forma,
+        Recebido: valores.Recebido,
+        Pago: valores.Pago,
+        Total: 0,
+      };
+    }
+    aplicarSangriaNoConsolidado(formasDetalhe, totalSangriasSessao);
 
-    const resumoFinal = Object.entries(consolidado).map(([forma, valores]) => ({
-      Forma: forma,
-      Recebido: valores.Recebido,
-      Pago: valores.Pago,
-      Total: valores.Recebido - valores.Pago
+    const resumoFinal = Object.values(formasDetalhe).map((row) => ({
+      Forma: row.Nome,
+      Recebido: row.Recebido,
+      Pago: row.Pago,
+      Total: row.Total,
     }));
 
-    const totalEntradas = resumoFinal.reduce((acc, curr) => acc + curr.Recebido, 0) + Number(session.ValorAbertura);
+    const totalEntradas = resumoFinal.reduce((acc, curr) => acc + curr.Recebido, 0);
     const totalSaidas = resumoFinal.reduce((acc, curr) => acc + curr.Pago, 0);
 
     return { 
@@ -438,8 +458,10 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
 
     const dataAbertura = session.DataAbertura || new Date();
     const dataFechamento = session.DataFechamento || new Date();
-    const startOfDay = new Date(dataAbertura);
-    startOfDay.setHours(0, 0, 0, 0);
+
+    const funcionario = session.UsuarioId
+      ? await prisma.funcionario.findUnique({ where: { Id: session.UsuarioId } })
+      : null;
 
     // 1. Vendas Consolidadas
     let vendasConsolidada: any[] = [];
@@ -452,7 +474,7 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
             { 
               AND: [
                 { CaixaSessaoId: null },
-                { CreatedAt: { gte: startOfDay, lte: dataFechamento } }
+                { CreatedAt: { gte: dataAbertura, lte: dataFechamento } }
               ]
             }
           ],
@@ -463,7 +485,7 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
       
       const consolidado: Record<string, any> = {};
       vendas.forEach(v => {
-        const forma = v.FormaPagamento?.Nome || "Diversos";
+        const forma = normalizarNomeFormaConsolidado(v.FormaPagamento?.Nome || "Diversos");
         if (!consolidado[forma]) consolidado[forma] = { Forma: forma, Recebido: 0, AReceber: 0, Total: 0 };
         const valor = Number(v.Total || 0);
         consolidado[forma].Recebido += valor;
@@ -483,7 +505,7 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
             { 
               AND: [
                 { CaixaSessaoId: null },
-                { CreatedAt: { gte: startOfDay, lte: dataFechamento } }
+                { CreatedAt: { gte: dataAbertura, lte: dataFechamento } }
               ]
             }
           ],
@@ -495,7 +517,7 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
 
       const consolidado: Record<string, any> = {};
       os.forEach(o => {
-        const forma = o.FormaPagamento?.Nome || "Não informado";
+        const forma = normalizarNomeFormaConsolidado(o.FormaPagamento?.Nome || "Não informado");
         if (!consolidado[forma]) consolidado[forma] = { Forma: forma, Recebido: 0, AReceber: 0, Total: 0 };
         const valor = Number(o.Total || 0);
         consolidado[forma].Recebido += valor;
@@ -520,14 +542,18 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
       APagar: 0,
       Total: Number(s.Valor ?? s.valor),
     }));
-    const suprimentos = suprimentosRaw.map(s => ({ Forma: "Dinheiro à Vista", Recebido: Number(s.Valor), Total: Number(s.Valor) }));
+    const suprimentos = suprimentosRaw.map(s => ({
+      Forma: FORMA_DINHEIRO_CONSOLIDADO,
+      Recebido: Number(s.Valor),
+      Total: Number(s.Valor),
+    }));
 
     console.log(">>> [PRINT] Consolidando valores...");
     // 4. Consolidado Final (Formas de Pagamento)
     const formasFinal: any = {};
     const addValues = (arr: any[], mode: 'entrada' | 'saida') => {
       arr.forEach(item => {
-        const nome = item.Forma || "Diversos";
+        const nome = normalizarNomeFormaConsolidado(item.Forma || "Diversos");
         // NaoRecebido: reservado p/ contas "à receber" no futuro; hoje o relatório só preenche Recebido/Pago/Total.
         if (!formasFinal[nome]) formasFinal[nome] = { Nome: nome, NaoRecebido: 0, Recebido: 0, Pago: 0, Total: 0 };
         if (mode === 'entrada') {
@@ -540,22 +566,36 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
       });
     };
 
-    const abertura = { 
-      Forma: "Dinheiro à Vista", 
-      Recebido: Number(session.ValorAbertura), 
-      AReceber: 0, 
-      Total: Number(session.ValorAbertura) 
+    const abertura = {
+      Forma: FORMA_DINHEIRO_CONSOLIDADO,
+      Recebido: Number(session.ValorAbertura),
+      AReceber: 0,
+      Total: Number(session.ValorAbertura),
     };
     
     addValues([abertura], 'entrada');
     addValues(vendasConsolidada, 'entrada');
     addValues(osConsolidada, 'entrada');
     addValues(suprimentos, 'entrada');
-    addValues(sangrias, 'saida');
 
-    const consolidadoGeral = Object.values(formasFinal);
-    const totalEntradas = consolidadoGeral.reduce((acc: number, curr: any) => acc + curr.Recebido, 0);
-    const totalSaidas = consolidadoGeral.reduce((acc: number, curr: any) => acc + curr.Pago, 0);
+    const totalSangriasSessao = (sangriasRaw as { Valor?: unknown }[]).reduce(
+      (acc, s) => acc + Number(s.Valor ?? 0),
+      0
+    );
+    aplicarSangriaNoConsolidado(formasFinal, totalSangriasSessao);
+
+    const consolidadoGeral = Object.values(formasFinal) as {
+      Nome: string;
+      Recebido: number;
+      Pago: number;
+      Total: number;
+    }[];
+    const totalEntradas = consolidadoGeral.reduce(
+      (acc, curr) => acc + curr.Recebido,
+      0
+    );
+    const totalSaidas = consolidadoGeral.reduce((acc, curr) => acc + curr.Pago, 0);
+    const saldoReal = consolidadoGeral.reduce((acc, curr) => acc + curr.Total, 0);
 
     const dataResult = {
       session: {
@@ -565,14 +605,14 @@ export async function getCaixaPrintData(id: number, type: 'vendas' | 'os' | 'com
         DataFechamento: session.DataFechamento?.toISOString(),
         ValorAbertura: Number(session.ValorAbertura),
         ValorFechamento: Number(session.ValorFechamento || 0),
-        FuncionarioNome: "Johnny Andrade Ferreira"
+        FuncionarioNome: funcionario?.Nome || "Sistema",
       },
       abertura,
       vendas: vendasConsolidada,
       os: osConsolidada,
       sangrias,
       consolidadoGeral,
-      saldoReal: totalEntradas - totalSaidas
+      saldoReal,
     };
 
     console.log(">>> [PRINT] Sucesso! Enviando payload.");
@@ -590,17 +630,27 @@ export async function getCaixaResumoSimples(id: number) {
 
     const data = details.data;
     
-    // Filtra apenas o que é dinheiro para ajudar na conferência física
-    const dinheiroEntry = data.vendas.find((f: any) => f.Forma.toUpperCase() === "DINHEIRO" || f.Forma.toUpperCase().includes("DINHEIRO"));
-    const totalEmDinheiro = (dinheiroEntry?.Recebido || 0) + (data.session.ValorAbertura || 0);
-    const totalSangrias = data.sangrias.reduce((acc: number, curr: any) => acc + curr.Valor, 0);
-    const totalSuprimentos = data.suprimentos.reduce((acc: number, curr: any) => acc + curr.Valor, 0);
+    const resumoFormas = data.vendas as { Forma: string; Recebido: number; Pago: number; Total: number }[];
+    const dinheiroEntry = resumoFormas.find((f) =>
+      normalizarNomeFormaConsolidado(f.Forma) === FORMA_DINHEIRO_CONSOLIDADO
+    );
+    const totalSangrias = data.sangrias.reduce(
+      (acc: number, curr: { Valor: number }) => acc + Number(curr.Valor),
+      0
+    );
+    const totalSuprimentos = data.suprimentos.reduce(
+      (acc: number, curr: { Valor: number }) => acc + Number(curr.Valor),
+      0
+    );
+    const saldoEmDinheiro = dinheiroEntry
+      ? Number(dinheiroEntry.Total)
+      : Number(data.session.ValorAbertura) + totalSuprimentos - totalSangrias;
 
     return {
       success: true,
       data: {
         saldoEsperado: data.totaisGerais.SaldoReal,
-        saldoEmDinheiro: totalEmDinheiro + totalSuprimentos - totalSangrias, // O que deve ter na gaveta
+        saldoEmDinheiro,
         vendasCount: data.vendasRaw.filter((v: any) => v._type === 'VENDA').length,
         osCount: data.vendasRaw.filter((v: any) => v._type === 'OS').length,
         sangriasCount: data.sangrias.length,

@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { resolverPeriodoRelatorio } from "@/lib/relatorioPeriodo";
 
 export async function getResumoGeral() {
   try {
@@ -69,6 +70,7 @@ export async function getLogs(filtros?: any, page: number = 1, pageSize: number 
 
 export async function getRelatorioVendas(filtros?: any, page: number = 1, pageSize: number = 20) {
   try {
+    const periodo = resolverPeriodoRelatorio(filtros);
     const where: any = { Ativo: true };
 
     if (filtros?.cliente) {
@@ -77,11 +79,10 @@ export async function getRelatorioVendas(filtros?: any, page: number = 1, pageSi
       ];
     }
 
-    if (filtros?.dataInicio || filtros?.dataFim) {
-      where.DataVenda = {};
-      if (filtros.dataInicio) where.DataVenda.gte = new Date(filtros.dataInicio + "T00:00:00");
-      if (filtros.dataFim) where.DataVenda.lte = new Date(filtros.dataFim + "T23:59:59");
-    }
+    where.DataVenda = {
+      gte: new Date(`${periodo.dataInicio}T00:00:00`),
+      lte: new Date(`${periodo.dataFim}T23:59:59`),
+    };
 
     // OTIMIZAÇÃO: Buscamos apenas o necessário para o agrupamento
     const todasVendas = await prisma.vendas.findMany({
@@ -113,7 +114,8 @@ export async function getRelatorioVendas(filtros?: any, page: number = 1, pageSi
       success: true, 
       data: paginado,
       total,
-      faturamentoTotal: result.reduce((acc, curr) => acc + curr.total, 0)
+      faturamentoTotal: result.reduce((acc, curr) => acc + curr.total, 0),
+      periodo,
     };
   } catch (error) {
     console.error("Erro ao buscar relatório de vendas:", error);
@@ -123,11 +125,12 @@ export async function getRelatorioVendas(filtros?: any, page: number = 1, pageSi
 
 export async function getRelatorioEstoque(filtros?: any) {
   try {
+    const periodo = resolverPeriodoRelatorio(filtros);
     const produtos = await prisma.produtos.findMany({
       where: { Ativo: true },
       orderBy: { Cod_Nome: "asc" },
     });
-    return { success: true, data: produtos };
+    return { success: true, data: produtos, periodo };
   } catch (error) {
     console.error("Erro ao buscar relatório de estoque:", error);
     return { success: false, error: "Erro ao buscar relatório de estoque" };
@@ -136,14 +139,20 @@ export async function getRelatorioEstoque(filtros?: any) {
 
 export async function getRelatorioFinanceiro(filtros?: any) {
   try {
+    const periodo = resolverPeriodoRelatorio(filtros);
+    const vencimento = {
+      gte: new Date(`${periodo.dataInicio}T00:00:00`),
+      lte: new Date(`${periodo.dataFim}T23:59:59`),
+    };
+
     const [contasPagar, contasReceber] = await Promise.all([
       prisma.contaPagar.findMany({
+        where: { Vencimento: vencimento },
         orderBy: { Vencimento: "desc" },
-        take: 50,
       }),
       prisma.contaReceber.findMany({
+        where: { Vencimento: vencimento },
         orderBy: { Vencimento: "desc" },
-        take: 50,
       }),
     ]);
 
@@ -153,6 +162,7 @@ export async function getRelatorioFinanceiro(filtros?: any) {
         contasPagar,
         contasReceber,
       },
+      periodo,
     };
   } catch (error) {
     console.error("Erro ao buscar relatório financeiro:", error);
@@ -162,6 +172,7 @@ export async function getRelatorioFinanceiro(filtros?: any) {
 
 export async function getRelatorioOrdensServico(filtros?: any, page: number = 1, pageSize: number = 20) {
   try {
+    const periodo = resolverPeriodoRelatorio(filtros);
     const where: any = { Ativo: true };
 
     if (filtros?.cliente) {
@@ -170,11 +181,10 @@ export async function getRelatorioOrdensServico(filtros?: any, page: number = 1,
       ];
     }
 
-    if (filtros?.dataInicio || filtros?.dataFim) {
-      where.DataAbertura = {};
-      if (filtros.dataInicio) where.DataAbertura.gte = new Date(filtros.dataInicio + "T00:00:00");
-      if (filtros.dataFim) where.DataAbertura.lte = new Date(filtros.dataFim + "T23:59:59");
-    }
+    where.DataAbertura = {
+      gte: new Date(`${periodo.dataInicio}T00:00:00`),
+      lte: new Date(`${periodo.dataFim}T23:59:59`),
+    };
 
     // OTIMIZAÇÃO: Buscamos apenas o necessário para o agrupamento
     const todasOS = await prisma.ordensServico.findMany({
@@ -205,7 +215,8 @@ export async function getRelatorioOrdensServico(filtros?: any, page: number = 1,
       success: true, 
       data: paginado,
       total,
-      faturamentoTotal: result.reduce((acc, curr) => acc + curr.total, 0)
+      faturamentoTotal: result.reduce((acc, curr) => acc + curr.total, 0),
+      periodo,
     };
   } catch (error) {
     console.error("Erro ao buscar relatório de ordens de serviço:", error);
@@ -218,6 +229,8 @@ export async function getRelatorioOrdensServico(filtros?: any, page: number = 1,
 
 export async function getRelatorioCadastros(filtros?: any) {
   try {
+    const periodo = resolverPeriodoRelatorio(filtros);
+
     const [clientes, fornecedores, funcionarios, produtos] = await Promise.all([
       prisma.clientes.count({ where: { Ativo: true } }),
       prisma.fornecedor.count({ where: { Ativo: true } }),
@@ -233,6 +246,7 @@ export async function getRelatorioCadastros(filtros?: any) {
         funcionarios,
         produtos,
       },
+      periodo,
     };
   } catch (error) {
     console.error("Erro ao buscar relatório de cadastros:", error);
@@ -242,14 +256,25 @@ export async function getRelatorioCadastros(filtros?: any) {
 
 export async function getRelatorioNotasFiscais(filtros?: any) {
   try {
+    const periodo = resolverPeriodoRelatorio(filtros);
+    const emissao = {
+      gte: new Date(`${periodo.dataInicio}T00:00:00`),
+      lte: new Date(`${periodo.dataFim}T23:59:59`),
+    };
+
     const [notasFiscais, notasCompra] = await Promise.all([
       prisma.notaFiscal.findMany({
+        where: { DataEmissao: emissao },
         orderBy: { DataEmissao: "desc" },
-        take: 50,
       }),
       prisma.notaCompra.findMany({
+        where: {
+          OR: [
+            { DataEntrada: emissao },
+            { DataEmissao: emissao },
+          ],
+        },
         orderBy: { DataEntrada: "desc" },
-        take: 50,
       }),
     ]);
 
@@ -259,6 +284,7 @@ export async function getRelatorioNotasFiscais(filtros?: any) {
         notasFiscais,
         notasCompra,
       },
+      periodo,
     };
   } catch (error) {
     console.error("Erro ao buscar relatório de notas fiscais:", error);

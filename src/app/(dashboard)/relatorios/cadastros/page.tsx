@@ -15,6 +15,13 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { getRelatorioCadastros } from "@/actions/relatorios";
+import { RelatorioFiltroMes } from "@/components/relatorios/RelatorioFiltroMes";
+import {
+  filtrosPeriodoPadrao,
+  mesAnoParaIntervalo,
+} from "@/lib/relatorioPeriodo";
+
+const periodoInicial = filtrosPeriodoPadrao();
 
 export default function RelatoriosCadastrosPage() {
   const [data, setData] = useState({
@@ -25,11 +32,16 @@ export default function RelatoriosCadastrosPage() {
   });
   const [, startTransition] = useTransition();
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
-  const [filters, setFilters] = useState({ observacao: "" });
+  const [filters, setFilters] = useState({
+    mesAno: periodoInicial.mesAno,
+    dataInicio: periodoInicial.dataInicio,
+    dataFim: periodoInicial.dataFim,
+    observacao: "",
+  });
 
-  const load = () => {
+  const load = (f = filters) => {
     startTransition(async () => {
-      const resp = await getRelatorioCadastros(filters);
+      const resp = await getRelatorioCadastros(f);
       if (resp.success && resp.data) {
         setData({
           clientes: resp.data.clientes ?? 0,
@@ -42,8 +54,15 @@ export default function RelatoriosCadastrosPage() {
   };
 
   useEffect(() => {
-    load();
+    load(filters);
   }, []);
+
+  const handleMesAnoChange = (mesAno: string) => {
+    const { dataInicio, dataFim } = mesAnoParaIntervalo(mesAno);
+    const next = { ...filters, mesAno, dataInicio, dataFim };
+    setFilters(next);
+    load(next);
+  };
 
   const totalCadastros =
     data.clientes + data.produtos + data.fornecedores + data.funcionarios;
@@ -83,7 +102,11 @@ export default function RelatoriosCadastrosPage() {
             <button
               type="button"
               onClick={() => {
-                const params = new URLSearchParams();
+                const params = new URLSearchParams({
+                  mesAno: filters.mesAno,
+                  dataInicio: filters.dataInicio,
+                  dataFim: filters.dataFim,
+                });
                 if (filters.observacao) params.set("observacao", filters.observacao);
                 const q = params.toString();
                 window.open(
@@ -114,6 +137,12 @@ export default function RelatoriosCadastrosPage() {
             Busca avançada
           </button>
         </div>
+
+        <RelatorioFiltroMes
+          mesAno={filters.mesAno}
+          onMesAnoChange={handleMesAnoChange}
+          hint="Totais de cadastros ativos (visão geral do sistema)."
+        />
 
         {isAdvancedSearchOpen && (
           <div className="bg-white border border-gray-200 rounded p-6 mb-6 shadow-sm">

@@ -1,6 +1,5 @@
-import { Home } from "lucide-react";
 import Link from "next/link";
-import { VendaForm } from "@/components/forms/VendaForm";
+import { VendaView } from "@/components/vendas/VendaView";
 import { getVendaById } from "@/actions/vendas";
 import { notFound } from "next/navigation";
 

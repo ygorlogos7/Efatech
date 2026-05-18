@@ -226,9 +226,9 @@ export default function VisualizarCaixaPage() {
                    {vendas.map((v: any, idx: number) => (
                      <tr key={idx} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3 font-medium text-gray-700">{v.Forma}</td>
-                        <td className="px-4 py-3 text-right text-green-600 font-medium">R$ {formatCurrency(v.Recebido + (v.Forma === "Dinheiro à Vista" ? session.ValorAbertura : 0))}</td>
+                        <td className="px-4 py-3 text-right text-green-600 font-medium">R$ {formatCurrency(v.Recebido)}</td>
                         <td className="px-4 py-3 text-right text-red-600 font-medium">R$ {formatCurrency(v.Pago)}</td>
-                        <td className="px-4 py-3 text-right font-black text-gray-900">R$ {formatCurrency(v.Total + (v.Forma === "Dinheiro à Vista" ? session.ValorAbertura : 0))}</td>
+                        <td className="px-4 py-3 text-right font-black text-gray-900">R$ {formatCurrency(v.Total)}</td>
                      </tr>
                    ))}
                 </tbody>

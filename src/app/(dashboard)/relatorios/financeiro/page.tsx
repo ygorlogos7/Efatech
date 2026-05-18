@@ -15,6 +15,13 @@ import {
   Wallet,
 } from "lucide-react";
 import { getRelatorioFinanceiro } from "@/actions/relatorios";
+import { RelatorioFiltroMes } from "@/components/relatorios/RelatorioFiltroMes";
+import {
+  filtrosPeriodoPadrao,
+  mesAnoParaIntervalo,
+} from "@/lib/relatorioPeriodo";
+
+const periodoInicial = filtrosPeriodoPadrao();
 
 type ContaPagar = {
   Id: number;
@@ -49,8 +56,9 @@ export default function RelatoriosFinanceiroPage() {
   const [, startTransition] = useTransition();
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   const [filters, setFilters] = useState({
-    dataInicio: "",
-    dataFim: "",
+    mesAno: periodoInicial.mesAno,
+    dataInicio: periodoInicial.dataInicio,
+    dataFim: periodoInicial.dataFim,
     texto: "",
   });
 
@@ -67,9 +75,9 @@ export default function RelatoriosFinanceiroPage() {
 
   const num = (v: unknown) => Number(v ?? 0);
 
-  const load = () => {
+  const load = (f = filters) => {
     startTransition(async () => {
-      const resp = await getRelatorioFinanceiro(filters);
+      const resp = await getRelatorioFinanceiro(f);
       if (!resp.success || !resp.data) return;
 
       const cp = (resp.data.contasPagar || []) as ContaPagar[];
@@ -110,8 +118,15 @@ export default function RelatoriosFinanceiroPage() {
   };
 
   useEffect(() => {
-    load();
+    load(filters);
   }, []);
+
+  const handleMesAnoChange = (mesAno: string) => {
+    const { dataInicio, dataFim } = mesAnoParaIntervalo(mesAno);
+    const next = { ...filters, mesAno, dataInicio, dataFim };
+    setFilters(next);
+    load(next);
+  };
 
   const kpis = useMemo(() => {
     const aPagarPendente = linhas
@@ -203,6 +218,11 @@ export default function RelatoriosFinanceiroPage() {
           </button>
         </div>
 
+        <RelatorioFiltroMes
+          mesAno={filters.mesAno}
+          onMesAnoChange={handleMesAnoChange}
+        />
+
         {isAdvancedSearchOpen && (
           <div className="bg-white border border-gray-200 rounded p-6 mb-6 shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
@@ -222,9 +242,9 @@ export default function RelatoriosFinanceiroPage() {
               </div>
               <div className="space-y-1.5 md:col-span-2">
                 <label className="text-[12px] font-black text-gray-700 uppercase tracking-wider">
-                  Período (vencimento) — em desenvolvimento
+                  Período (vencimento) — personalizado
                 </label>
-                <div className="flex items-center gap-2 opacity-60 pointer-events-none">
+                <div className="flex items-center gap-2">
                   <input
                     type="date"
                     value={filters.dataInicio}
@@ -249,7 +269,7 @@ export default function RelatoriosFinanceiroPage() {
             <div className="flex items-center gap-3 border-t border-gray-50 pt-6">
               <button
                 type="button"
-                onClick={() => setPage(1)}
+                onClick={() => load(filters)}
                 className="flex items-center gap-2 bg-[#00a65a] hover:bg-[#008d4c] text-white px-5 h-10 rounded text-[13px] font-bold shadow-sm transition-all active:scale-95"
               >
                 <Check className="w-4 h-4" />
@@ -258,8 +278,10 @@ export default function RelatoriosFinanceiroPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setFilters({ dataInicio: "", dataFim: "", texto: "" });
-                  setPage(1);
+                  const p = filtrosPeriodoPadrao();
+                  const next = { ...filters, ...p, texto: "" };
+                  setFilters(next);
+                  load(next);
                 }}
                 className="flex items-center gap-2 bg-[#f35c4b] hover:bg-[#d94a3a] text-white px-5 h-10 rounded text-[13px] font-bold shadow-sm transition-all active:scale-95"
               >

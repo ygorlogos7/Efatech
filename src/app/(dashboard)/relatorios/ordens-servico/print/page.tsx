@@ -7,6 +7,7 @@ import { RelatorioPrintChrome } from "@/components/relatorios/RelatorioPrintChro
 
 function RelatorioOSPrintContent() {
   const searchParams = useSearchParams();
+  const mesAno = searchParams.get("mesAno") || "";
   const dataInicio = searchParams.get("dataInicio") || "";
   const dataFim = searchParams.get("dataFim") || "";
   const cliente = searchParams.get("cliente") || "";
@@ -18,7 +19,7 @@ function RelatorioOSPrintContent() {
   useEffect(() => {
     startTransition(async () => {
       const resp = await getRelatorioOrdensServico(
-        { dataInicio, dataFim, cliente },
+        { mesAno, dataInicio, dataFim, cliente },
         1,
         9999
       );
@@ -27,7 +28,7 @@ function RelatorioOSPrintContent() {
         setFaturamentoTotal(resp.faturamentoTotal || 0);
       }
     });
-  }, [dataInicio, dataFim, cliente]);
+  }, [mesAno, dataInicio, dataFim, cliente]);
 
   const formatCurrency = (val: number) => {
     return val.toLocaleString("pt-BR", {

@@ -31,7 +31,6 @@ import {
   FlaskConical,
   GitBranch,
   Barcode,
-  Megaphone,
   Scale,
   ArrowLeftRight,
   RotateCcw,
@@ -55,8 +54,7 @@ import {
   History,
   Star,
   User,
-  Image,
-  Store
+  Store,
 } from "lucide-react";
 
 // Utility function to merge tailwind classes safely
@@ -221,9 +219,6 @@ const MENU_ITEMS = [
     subItems: [
       { href: "/atendimentos/central", label: "Central de atendimentos", icon: Headset },
       { href: "/atendimentos/historico", label: "Histórico", icon: History },
-      { href: "/atendimentos/opcoes/categorias", label: "Categorias", icon: List },
-      { href: "/atendimentos/opcoes/canais", label: "Canais", icon: MessageSquare },
-      { href: "/atendimentos/opcoes/situacoes", label: "Situações", icon: List },
       { href: "/atendimentos/opcoes/configuracoes", label: "Configurações", icon: Settings },
     ]
   },
@@ -254,11 +249,8 @@ const MENU_ITEMS = [
       { href: "/configuracoes/plano", label: "Meu plano", icon: Star },
       { href: "/configuracoes/usuarios", label: "Usuários", icon: User },
       { href: "/configuracoes/dados-empresa", label: "Dados da empresa", icon: Briefcase },
-      { href: "/configuracoes/marca", label: "Marca da empresa", icon: Image },
       { href: "/configuracoes/empresas", label: "Empresas / Lojas", icon: Store },
       { href: "/configuracoes/certificado", label: "Certificado digital", icon: Award },
-      { href: "/configuracoes/modelos-email", label: "Modelos de e-mails", icon: Mail },
-      { href: "/configuracoes/avisos-email", label: "Avisos por e-mail", icon: Megaphone },
     ]
   },
 ];

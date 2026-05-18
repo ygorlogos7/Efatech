@@ -15,6 +15,13 @@ import {
   Layers,
 } from "lucide-react";
 import { getRelatorioNotasFiscais } from "@/actions/relatorios";
+import { RelatorioFiltroMes } from "@/components/relatorios/RelatorioFiltroMes";
+import {
+  filtrosPeriodoPadrao,
+  mesAnoParaIntervalo,
+} from "@/lib/relatorioPeriodo";
+
+const periodoInicial = filtrosPeriodoPadrao();
 
 type Linha = {
   id: string;
@@ -33,7 +40,12 @@ export default function RelatoriosNotasFiscaisPage() {
   const [page, setPage] = useState(1);
   const [, startTransition] = useTransition();
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
-  const [filters, setFilters] = useState({ texto: "" });
+  const [filters, setFilters] = useState({
+    mesAno: periodoInicial.mesAno,
+    dataInicio: periodoInicial.dataInicio,
+    dataFim: periodoInicial.dataFim,
+    texto: "",
+  });
 
   const pageSize = 20;
 
@@ -47,9 +59,9 @@ export default function RelatoriosNotasFiscaisPage() {
 
   const num = (v: unknown) => Number(v ?? 0);
 
-  const load = () => {
+  const load = (f = filters) => {
     startTransition(async () => {
-      const resp = await getRelatorioNotasFiscais();
+      const resp = await getRelatorioNotasFiscais(f);
       if (!resp.success || !resp.data) return;
 
       const nf = resp.data.notasFiscais || [];
@@ -98,8 +110,15 @@ export default function RelatoriosNotasFiscaisPage() {
   };
 
   useEffect(() => {
-    load();
+    load(filters);
   }, []);
+
+  const handleMesAnoChange = (mesAno: string) => {
+    const { dataInicio, dataFim } = mesAnoParaIntervalo(mesAno);
+    const next = { ...filters, mesAno, dataInicio, dataFim };
+    setFilters(next);
+    load(next);
+  };
 
   const kpis = useMemo(() => {
     const saida = linhas.filter((l) => l.origem.startsWith("Saída"));
@@ -194,6 +213,11 @@ export default function RelatoriosNotasFiscaisPage() {
           </button>
         </div>
 
+        <RelatorioFiltroMes
+          mesAno={filters.mesAno}
+          onMesAnoChange={handleMesAnoChange}
+        />
+
         {isAdvancedSearchOpen && (
           <div className="bg-white border border-gray-200 rounded p-6 mb-6 shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -206,7 +230,7 @@ export default function RelatoriosNotasFiscaisPage() {
                   placeholder="Filtrar listagem…"
                   value={filters.texto}
                   onChange={(e) =>
-                    setFilters({ texto: e.target.value })
+                    setFilters({ ...filters, texto: e.target.value })
                   }
                   className="w-full h-10 border border-gray-200 rounded px-3 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
@@ -225,8 +249,10 @@ export default function RelatoriosNotasFiscaisPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setFilters({ texto: "" });
-                  setPage(1);
+                  const p = filtrosPeriodoPadrao();
+                  const next = { ...filters, ...p, texto: "" };
+                  setFilters(next);
+                  load(next);
                 }}
                 className="flex items-center gap-2 bg-[#f35c4b] hover:bg-[#d94a3a] text-white px-5 h-10 rounded text-[13px] font-bold shadow-sm transition-all active:scale-95"
               >

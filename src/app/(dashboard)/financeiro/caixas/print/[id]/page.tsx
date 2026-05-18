@@ -6,7 +6,12 @@ import { getCaixaPrintData } from "@/actions/caixa";
 import { PrintButton } from "@/components/forms/PrintButton";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { RETIRADAS_FORMA_CONSOLIDADO, indiceLinhaParaAlocarSangria } from "@/lib/caixaRelatorioFormas";
+import {
+  RETIRADAS_FORMA_CONSOLIDADO,
+  isFormaDinheiro,
+  totalEntradasDinheiroLinhas,
+  valorSangriaExibicao,
+} from "@/lib/caixaRelatorioFormas";
 
 export default function CaixaPrintPage() {
   const { id } = useParams();
@@ -42,16 +47,24 @@ export default function CaixaPrintPage() {
   const { session, abertura, vendas, os, sangrias, consolidadoGeral, saldoReal } = data;
 
   const valorAberturaNum = Number(abertura?.Recebido ?? session?.ValorAbertura ?? 0);
+  const consolidadoFormasPagamento = consolidadoGeral.filter(
+    (f: any) => f.Nome !== RETIRADAS_FORMA_CONSOLIDADO
+  );
+  const entradasDinheiroTotal = totalEntradasDinheiroLinhas(consolidadoFormasPagamento);
   const totalRetiradasNum = Array.isArray(sangrias)
-    ? sangrias.reduce((acc: number, s: any) => acc + Number(s.Total ?? s.Pago ?? 0), 0)
+    ? sangrias.reduce(
+        (acc: number, s: any) => acc + valorSangriaExibicao(s.Total ?? s.Pago),
+        0
+      )
     : 0;
-  const saldoDinheiroAposRetiradas = valorAberturaNum - totalRetiradasNum;
+  const linhaDinheiro = consolidadoFormasPagamento.find((f: any) =>
+    isFormaDinheiro(f.Nome)
+  );
+  const saldoDinheiroAposRetiradas =
+    linhaDinheiro != null
+      ? Number(linhaDinheiro.Total)
+      : entradasDinheiroTotal - totalRetiradasNum;
   const showLinhaSaldoAposRetiradas = type === "completo" && totalRetiradasNum > 0;
-
-  const consolidadoFormasPagamento = consolidadoGeral.filter((f: any) => f.Nome !== RETIRADAS_FORMA_CONSOLIDADO);
-  const idxSangriaAlvo = indiceLinhaParaAlocarSangria(consolidadoFormasPagamento);
-  const sangriaAlocadaNaLinha = (i: number) =>
-    totalRetiradasNum > 0 && i === idxSangriaAlvo ? totalRetiradasNum : 0;
 
   return (
     <div className="bg-white text-black p-4 font-sans text-[12px] leading-tight max-w-[800px] mx-auto print:max-w-full print:p-0 relative">
@@ -106,7 +119,7 @@ export default function CaixaPrintPage() {
           </tr>
           <tr>
             <td className="border-r border-black p-1.5 font-bold">Funcionário</td>
-            <td className="p-1.5">{session.FuncionarioNome || "Johnny Andrade Ferreira"}</td>
+            <td className="p-1.5">{session.FuncionarioNome || "Sistema"}</td>
           </tr>
         </tbody>
       </table>
@@ -238,7 +251,7 @@ export default function CaixaPrintPage() {
                 sangrias.map((s: any, i: number) => (
                   <tr key={i} className="border-b border-black last:border-0">
                     <td className="border-r border-black p-1 text-left">{s.Forma}</td>
-                    <td className="p-1 text-right text-red-600">-{formatCurrency(s.Total)}</td>
+                    <td className="p-1 text-right">{formatCurrency(valorSangriaExibicao(s.Total))}</td>
                   </tr>
                 ))
               ) : (
@@ -251,8 +264,8 @@ export default function CaixaPrintPage() {
               <tfoot className="font-bold border-t border-black bg-[#f9f9f9] text-[10px]">
                 <tr>
                   <td className="border-r border-black p-1 text-left">Total de saídas / sangrias</td>
-                  <td className="p-1 text-right text-red-600">
-                    -{formatCurrency(sangrias.reduce((acc: number, curr: any) => acc + curr.Total, 0))}
+                  <td className="p-1 text-right">
+                    {formatCurrency(totalRetiradasNum)}
                   </td>
                 </tr>
                 {showLinhaSaldoAposRetiradas && (
@@ -260,7 +273,7 @@ export default function CaixaPrintPage() {
                     <td className="border-r border-black p-1 text-left">
                       Saldo atual{" "}
                       <span className="font-normal text-gray-600 font-sans">
-                        (abertura {formatCurrency(valorAberturaNum)} − retiradas {formatCurrency(totalRetiradasNum)})
+                        (entradas em dinheiro {formatCurrency(entradasDinheiroTotal)} − retiradas {formatCurrency(totalRetiradasNum)})
                       </span>
                     </td>
                     <td className="p-1 text-right text-gray-900">{formatCurrency(saldoDinheiroAposRetiradas)}</td>
@@ -286,18 +299,14 @@ export default function CaixaPrintPage() {
            </thead>
            <tbody className="text-[10px]">
               {consolidadoFormasPagamento.map((f: any, i: number) => {
-                const s = sangriaAlocadaNaLinha(i);
-                const liquido = Number(f.Total) - s;
+                const sangriaLinha = valorSangriaExibicao(f.Pago);
+                const liquido = Number(f.Total);
                 return (
                   <tr key={`${f.Nome}-${i}`} className="border-b border-black last:border-0">
                     <td className="border-r border-black p-1 text-left">{f.Nome}</td>
                     <td className="border-r border-black p-1 text-right">{formatCurrency(f.Recebido)}</td>
                     <td className="border-r border-black p-1 text-right">
-                      {s > 0 ? (
-                        <span className="text-red-600">-{formatCurrency(s)}</span>
-                      ) : (
-                        formatCurrency(0)
-                      )}
+                      {sangriaLinha > 0 ? formatCurrency(sangriaLinha) : formatCurrency(0)}
                     </td>
                     <td className="p-1 text-right font-bold">{formatCurrency(liquido)}</td>
                   </tr>
@@ -308,8 +317,8 @@ export default function CaixaPrintPage() {
               <tr>
                  <td className="border-r border-black p-1 text-left">Total geral</td>
                  <td className="border-r border-black p-1 text-right">{formatCurrency(consolidadoGeral.reduce((acc: number, curr: any) => acc + curr.Recebido, 0))}</td>
-                 <td className="border-r border-black p-1 text-right text-red-600">
-                   {totalRetiradasNum > 0 ? `-${formatCurrency(totalRetiradasNum)}` : formatCurrency(0)}
+                 <td className="border-r border-black p-1 text-right">
+                   {totalRetiradasNum > 0 ? formatCurrency(totalRetiradasNum) : formatCurrency(0)}
                  </td>
                  <td className="p-1 text-right font-black">{formatCurrency(saldoReal)}</td>
               </tr>

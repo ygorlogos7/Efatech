@@ -14,6 +14,13 @@ import {
   DollarSign
 } from "lucide-react";
 import { getRelatorioOrdensServico } from "@/actions/relatorios";
+import { RelatorioFiltroMes } from "@/components/relatorios/RelatorioFiltroMes";
+import {
+  filtrosPeriodoPadrao,
+  mesAnoParaIntervalo,
+} from "@/lib/relatorioPeriodo";
+
+const periodoInicial = filtrosPeriodoPadrao();
 
 export default function RelatoriosOSPage() {
   const [os, setOs] = useState<any[]>([]);
@@ -24,14 +31,15 @@ export default function RelatoriosOSPage() {
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   
   const [filters, setFilters] = useState({
-    dataInicio: "",
-    dataFim: "",
-    cliente: ""
+    mesAno: periodoInicial.mesAno,
+    dataInicio: periodoInicial.dataInicio,
+    dataFim: periodoInicial.dataFim,
+    cliente: "",
   });
 
-  const loadOS = (p: number = 1) => {
+  const loadOS = (p: number = 1, f = filters) => {
     startTransition(async () => {
-      const resp = await getRelatorioOrdensServico(filters, p, 20);
+      const resp = await getRelatorioOrdensServico(f, p, 20);
       if (resp.success) {
         setOs(resp.data || []);
         setTotal(resp.total || 0);
@@ -42,8 +50,15 @@ export default function RelatoriosOSPage() {
   };
 
   useEffect(() => {
-    loadOS(1);
+    loadOS(1, filters);
   }, []);
+
+  const handleMesAnoChange = (mesAno: string) => {
+    const { dataInicio, dataFim } = mesAnoParaIntervalo(mesAno);
+    const next = { ...filters, mesAno, dataInicio, dataFim };
+    setFilters(next);
+    loadOS(1, next);
+  };
 
   const formatCurrency = (val: number) => {
     return val.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -109,6 +124,11 @@ export default function RelatoriosOSPage() {
           </button>
         </div>
 
+        <RelatorioFiltroMes
+          mesAno={filters.mesAno}
+          onMesAnoChange={handleMesAnoChange}
+        />
+
         {/* Search Panel */}
         {isAdvancedSearchOpen && (
           <div className="bg-white border border-gray-200 rounded p-6 mb-6 shadow-sm">
@@ -146,14 +166,19 @@ export default function RelatoriosOSPage() {
 
              <div className="flex items-center gap-3 border-t border-gray-50 pt-6">
                 <button 
-                  onClick={() => loadOS(1)}
+                  onClick={() => loadOS(1, filters)}
                   className="flex items-center gap-2 bg-[#00a65a] hover:bg-[#008d4c] text-white px-5 h-10 rounded text-[13px] font-bold shadow-sm transition-all active:scale-95"
                 >
                   <Check className="w-4 h-4" />
                   Filtrar
                 </button>
                 <button 
-                  onClick={() => setFilters({ dataInicio: "", dataFim: "", cliente: "" })}
+                  onClick={() => {
+                    const p = filtrosPeriodoPadrao();
+                    const next = { ...filters, ...p, cliente: "" };
+                    setFilters(next);
+                    loadOS(1, next);
+                  }}
                   className="flex items-center gap-2 bg-[#f35c4b] hover:bg-[#d94a3a] text-white px-5 h-10 rounded text-[13px] font-bold shadow-sm transition-all active:scale-95"
                 >
                   <X className="w-4 h-4" />

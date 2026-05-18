@@ -50,12 +50,9 @@ const routeTitles: Record<string, string> = {
   "/relatorios/logs": "Relatorios - Logs",
   "/configuracoes/dados-empresa": "Dados da Empresa",
   "/configuracoes/usuarios": "Usuarios",
-  "/configuracoes/marca": "Marca",
   "/configuracoes/gerais": "Configuracoes Gerais",
   "/configuracoes/plano": "Plano",
   "/configuracoes/empresas": "Empresas",
-  "/configuracoes/modelos-email": "Modelos de Email",
-  "/configuracoes/avisos-email": "Avisos por Email",
   "/configuracoes/certificado": "Certificado Digital",
 };
 

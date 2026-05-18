@@ -20,7 +20,12 @@ import {
   ArrowUpCircle
 } from "lucide-react";
 import { getCaixaPrintData } from "@/actions/caixa";
-import { RETIRADAS_FORMA_CONSOLIDADO, indiceLinhaParaAlocarSangria } from "@/lib/caixaRelatorioFormas";
+import {
+  RETIRADAS_FORMA_CONSOLIDADO,
+  isFormaDinheiro,
+  totalEntradasDinheiroLinhas,
+  valorSangriaExibicao,
+} from "@/lib/caixaRelatorioFormas";
 
 export default function CaixaResumoPage() {
   const { id } = useParams();
@@ -51,16 +56,24 @@ export default function CaixaResumoPage() {
   const isCompleto = type === 'completo';
 
   const valorAberturaNum = Number(abertura?.Recebido ?? session?.ValorAbertura ?? 0);
+  const consolidadoFormasPagamento = consolidadoGeral.filter(
+    (f: any) => f.Nome !== RETIRADAS_FORMA_CONSOLIDADO
+  );
+  const entradasDinheiroTotal = totalEntradasDinheiroLinhas(consolidadoFormasPagamento);
   const totalRetiradasNum = Array.isArray(sangrias)
-    ? sangrias.reduce((acc: number, s: any) => acc + Number(s.Total ?? s.Pago ?? 0), 0)
+    ? sangrias.reduce(
+        (acc: number, s: any) => acc + valorSangriaExibicao(s.Total ?? s.Pago),
+        0
+      )
     : 0;
-  const saldoDinheiroAposRetiradas = valorAberturaNum - totalRetiradasNum;
+  const linhaDinheiro = consolidadoFormasPagamento.find((f: any) =>
+    isFormaDinheiro(f.Nome)
+  );
+  const saldoDinheiroAposRetiradas =
+    linhaDinheiro != null
+      ? Number(linhaDinheiro.Total)
+      : entradasDinheiroTotal - totalRetiradasNum;
   const showLinhaSaldoAposRetiradas = isCompleto && totalRetiradasNum > 0;
-
-  const consolidadoFormasPagamento = consolidadoGeral.filter((f: any) => f.Nome !== RETIRADAS_FORMA_CONSOLIDADO);
-  const idxSangriaAlvo = indiceLinhaParaAlocarSangria(consolidadoFormasPagamento);
-  const sangriaAlocadaNaLinha = (i: number) =>
-    totalRetiradasNum > 0 && i === idxSangriaAlvo ? totalRetiradasNum : 0;
 
   const btnColor = isCompleto ? "bg-orange-600 hover:bg-orange-700" : (type === 'vendas' ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700");
   const borderColor = isCompleto ? "border-orange-100" : (type === 'vendas' ? "border-green-100" : "border-blue-100");
@@ -179,8 +192,8 @@ export default function CaixaResumoPage() {
                  </thead>
                  <tbody className="divide-y divide-gray-50">
                     {consolidadoFormasPagamento.map((f: any, i: number) => {
-                      const s = sangriaAlocadaNaLinha(i);
-                      const liquido = Number(f.Total) - s;
+                      const sangriaLinha = valorSangriaExibicao(f.Pago);
+                      const liquido = Number(f.Total);
                       return (
                         <tr key={`${f.Nome}-${i}`} className="group hover:bg-gray-50 transition-colors">
                           <td className="px-8 py-4">
@@ -188,8 +201,8 @@ export default function CaixaResumoPage() {
                           </td>
                           <td className="px-8 py-4 text-right text-green-600 font-bold">{formatCurrency(f.Recebido)}</td>
                           <td className="px-8 py-4 text-right text-sm">
-                            {s > 0 ? (
-                              <span className="font-bold text-red-600">-{formatCurrency(s)}</span>
+                            {sangriaLinha > 0 ? (
+                              <span className="font-bold text-red-600">{formatCurrency(sangriaLinha)}</span>
                             ) : (
                               <span className="font-bold text-gray-500">{formatCurrency(0)}</span>
                             )}
@@ -206,7 +219,7 @@ export default function CaixaResumoPage() {
                        <td className="px-8 py-5 font-black text-gray-500 text-[11px] uppercase tracking-widest">Total geral</td>
                        <td className="px-8 py-5 text-right font-bold text-green-600">{formatCurrency(consolidadoGeral.reduce((acc: number, curr: any) => acc + curr.Recebido, 0))}</td>
                        <td className="px-8 py-5 text-right font-bold text-red-600">
-                         {totalRetiradasNum > 0 ? `-${formatCurrency(totalRetiradasNum)}` : formatCurrency(0)}
+                         {totalRetiradasNum > 0 ? formatCurrency(totalRetiradasNum) : formatCurrency(0)}
                        </td>
                        <td className="px-8 py-5 text-right">
                           <span className="font-black text-gray-900 text-lg">{formatCurrency(saldoReal)}</span>
@@ -244,7 +257,7 @@ export default function CaixaResumoPage() {
                              <span className="text-[10px] font-black uppercase text-gray-400 bg-white border border-gray-100 px-2 py-1 rounded">Dinheiro</span>
                            </td>
                            <td className="px-8 py-4 text-right">
-                              <span className="font-black text-red-600">-{formatCurrency(item.Total)}</span>
+                              <span className="font-black text-red-600">{formatCurrency(valorSangriaExibicao(item.Total))}</span>
                            </td>
                         </tr>
                       ))}
@@ -255,7 +268,7 @@ export default function CaixaResumoPage() {
                           Total de saídas / sangrias
                         </td>
                         <td className="px-8 py-4 text-right font-black text-red-600">
-                          -{formatCurrency(sangrias.reduce((acc: number, curr: any) => acc + Number(curr.Total ?? curr.Pago ?? 0), 0))}
+                          {formatCurrency(totalRetiradasNum)}
                         </td>
                       </tr>
                       {showLinhaSaldoAposRetiradas && (
@@ -263,7 +276,7 @@ export default function CaixaResumoPage() {
                           <td className="px-8 py-4 font-bold text-gray-800" colSpan={2}>
                             Saldo atual{" "}
                             <span className="font-medium text-gray-500 text-xs font-sans normal-case">
-                              (abertura {formatCurrency(valorAberturaNum)} − retiradas {formatCurrency(totalRetiradasNum)})
+                              (entradas em dinheiro {formatCurrency(entradasDinheiroTotal)} − retiradas {formatCurrency(totalRetiradasNum)})
                             </span>
                           </td>
                           <td className="px-8 py-4 text-right font-black text-gray-900">

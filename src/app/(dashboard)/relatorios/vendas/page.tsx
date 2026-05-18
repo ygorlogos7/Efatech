@@ -15,6 +15,13 @@ import {
   DollarSign
 } from "lucide-react";
 import { getRelatorioVendas } from "@/actions/relatorios";
+import { RelatorioFiltroMes } from "@/components/relatorios/RelatorioFiltroMes";
+import {
+  filtrosPeriodoPadrao,
+  mesAnoParaIntervalo,
+} from "@/lib/relatorioPeriodo";
+
+const periodoInicial = filtrosPeriodoPadrao();
 
 export default function RelatoriosVendasPage() {
   const [vendas, setVendas] = useState<any[]>([]);
@@ -25,14 +32,15 @@ export default function RelatoriosVendasPage() {
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   
   const [filters, setFilters] = useState({
-    dataInicio: "",
-    dataFim: "",
-    cliente: ""
+    mesAno: periodoInicial.mesAno,
+    dataInicio: periodoInicial.dataInicio,
+    dataFim: periodoInicial.dataFim,
+    cliente: "",
   });
 
-  const loadVendas = (p: number = 1) => {
+  const loadVendas = (p: number = 1, f = filters) => {
     startTransition(async () => {
-      const resp = await getRelatorioVendas(filters, p, 20);
+      const resp = await getRelatorioVendas(f, p, 20);
       if (resp.success) {
         setVendas(resp.data || []);
         setTotal(resp.total || 0);
@@ -43,8 +51,15 @@ export default function RelatoriosVendasPage() {
   };
 
   useEffect(() => {
-    loadVendas(1);
+    loadVendas(1, filters);
   }, []);
+
+  const handleMesAnoChange = (mesAno: string) => {
+    const { dataInicio, dataFim } = mesAnoParaIntervalo(mesAno);
+    const next = { ...filters, mesAno, dataInicio, dataFim };
+    setFilters(next);
+    loadVendas(1, next);
+  };
 
   const formatCurrency = (val: number) => {
     return val.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -110,6 +125,11 @@ export default function RelatoriosVendasPage() {
           </button>
         </div>
 
+        <RelatorioFiltroMes
+          mesAno={filters.mesAno}
+          onMesAnoChange={handleMesAnoChange}
+        />
+
         {/* Search Panel */}
         {isAdvancedSearchOpen && (
           <div className="bg-white border border-gray-200 rounded p-6 mb-6 shadow-sm">
@@ -126,7 +146,7 @@ export default function RelatoriosVendasPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                   <label className="text-[12px] font-black text-gray-700 uppercase tracking-wider">Período</label>
+                   <label className="text-[12px] font-black text-gray-700 uppercase tracking-wider">Período personalizado (opcional)</label>
                    <div className="flex items-center gap-2">
                       <input 
                         type="date"
@@ -147,7 +167,7 @@ export default function RelatoriosVendasPage() {
 
              <div className="flex items-center gap-3 border-t border-gray-50 pt-6">
                 <button 
-                  onClick={() => loadVendas(1)}
+                  onClick={() => loadVendas(1, filters)}
                   className="flex items-center gap-2 bg-[#00a65a] hover:bg-[#008d4c] text-white px-5 h-10 rounded text-[13px] font-bold shadow-sm transition-all active:scale-95"
                 >
                   <Check className="w-4 h-4" />
@@ -155,8 +175,10 @@ export default function RelatoriosVendasPage() {
                 </button>
                 <button 
                   onClick={() => {
-                    setFilters({ dataInicio: "", dataFim: "", cliente: "" });
-                    // No need to reload here as useEffect will trigger if needed or user can click filter
+                    const p = filtrosPeriodoPadrao();
+                    const next = { ...filters, ...p, cliente: "" };
+                    setFilters(next);
+                    loadVendas(1, next);
                   }}
                   className="flex items-center gap-2 bg-[#f35c4b] hover:bg-[#d94a3a] text-white px-5 h-10 rounded text-[13px] font-bold shadow-sm transition-all active:scale-95"
                 >
