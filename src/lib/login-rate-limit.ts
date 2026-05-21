@@ -1,6 +1,5 @@
 import {
   canUseInMemoryRateLimitFallback,
-  isRateLimitMisconfigured,
   redis,
   warnIfProductionWithoutRedis,
 } from "@/lib/upstash-redis";
@@ -18,7 +17,7 @@ type AttemptStore = {
   blockedUntil?: number;
 };
 
-/** Fallback só em dev sem Upstash — nunca usado em produção. */
+/** Fallback em memória quando Upstash não está configurado. */
 const devAttempts = new Map<string, AttemptStore>();
 
 export function getRateLimitKey(email: string, ip: string) {
@@ -82,19 +81,10 @@ function registerDevFailedAttempt(key: string) {
   devAttempts.set(key, { ...current, count: nextCount });
 }
 
-/** Produção sem Redis: bloqueia tentativas (fail-closed) em vez de liberar tudo. */
-function misconfiguredRateLimitStatus(): { blocked: boolean; retryAfterMs?: number } {
-  return { blocked: true, retryAfterMs: BLOCK_SEC * 1000 };
-}
-
 export async function checkRateLimit(
   key: string,
 ): Promise<{ blocked: boolean; retryAfterMs?: number }> {
   warnIfProductionWithoutRedis();
-
-  if (isRateLimitMisconfigured()) {
-    return misconfiguredRateLimitStatus();
-  }
 
   if (canUseInMemoryRateLimitFallback()) {
     return checkDevRateLimit(key);
@@ -110,8 +100,6 @@ export async function checkRateLimit(
 }
 
 export async function registerFailedAttempt(key: string): Promise<void> {
-  if (isRateLimitMisconfigured()) return;
-
   if (canUseInMemoryRateLimitFallback()) {
     registerDevFailedAttempt(key);
     return;
@@ -131,8 +119,6 @@ export async function registerFailedAttempt(key: string): Promise<void> {
 }
 
 export async function clearAttemptHistory(key: string): Promise<void> {
-  if (isRateLimitMisconfigured()) return;
-
   if (canUseInMemoryRateLimitFallback()) {
     devAttempts.delete(key);
     return;

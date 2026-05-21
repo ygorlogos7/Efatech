@@ -9,11 +9,15 @@ const nextConfig: NextConfig = {
       allowedOrigins: [
         "74ca45c6-fa8a-4584-8723-09939e8e1666.preview.emergentagent.com",
         "74ca45c6-fa8a-4584-8723-09939e8e1666.cluster-0.preview.emergentcf.cloud",
+        "efatechpro.com.br",
+        "www.efatechpro.com.br",
         "localhost:3000",
       ],
       allowedForwardedHosts: [
         "74ca45c6-fa8a-4584-8723-09939e8e1666.preview.emergentagent.com",
         "74ca45c6-fa8a-4584-8723-09939e8e1666.cluster-0.preview.emergentcf.cloud",
+        "efatechpro.com.br",
+        "www.efatechpro.com.br",
         "localhost:3000",
       ],
     },

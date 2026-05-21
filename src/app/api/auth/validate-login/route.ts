@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { validateLoginInput } from "@/lib/auth-validation";
-import { getClientIp, rateLimitUnavailableResponse } from "@/lib/ratelimit";
+import { getClientIp } from "@/lib/ratelimit";
 import {
   checkRateLimit,
   clearAttemptHistory,
@@ -8,14 +8,9 @@ import {
   getRateLimitKey,
   registerFailedAttempt,
 } from "@/lib/login-rate-limit";
-import { isRateLimitMisconfigured } from "@/lib/upstash-redis";
 
 export async function POST(request: Request) {
   try {
-    if (isRateLimitMisconfigured()) {
-      return rateLimitUnavailableResponse();
-    }
-
     const body = await request.json();
     const email = String(body?.email ?? "").trim().toLowerCase();
     const ip = getClientIp(request);

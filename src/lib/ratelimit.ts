@@ -1,11 +1,7 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import {
-  isRateLimitMisconfigured,
-  redis,
-  warnIfProductionWithoutRedis,
-} from "@/lib/upstash-redis";
+import { redis, warnIfProductionWithoutRedis } from "@/lib/upstash-redis";
 
 /** Limite de 10 requisições a cada 10 segundos por IP (rotas /api). */
 export const rateLimiter = redis
@@ -29,25 +25,14 @@ export function shouldRateLimitApi(pathname: string): boolean {
   return pathname.startsWith("/api");
 }
 
-const RATE_LIMIT_UNAVAILABLE_MESSAGE =
-  "Serviço temporariamente indisponível. Tente novamente em alguns minutos.";
-
 /**
  * Rate limit global por IP (Upstash).
- * Produção sem Redis: falha fechada (503), não deixa /api sem limite.
- * Desenvolvimento sem Redis: segue sem limite global (login ainda usa Map local).
+ * Sem Redis: não aplica limite global por IP (login usa fallback em memória).
  */
 export async function enforceIpRateLimit(
   request: Request | NextRequest,
 ): Promise<NextResponse | null> {
   warnIfProductionWithoutRedis();
-
-  if (isRateLimitMisconfigured()) {
-    return NextResponse.json(
-      { error: RATE_LIMIT_UNAVAILABLE_MESSAGE },
-      { status: 503 },
-    );
-  }
 
   if (!rateLimiter) return null;
 
@@ -62,15 +47,4 @@ export async function enforceIpRateLimit(
   }
 
   return null;
-}
-
-/** Resposta padrão quando login/auth exige Redis e ele não está configurado em produção. */
-export function rateLimitUnavailableResponse() {
-  return NextResponse.json(
-    {
-      success: false,
-      error: RATE_LIMIT_UNAVAILABLE_MESSAGE,
-    },
-    { status: 503 },
-  );
 }

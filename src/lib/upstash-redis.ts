@@ -2,8 +2,8 @@ import { Redis } from "@upstash/redis";
 
 /**
  * Upstash Redis — fonte única do cliente e regras de ambiente.
- * Produção: obrigatório (sem fallback em Map).
- * Desenvolvimento: Map em login-rate-limit.ts se variáveis ausentes.
+ * Com variáveis configuradas: rate limit distribuído (recomendado em produção).
+ * Sem Upstash: fallback em memória (login e APIs seguem funcionando).
  */
 export function isUpstashConfigured(): boolean {
   return Boolean(
@@ -19,24 +19,19 @@ export function isProductionEnv(): boolean {
 /** Cliente compartilhado (rate limit global + tentativas de login). */
 export const redis = isUpstashConfigured() ? Redis.fromEnv() : null;
 
-/** Map em RAM permitido só fora de produção, quando Upstash não está no .env. */
+/** Fallback em RAM quando Upstash não está no ambiente. */
 export function canUseInMemoryRateLimitFallback(): boolean {
-  return !isProductionEnv() && redis === null;
-}
-
-/** Produção sem Redis — rate limit distribuído indisponível (não usar Map). */
-export function isRateLimitMisconfigured(): boolean {
-  return isProductionEnv() && redis === null;
+  return redis === null;
 }
 
 let missingRedisWarned = false;
 
 /** Aviso único no log do servidor (build/start e primeira requisição). */
 export function warnIfProductionWithoutRedis(): void {
-  if (!isRateLimitMisconfigured() || missingRedisWarned) return;
+  if (!isProductionEnv() || isUpstashConfigured() || missingRedisWarned) return;
   missingRedisWarned = true;
-  console.error(
-    "[RateLimit] CRÍTICO: em produção defina UPSTASH_REDIS_REST_URL e UPSTASH_REDIS_REST_TOKEN. " +
-      "Sem Redis não há limite compartilhado entre instâncias e o fallback em memória está desativado.",
+  console.warn(
+    "[RateLimit] Produção sem Upstash: usando limite em memória. " +
+      "Configure UPSTASH_REDIS_REST_URL e UPSTASH_REDIS_REST_TOKEN para limite entre instâncias.",
   );
 }
