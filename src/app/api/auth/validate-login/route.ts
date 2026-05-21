@@ -1,27 +1,33 @@
 import { NextResponse } from "next/server";
 import { validateLoginInput } from "@/lib/auth-validation";
+import { getClientIp, rateLimitUnavailableResponse } from "@/lib/ratelimit";
 import {
   checkRateLimit,
   clearAttemptHistory,
+  formatLoginBlockWait,
   getRateLimitKey,
   registerFailedAttempt,
-} from "@/lib/auth-rate-limit";
+} from "@/lib/login-rate-limit";
+import { isRateLimitMisconfigured } from "@/lib/upstash-redis";
 
 export async function POST(request: Request) {
   try {
+    if (isRateLimitMisconfigured()) {
+      return rateLimitUnavailableResponse();
+    }
+
     const body = await request.json();
     const email = String(body?.email ?? "").trim().toLowerCase();
-    const forwardedFor = request.headers.get("x-forwarded-for") ?? "unknown";
-    const ip = forwardedFor.split(",")[0]?.trim() || "unknown";
+    const ip = getClientIp(request);
     const rateLimitKey = getRateLimitKey(email || "unknown", ip);
 
-    const limitStatus = checkRateLimit(rateLimitKey);
+    const limitStatus = await checkRateLimit(rateLimitKey);
     if (limitStatus.blocked) {
-      const retrySeconds = Math.ceil((limitStatus.retryAfterMs ?? 0) / 1000);
+      const waitLabel = formatLoginBlockWait(limitStatus.retryAfterMs);
       return NextResponse.json(
         {
           success: false,
-          error: `Muitas tentativas. Tente novamente em ${retrySeconds}s.`,
+          error: `Muitas tentativas. Tente novamente em ${waitLabel}.`,
           fieldErrors: { senha: "Acesso temporariamente bloqueado." },
         },
         { status: 429 },
@@ -34,7 +40,7 @@ export async function POST(request: Request) {
     });
 
     if (!validation.success) {
-      registerFailedAttempt(rateLimitKey);
+      await registerFailedAttempt(rateLimitKey);
       return NextResponse.json(
         {
           success: false,
@@ -45,7 +51,7 @@ export async function POST(request: Request) {
       );
     }
 
-    clearAttemptHistory(rateLimitKey);
+    await clearAttemptHistory(rateLimitKey);
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json(

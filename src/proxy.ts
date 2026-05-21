@@ -1,9 +1,16 @@
-import NextAuth from 'next-auth';
-import { authConfig } from './auth.config';
+import { auth } from "./auth";
+import { enforceIpRateLimit, shouldRateLimitApi } from "@/lib/ratelimit";
 
-export default NextAuth(authConfig).auth;
+export default auth(async (request) => {
+  // 1. Rate limit global nas rotas /api (login, esqueci senha, etc.)
+  if (shouldRateLimitApi(request.nextUrl.pathname)) {
+    const rateLimitResponse = await enforceIpRateLimit(request);
+    if (rateLimitResponse) return rateLimitResponse;
+  }
+
+  // 2. Proteção de rotas: auth.config.ts → callback `authorized`
+});
 
 export const config = {
-  // Ignora rotas /api, arquivos internos do next e assets estáticos (imagens em /public)
-  matcher: ['/((?!api|_next/static|_next/image|images|.*\\.png$).*)'],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|images|.*\\.png$).*)"],
 };

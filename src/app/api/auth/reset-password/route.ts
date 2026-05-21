@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { validatePasswordStrength } from "@/lib/auth-validation";
 import { verifyPasswordResetToken } from "@/lib/password-reset-token";
+import { bumpSessionVersion } from "@/lib/session-version";
 
 export async function POST(request: Request) {
   try {
@@ -35,10 +36,24 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(senha, 10);
 
-    await prisma.usuarios.updateMany({
+    const user = await prisma.usuarios.findFirst({
       where: { Email: tokenValidation.email },
+      select: { Id: true },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Usuario nao encontrado." },
+        { status: 404 },
+      );
+    }
+
+    await prisma.usuarios.update({
+      where: { Id: user.Id },
       data: { Senha: hashedPassword },
     });
+
+    await bumpSessionVersion(user.Id);
 
     return NextResponse.json({ success: true });
   } catch {

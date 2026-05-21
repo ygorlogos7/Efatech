@@ -155,12 +155,14 @@ model Servicos {
 }
 
 model Usuarios {
-  Id       Int     @id(map: "PK_Usuarios") @default(autoincrement())
-  Nome     String
-  Email    String
-  Senha    String
-  Telefone String?
-  Celular  String?
+  Id            Int     @id(map: "PK_Usuarios") @default(autoincrement())
+  Nome          String
+  Email         String
+  Senha         String
+  Telefone      String?
+  Celular       String?
+  /// Invalida JWTs antigos ao incrementar (sair de todos / troca de senha).
+  SessaoVersao  Int     @default(0)
 }
 
 model ValoresVenda {

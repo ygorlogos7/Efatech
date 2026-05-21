@@ -2,9 +2,10 @@
 
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { signIn } from "@/auth";
+import { auth, signIn, signOut } from "@/auth";
 import { AuthError } from "next-auth";
 import { validateRegisterInput } from "@/lib/auth-validation";
+import { bumpSessionVersion } from "@/lib/session-version";
 
 export async function loginAction(formData: FormData) {
   try {
@@ -22,6 +23,20 @@ export async function loginAction(formData: FormData) {
     // Erros de redirect originais do Next.js devem ser relançados para o redirecionamento funcionar
     throw error;
   }
+}
+
+/** Encerra sessões em todos os dispositivos (invalida JWTs antigos). */
+export async function revokeAllSessionsAction() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "Não autenticado." };
+  }
+
+  await bumpSessionVersion(Number(session.user.id));
+  await signOut({ redirectTo: "/login" });
+
+  return { success: true };
 }
 
 export async function registerUser(formData: FormData) {

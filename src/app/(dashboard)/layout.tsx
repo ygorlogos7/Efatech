@@ -14,7 +14,7 @@ export default async function DashboardLayout({
 }) {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user || session.error === "SessionRevoked") {
     redirect("/login");
   }
 

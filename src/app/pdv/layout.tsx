@@ -11,7 +11,7 @@ export default async function PDVLayout({
   const session = await auth();
 
   // Garantir que só usuários logados acessem o PDV
-  if (!session?.user) {
+  if (!session?.user || session.error === "SessionRevoked") {
     redirect("/login");
   }
 

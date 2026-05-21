@@ -7,18 +7,41 @@ export const authConfig = {
   },
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
-      const isLoggedIn = !!auth?.user;
-      const isProtecting = nextUrl.pathname.startsWith('/home'); // Qualquer página /home pra frente precisa de login
-      
+      const isLoggedIn =
+        !!auth?.user && auth?.error !== "SessionRevoked";
+      const pathname = nextUrl.pathname;
+
+      const publicPaths = new Set([
+        "/",
+        "/login",
+        "/cadastro",
+        "/esqueci-senha",
+        "/redefinir-senha",
+      ]);
+
+      const isPublic =
+        publicPaths.has(pathname) ||
+        pathname.startsWith("/api") ||
+        pathname.startsWith("/_next") ||
+        pathname.startsWith("/images");
+
+      const isProtecting = !isPublic;
+
       if (isProtecting) {
         if (isLoggedIn) return true;
-        return false; // Redireciona para /login
-      } else if (isLoggedIn) {
-        const isAuthRoute = nextUrl.pathname === '/login' || nextUrl.pathname === '/cadastro';
+        return false;
+      }
+
+      if (isLoggedIn) {
+        const isAuthRoute =
+          pathname === "/login" ||
+          pathname === "/cadastro" ||
+          pathname === "/esqueci-senha";
         if (isAuthRoute) {
-          return Response.redirect(new URL('/home', nextUrl)); // Manda usuários já logados da tela de login para a Home
+          return Response.redirect(new URL("/home", nextUrl));
         }
       }
+
       return true;
     },
   },

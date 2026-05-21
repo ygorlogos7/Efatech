@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Menu, Grid, Bell, User, LogOut, Settings, CreditCard, Layout } from "lucide-react";
+import { Menu, Grid, Bell, User, LogOut, Settings, CreditCard, Layout, ShieldOff } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useSidebar } from "@/components/providers/SidebarProvider";
+import { revokeAllSessionsAction } from "@/actions/auth";
 import Link from "next/link";
 
 interface HeaderProps {
@@ -162,9 +163,25 @@ export function Header({ userName, userEmail }: HeaderProps) {
                 <Link href="/configuracoes/plano" className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-md hover:bg-gray-50 text-gray-600 hover:text-gray-900 transition-colors border-b border-gray-50 pb-3 mb-1">
                   <CreditCard className="w-4 h-4" /> Meu Plano
                 </Link>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (
+                      !window.confirm(
+                        "Isso encerra a sessão neste e em todos os outros dispositivos. Continuar?"
+                      )
+                    ) {
+                      return;
+                    }
+                    await revokeAllSessionsAction();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-md hover:bg-amber-50 text-amber-700 transition-colors mt-1"
+                >
+                  <ShieldOff className="w-4 h-4" /> Sair de todos os aparelhos
+                </button>
                 <button 
                   onClick={() => signOut()}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-md hover:bg-red-50 text-red-500 transition-colors mt-1"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-md hover:bg-red-50 text-red-500 transition-colors"
                 >
                   <LogOut className="w-4 h-4" /> Sair do Sistema
                 </button>
