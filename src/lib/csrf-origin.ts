@@ -1,16 +1,16 @@
 import { ALLOWED_HOSTS } from "@/lib/allowed-hosts";
 
-/** Rotas do NextAuth — CSRF proprio; nao validar Origin aqui. */
-const NEXTAUTH_POST_PREFIXES = [
-  "/api/auth/signin",
-  "/api/auth/signout",
-  "/api/auth/session",
-  "/api/auth/csrf",
-  "/api/auth/providers",
-  "/api/auth/callback",
-  "/api/auth/error",
-  "/api/auth/verify-request",
-] as const;
+/** APIs proprias de auth — Origin/Referer obrigatorio em POST (lacuna 9). */
+const CUSTOM_AUTH_API_PATHS = new Set([
+  "/api/auth/validate-login",
+  "/api/auth/validate-register",
+  "/api/auth/forgot-password",
+  "/api/auth/reset-password",
+  "/api/auth/resend-verification",
+  "/api/auth/verify-email",
+  "/api/auth/send-verification-email",
+  "/api/auth/dev-reset-verification",
+]);
 
 function hostToOriginVariants(host: string): string[] {
   const clean = host.replace(/^https?:\/\//, "").replace(/\/$/, "");
@@ -38,11 +38,7 @@ export function getAllowedRequestOrigins(): string[] {
 
 export function shouldEnforceCsrfOrigin(method: string, pathname: string): boolean {
   if (method !== "POST") return false;
-  if (!pathname.startsWith("/api/auth")) return false;
-  if (NEXTAUTH_POST_PREFIXES.some((p) => pathname.startsWith(p))) {
-    return false;
-  }
-  return true;
+  return CUSTOM_AUTH_API_PATHS.has(pathname);
 }
 
 export function validateRequestOrigin(request: Request): boolean {

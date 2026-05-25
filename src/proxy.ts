@@ -1,4 +1,4 @@
-import { auth } from "./auth";
+import { proxyAuth } from "./auth.middleware";
 import { enforceIpRateLimit, shouldRateLimitApi } from "@/lib/ratelimit";
 import {
   csrfOriginForbiddenResponse,
@@ -6,7 +6,7 @@ import {
   validateRequestOrigin,
 } from "@/lib/csrf-origin";
 
-export default auth(async (request) => {
+export default proxyAuth(async (request) => {
   const { pathname } = request.nextUrl;
 
   if (shouldEnforceCsrfOrigin(request.method, pathname)) {
