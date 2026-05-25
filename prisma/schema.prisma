@@ -167,6 +167,22 @@ model Usuarios {
   EmailVerificadoEm DateTime? @db.Timestamp(6)
   /// Conta suspensa (ex.: inadimplencia SaaS) — bloqueia login sem apagar dados.
   Bloqueado       Boolean @default(false)
+  TokenResetSenha TokenResetSenha[]
+}
+
+/// Token de redefinicao de senha (uso unico, 15 min).
+model TokenResetSenha {
+  Id        Int       @id @default(autoincrement())
+  UsuarioId Int
+  TokenHash String    @db.VarChar(64)
+  ExpiraEm  DateTime  @db.Timestamptz(6)
+  UsadoEm   DateTime? @db.Timestamptz(6)
+  CriadoEm  DateTime  @default(now()) @db.Timestamptz(6)
+  Ip        String?   @db.VarChar(45)
+  Usuario   Usuarios  @relation(fields: [UsuarioId], references: [Id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([TokenHash], map: "IX_TokenResetSenha_TokenHash")
+  @@index([UsuarioId], map: "IX_TokenResetSenha_UsuarioId")
 }
 
 model ValoresVenda {

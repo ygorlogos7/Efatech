@@ -3,12 +3,15 @@
 import { FormEvent, Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 
 function RedefinirSenhaContent() {
   const searchParams = useSearchParams();
   const token = useMemo(() => searchParams.get("token") ?? "", [searchParams]);
   const [senha, setSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
+  const [showSenha, setShowSenha] = useState(false);
+  const [showConfirmacao, setShowConfirmacao] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -76,22 +79,50 @@ function RedefinirSenhaContent() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="password"
-            required
-            value={senha}
-            onChange={(event) => setSenha(event.target.value)}
-            placeholder="Nova senha"
-            className="w-full rounded-[10px] border border-[var(--color-border-color)] bg-[#fcfcfc] px-4 py-3 text-black focus:outline-none focus:border-[var(--color-primary-green)]"
-          />
-          <input
-            type="password"
-            required
-            value={confirmacao}
-            onChange={(event) => setConfirmacao(event.target.value)}
-            placeholder="Confirmar nova senha"
-            className="w-full rounded-[10px] border border-[var(--color-border-color)] bg-[#fcfcfc] px-4 py-3 text-black focus:outline-none focus:border-[var(--color-primary-green)]"
-          />
+          <div className="relative flex items-center">
+            <input
+              type={showSenha ? "text" : "password"}
+              required
+              value={senha}
+              onChange={(event) => setSenha(event.target.value)}
+              placeholder="Nova senha"
+              className="w-full rounded-[10px] border border-[var(--color-border-color)] bg-[#fcfcfc] py-3 pl-4 pr-[45px] text-black focus:outline-none focus:border-[var(--color-primary-green)]"
+            />
+            <button
+              type="button"
+              onClick={() => setShowSenha(!showSenha)}
+              className="absolute right-[15px] z-10 p-[10px] text-[#95a5a6] hover:text-[var(--color-primary-green)] focus:outline-none"
+              aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
+            >
+              {showSenha ? (
+                <EyeOff size={18} className="text-[var(--color-primary-green)]" />
+              ) : (
+                <Eye size={18} />
+              )}
+            </button>
+          </div>
+          <div className="relative flex items-center">
+            <input
+              type={showConfirmacao ? "text" : "password"}
+              required
+              value={confirmacao}
+              onChange={(event) => setConfirmacao(event.target.value)}
+              placeholder="Confirmar nova senha"
+              className="w-full rounded-[10px] border border-[var(--color-border-color)] bg-[#fcfcfc] py-3 pl-4 pr-[45px] text-black focus:outline-none focus:border-[var(--color-primary-green)]"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmacao(!showConfirmacao)}
+              className="absolute right-[15px] z-10 p-[10px] text-[#95a5a6] hover:text-[var(--color-primary-green)] focus:outline-none"
+              aria-label={showConfirmacao ? "Ocultar confirmacao" : "Mostrar confirmacao"}
+            >
+              {showConfirmacao ? (
+                <EyeOff size={18} className="text-[var(--color-primary-green)]" />
+              ) : (
+                <Eye size={18} />
+              )}
+            </button>
+          </div>
           <button
             type="submit"
             disabled={loading}

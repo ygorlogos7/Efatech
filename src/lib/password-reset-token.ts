@@ -1,48 +1,17 @@
 import crypto from "crypto";
-import { getAuthSecret } from "@/lib/auth-secret";
 
-const TOKEN_TTL_MS = 15 * 60 * 1000;
+/** Validade do link de redefinicao (lacuna 6). */
+export const PASSWORD_RESET_TTL_MS = 15 * 60 * 1000;
 
-type TokenPayload = {
-  email: string;
-  exp: number;
-};
+/** Intervalo minimo entre e-mails de reset para o mesmo usuario. */
+export const PASSWORD_RESET_EMAIL_COOLDOWN_MS = 2 * 60 * 1000;
 
-function toBase64Url(value: string) {
-  return Buffer.from(value).toString("base64url");
+/** Token aleatorio enviado no link (nunca persista em claro no banco). */
+export function generatePasswordResetPlainToken(): string {
+  return crypto.randomBytes(32).toString("base64url");
 }
 
-function fromBase64Url(value: string) {
-  return Buffer.from(value, "base64url").toString("utf8");
-}
-
-function sign(data: string) {
-  return crypto.createHmac("sha256", getAuthSecret()).update(data).digest("base64url");
-}
-
-export function createPasswordResetToken(email: string) {
-  const payload: TokenPayload = {
-    email: email.toLowerCase(),
-    exp: Date.now() + TOKEN_TTL_MS,
-  };
-  const payloadEncoded = toBase64Url(JSON.stringify(payload));
-  const signature = sign(payloadEncoded);
-  return `${payloadEncoded}.${signature}`;
-}
-
-export function verifyPasswordResetToken(token: string): { valid: boolean; email?: string } {
-  const [payloadEncoded, signature] = token.split(".");
-  if (!payloadEncoded || !signature) return { valid: false };
-
-  const expectedSignature = sign(payloadEncoded);
-  if (signature !== expectedSignature) return { valid: false };
-
-  try {
-    const payload = JSON.parse(fromBase64Url(payloadEncoded)) as TokenPayload;
-    if (!payload?.email || !payload?.exp) return { valid: false };
-    if (Date.now() > payload.exp) return { valid: false };
-    return { valid: true, email: payload.email };
-  } catch {
-    return { valid: false };
-  }
+/** Hash SHA-256 hex para busca em TokenResetSenha.TokenHash. */
+export function hashPasswordResetToken(plainToken: string): string {
+  return crypto.createHash("sha256").update(plainToken).digest("hex");
 }

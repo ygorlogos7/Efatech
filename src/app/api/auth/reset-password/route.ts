@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { validatePasswordStrength } from "@/lib/auth-validation";
-import { verifyPasswordResetToken } from "@/lib/password-reset-token";
+import { redeemPasswordResetToken } from "@/lib/password-reset-store";
 import { bumpSessionVersion } from "@/lib/session-version";
 
 export async function POST(request: Request) {
@@ -18,10 +18,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const tokenValidation = verifyPasswordResetToken(token);
-    if (!tokenValidation.valid || !tokenValidation.email) {
+    const redeemed = await redeemPasswordResetToken(token);
+    if (!redeemed.valid) {
       return NextResponse.json(
-        { success: false, error: "Token invalido ou expirado." },
+        { success: false, error: "Token invalido, expirado ou ja utilizado." },
         { status: 400 },
       );
     }
@@ -36,27 +36,16 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(senha, 10);
 
-    const user = await prisma.usuarios.findFirst({
-      where: { Email: tokenValidation.email },
-      select: { Id: true },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: "Usuario nao encontrado." },
-        { status: 404 },
-      );
-    }
-
     await prisma.usuarios.update({
-      where: { Id: user.Id },
+      where: { Id: redeemed.usuarioId },
       data: { Senha: hashedPassword },
     });
 
-    await bumpSessionVersion(user.Id);
+    await bumpSessionVersion(redeemed.usuarioId);
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    console.error("[reset-password]", error);
     return NextResponse.json(
       { success: false, error: "Erro interno ao redefinir senha." },
       { status: 500 },

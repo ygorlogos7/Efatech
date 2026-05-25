@@ -11,9 +11,10 @@ export default function EsqueciSenhaPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (loading) return;
+
     setLoading(true);
     setError(null);
-    setSuccess(false);
 
     try {
       const response = await fetch("/api/auth/forgot-password", {
@@ -48,9 +49,15 @@ export default function EsqueciSenhaPage() {
         </p>
 
         {success && (
-          <p className="mb-4 rounded-md bg-green-100 p-3 text-sm text-green-700">
-            Se o e-mail existir, o link de redefinicao foi enviado.
-          </p>
+          <div className="mb-4 space-y-3 rounded-md bg-green-100 p-3 text-sm text-green-700">
+            <p>Se o e-mail existir, o link de redefinicao foi enviado.</p>
+            <p className="text-xs text-green-800">
+              Confira a caixa de entrada e o spam. O link vale 15 minutos e so pode ser usado uma vez.
+            </p>
+            <Link href="/login" className="inline-block font-bold text-[var(--color-primary-green)] hover:underline">
+              Ir para o login
+            </Link>
+          </div>
         )}
 
         {error && (
@@ -59,23 +66,25 @@ export default function EsqueciSenhaPage() {
           </p>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="voce@empresa.com"
-            className="w-full rounded-[10px] border border-[var(--color-border-color)] bg-[#fcfcfc] px-4 py-3 text-black focus:outline-none focus:border-[var(--color-primary-green)]"
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-[30px] bg-[var(--color-primary-green)] p-3 font-bold text-white transition-colors hover:bg-[var(--color-hover-green)] disabled:cursor-not-allowed disabled:bg-gray-400"
-          >
-            {loading ? "Enviando..." : "Enviar link"}
-          </button>
-        </form>
+        {!success && (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="voce@empresa.com"
+              className="w-full rounded-[10px] border border-[var(--color-border-color)] bg-[#fcfcfc] px-4 py-3 text-black focus:outline-none focus:border-[var(--color-primary-green)]"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-[30px] bg-[var(--color-primary-green)] p-3 font-bold text-white transition-colors hover:bg-[var(--color-hover-green)] disabled:cursor-not-allowed disabled:bg-gray-400"
+            >
+              {loading ? "Enviando..." : "Enviar link"}
+            </button>
+          </form>
+        )}
 
         <div className="mt-5 text-center">
           <Link href="/login" className="text-sm text-gray-500 hover:text-[var(--color-primary-green)] hover:underline">

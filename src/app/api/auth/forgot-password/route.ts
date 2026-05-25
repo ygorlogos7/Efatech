@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
 import { prisma } from "@/lib/prisma";
-import { createPasswordResetToken } from "@/lib/password-reset-token";
+import { getRequestBaseUrl, sendAuthEmail } from "@/lib/send-auth-email";
+import { issuePasswordResetToken } from "@/lib/password-reset-store";
+import { getClientIp } from "@/lib/ratelimit";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const email = String(body?.email ?? "").trim().toLowerCase();
+    const ip = getClientIp(request);
 
     if (!email) {
       return NextResponse.json(
@@ -17,40 +19,50 @@ export async function POST(request: Request) {
 
     const user = await prisma.usuarios.findFirst({
       where: { Email: email },
+      select: { Id: true },
     });
 
-    // Nunca expor se o e-mail existe ou nao.
     if (!user) {
       return NextResponse.json({ success: true });
     }
 
-    const token = createPasswordResetToken(email);
-    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-    const resetLink = `${baseUrl}/redefinir-senha?token=${encodeURIComponent(token)}`;
-    const resendApiKey = process.env.RESEND_API_KEY?.trim();
-    const emailFrom = process.env.EMAIL_FROM ?? "onboarding@resend.dev";
+    const issued = await issuePasswordResetToken(user.Id, ip);
 
-    // Modo simples: envia com Resend quando configurado.
-    if (resendApiKey) {
-      const resend = new Resend(resendApiKey);
-      await resend.emails.send({
-        from: emailFrom,
-        to: email,
-        subject: "Redefinicao de senha",
-        html: `<p>Recebemos uma solicitacao para redefinir sua senha.</p>
-<p>Clique no link abaixo para continuar:</p>
-<p><a href="${resetLink}">${resetLink}</a></p>
-<p>Se voce nao solicitou, pode ignorar este e-mail.</p>`,
-      });
-    } else {
-      // Fallback local para testes sem provedor.
-      console.log(`[Auth] Link de redefinicao para ${email}: ${resetLink}`);
+    if (!issued.shouldSendEmail) {
+      return NextResponse.json({ success: true });
+    }
+
+    const resetLink = `${getRequestBaseUrl(request)}/redefinir-senha?token=${encodeURIComponent(issued.plainToken)}`;
+
+    const mail = await sendAuthEmail({
+      to: email,
+      subject: "Redefinicao de senha - Efatech",
+      html: `<p>Recebemos uma solicitacao para redefinir sua senha.</p>
+<p>Clique no link abaixo (valido por 15 minutos, uso unico):</p>
+<p><a href="${resetLink}">Redefinir senha</a></p>
+<p>Se voce nao solicitou, ignore este e-mail. Links antigos foram invalidados.</p>`,
+      text: `Redefinir senha: ${resetLink}\nValido por 15 minutos. Uso unico.`,
+      logLabel: "Reset de senha",
+      fallbackLink: resetLink,
+    });
+
+    if (!mail.sent) {
+      console.warn("[forgot-password] E-mail nao enviado:", mail.error);
     }
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    console.error("[forgot-password]", error);
+    const detail =
+      process.env.NODE_ENV !== "production" && error instanceof Error
+        ? error.message
+        : undefined;
     return NextResponse.json(
-      { success: false, error: "Erro interno ao solicitar redefinicao." },
+      {
+        success: false,
+        error: "Erro interno ao solicitar redefinicao.",
+        ...(detail ? { detail } : {}),
+      },
       { status: 500 },
     );
   }
