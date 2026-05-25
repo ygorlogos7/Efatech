@@ -1,3 +1,7 @@
+import {
+  buildEmailVerificationHtml,
+  buildEmailVerificationText,
+} from "@/lib/auth-email-templates";
 import { createEmailVerificationToken } from "@/lib/email-verification-token";
 import { getAppBaseUrl, sendAuthEmail } from "@/lib/send-auth-email";
 import { getUsuarioEmailStatus } from "@/lib/usuario-email-verificado";
@@ -46,9 +50,16 @@ export async function sendVerificationEmailForAddress(
   const mailResult = await sendAuthEmail({
     to: normalized,
     subject: "Confirme seu e-mail - Efatech",
-    html: `<p>Confirme seu e-mail para acessar o Efatech.</p>
-<p><a href="${verifyLink}">${verifyLink}</a></p>
-<p>O link expira em 1 hora. Se expirar, use Reenviar confirmacao no site.</p>`,
+    html: buildEmailVerificationHtml({
+      email: normalized,
+      verifyLink,
+      expiresHours: 1,
+    }),
+    text: buildEmailVerificationText({
+      email: normalized,
+      verifyLink,
+      expiresHours: 1,
+    }),
     logLabel: "Link de verificacao",
     fallbackLink: verifyLink,
   });
@@ -72,12 +83,8 @@ export async function sendVerificationEmailForAddress(
     ...base,
     message: dev
       ? "E-mail nao entregue pelo Resend (modo dev). Use o link abaixo para confirmar."
-      : "Nao foi possivel enviar o e-mail agora. Tente novamente ou contate o suporte.",
-    ...(dev
-      ? {
-          verifyLink,
-          mailError: mailResult.error,
-        }
-      : {}),
+      : "Nao foi possivel enviar o e-mail agora. Corrija a configuracao no servidor (veja detalhe abaixo).",
+    mailError: mailResult.error,
+    ...(dev ? { verifyLink } : {}),
   };
 }

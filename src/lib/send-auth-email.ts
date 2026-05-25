@@ -20,6 +20,8 @@ export async function sendAuthEmail(options: {
   to: string;
   subject: string;
   html: string;
+  /** Versao texto para clientes que nao renderizam HTML */
+  text?: string;
   logLabel: string;
   /** URL de confirmacao etc. — sempre logada em dev se envio falhar */
   fallbackLink?: string;
@@ -52,6 +54,7 @@ export async function sendAuthEmail(options: {
     to: options.to,
     subject: options.subject,
     html: options.html,
+    ...(options.text ? { text: options.text } : {}),
   });
 
   if (error) {
