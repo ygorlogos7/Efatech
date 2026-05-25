@@ -1,11 +1,14 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { getUsuarioEmailStatus } from "@/lib/usuario-email-verificado";
+import { getUsuarioAuthStatus } from "@/lib/usuario-email-verificado";
+import type { LoginAuditResult } from "@/lib/login-audit";
 
 type ValidationResult = {
   success: boolean;
   error?: string;
   fieldErrors?: Record<string, string>;
+  /** Apenas para auditoria em LogSistema — nao expor ao cliente. */
+  auditResult?: LoginAuditResult;
 };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -67,26 +70,6 @@ export async function validateRegisterInput(input: {
     };
   }
 
-  const existingStatus = await getUsuarioEmailStatus(email);
-
-  if (existingStatus.exists) {
-    if (!existingStatus.verified) {
-      return {
-        success: false,
-        error:
-          "Este e-mail ja foi cadastrado mas ainda nao foi confirmado. Reenvie o link de confirmacao.",
-        fieldErrors: {
-          email: "E-mail pendente de confirmacao.",
-        },
-      };
-    }
-    return {
-      success: false,
-      error: "Este e-mail ja esta em uso.",
-      fieldErrors: { email: "Este e-mail ja esta em uso." },
-    };
-  }
-
   return { success: true };
 }
 
@@ -122,28 +105,41 @@ export async function validateLoginInput(input: {
       success: false,
       error: "E-mail ou senha invalidos.",
       fieldErrors: { auth: "Credenciais invalidas." },
+      auditResult: "credenciais_invalidas",
     };
   }
 
-  const passwordsMatch = user ? await bcrypt.compare(senha, user.Senha) : false;
+  const passwordsMatch = await bcrypt.compare(senha, user.Senha);
 
   if (!passwordsMatch) {
     return {
       success: false,
       error: "E-mail ou senha invalidos.",
       fieldErrors: { auth: "Credenciais invalidas." },
+      auditResult: "credenciais_invalidas",
     };
   }
 
-  const emailStatus = await getUsuarioEmailStatus(email);
-  if (!emailStatus.verified) {
+  const status = await getUsuarioAuthStatus(email);
+
+  if (status.blocked) {
+    return {
+      success: false,
+      error: "Conta suspensa. Entre em contato com o suporte.",
+      fieldErrors: { auth: "Conta bloqueada." },
+      auditResult: "conta_bloqueada",
+    };
+  }
+
+  if (!status.verified) {
     return {
       success: false,
       error:
         "Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada ou reenvie o link.",
       fieldErrors: { auth: "E-mail nao confirmado." },
+      auditResult: "email_nao_confirmado",
     };
   }
 
-  return { success: true };
+  return { success: true, auditResult: "sucesso" };
 }

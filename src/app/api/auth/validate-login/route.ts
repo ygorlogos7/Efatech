@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { validateLoginInput } from "@/lib/auth-validation";
+import { logLoginAudit } from "@/lib/login-audit";
 import { getClientIp } from "@/lib/ratelimit";
 import {
   checkRateLimit,
@@ -18,6 +19,11 @@ export async function POST(request: Request) {
 
     const limitStatus = await checkRateLimit(rateLimitKey);
     if (limitStatus.blocked) {
+      await logLoginAudit({
+        email,
+        resultado: "rate_limit",
+        ip,
+      });
       const waitLabel = formatLoginBlockWait(limitStatus.retryAfterMs);
       return NextResponse.json(
         {
@@ -36,6 +42,13 @@ export async function POST(request: Request) {
 
     if (!validation.success) {
       await registerFailedAttempt(rateLimitKey);
+      if (validation.auditResult) {
+        await logLoginAudit({
+          email,
+          resultado: validation.auditResult,
+          ip,
+        });
+      }
       return NextResponse.json(
         {
           success: false,
@@ -47,6 +60,11 @@ export async function POST(request: Request) {
     }
 
     await clearAttemptHistory(rateLimitKey);
+    await logLoginAudit({
+      email,
+      resultado: "sucesso",
+      ip,
+    });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json(

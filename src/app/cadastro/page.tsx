@@ -18,7 +18,7 @@ export default function CadastroPage() {
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
-  const [devVerifyLink, setDevVerifyLink] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState("");
 
   // States for password rules
   const [ruleLength, setRuleLength] = useState(false);
@@ -66,10 +66,14 @@ export default function CadastroPage() {
 
     if (result.success) {
       setRegisteredEmail(email);
-      setDevVerifyLink(result.verifyLink ?? null);
+      setSuccessMessage(
+        result.message ??
+          "Se os dados estiverem corretos, enviamos um link de confirmacao para o e-mail informado. Confira a caixa de entrada e o spam.",
+      );
       setSuccess(true);
     } else {
       setError(result.error || "Ocorreu um erro ao cadastrar.");
+      setFieldErrors(result.fieldErrors ?? {});
     }
   };
 
@@ -97,28 +101,10 @@ export default function CadastroPage() {
               <p className="flex items-center gap-2">
                 <CheckCircle2 size={16} /> Conta criada!
               </p>
-              <p>
-                {devVerifyLink ? (
-                  <>
-                    O e-mail pode nao ter sido entregue (Resend). Use o link abaixo
-                    para confirmar:
-                  </>
-                ) : (
-                  <>
-                    Enviamos um link de confirmacao para{" "}
-                    <strong>{registeredEmail}</strong>. Confirme o e-mail antes de
-                    entrar (verifique spam).
-                  </>
-                )}
+              <p>{successMessage}</p>
+              <p className="text-xs text-green-900/80">
+                E-mail informado: <strong>{registeredEmail}</strong>
               </p>
-              {devVerifyLink && (
-                <a
-                  href={devVerifyLink}
-                  className="block break-all text-[var(--color-primary-green)] font-bold hover:underline"
-                >
-                  Confirmar e-mail agora
-                </a>
-              )}
               <p className="text-xs text-green-900/80">
                 Nao recebeu?{" "}
                 <Link href="/reenviar-confirmacao" className="underline font-semibold">
@@ -202,17 +188,7 @@ export default function CadastroPage() {
                 className="w-full py-[12px] px-[16px] border border-[var(--color-border-color)] rounded-[10px] text-[15px] text-black bg-[#fcfcfc] focus:outline-none focus:border-[var(--color-primary-green)] transition-colors"
               />
               {fieldErrors.email && (
-                <p className="mt-1 text-xs text-red-600">
-                  {fieldErrors.email}{" "}
-                  {fieldErrors.email.includes("pendente") && (
-                    <Link
-                      href="/reenviar-confirmacao"
-                      className="text-[var(--color-primary-green)] underline"
-                    >
-                      Reenviar link
-                    </Link>
-                  )}
-                </p>
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>
               )}
             </div>
 

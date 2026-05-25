@@ -6,6 +6,8 @@ import { auth, signIn, signOut } from "@/auth";
 import { AuthError } from "next-auth";
 import { validateRegisterInput } from "@/lib/auth-validation";
 import { bumpSessionVersion } from "@/lib/session-version";
+import { REGISTER_GENERIC_SUCCESS_MESSAGE } from "@/lib/register-messages";
+import { getUsuarioAuthStatus } from "@/lib/usuario-email-verificado";
 import { sendVerificationEmailForAddress } from "@/lib/verification-email";
 
 export async function loginAction(formData: FormData) {
@@ -56,37 +58,41 @@ export async function registerUser(formData: FormData) {
     });
 
     if (!validation.success) {
-      return { success: false, error: validation.error };
+      return { success: false, error: validation.error, fieldErrors: validation.fieldErrors };
     }
 
-    // Limpa a formatação de telefone (remove parênteses, traços, espaços)
+    const existing = await getUsuarioAuthStatus(email);
+
+    if (existing.exists) {
+      if (!existing.verified) {
+        await sendVerificationEmailForAddress(email);
+      }
+      return {
+        success: true,
+        message: REGISTER_GENERIC_SUCCESS_MESSAGE,
+      };
+    }
+
     const telefoneNumbers = telefoneStr.replace(/\D/g, "");
     const celularNumbers = celularStr ? celularStr.replace(/\D/g, "") : "";
 
-    const telefone = telefoneNumbers || null;
-    const celular = celularNumbers || null;
-
-    // Hashear a senha
     const hashedPassword = await bcrypt.hash(senha, 10);
 
-    // Salvar no banco
     await prisma.usuarios.create({
       data: {
         Nome: nome,
         Email: email,
         Senha: hashedPassword,
-        Telefone: telefone,
-        Celular: celular,
+        Telefone: telefoneNumbers || null,
+        Celular: celularNumbers || null,
       },
     });
 
-    const mail = await sendVerificationEmailForAddress(email);
+    await sendVerificationEmailForAddress(email);
 
     return {
       success: true,
-      emailSent: mail.emailSent,
-      verifyLink: mail.verifyLink,
-      message: mail.message,
+      message: REGISTER_GENERIC_SUCCESS_MESSAGE,
     };
   } catch (error) {
     console.error("Erro no cadastro:", error);
