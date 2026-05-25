@@ -6,6 +6,7 @@ import { auth, signIn, signOut } from "@/auth";
 import { AuthError } from "next-auth";
 import { validateRegisterInput } from "@/lib/auth-validation";
 import { bumpSessionVersion } from "@/lib/session-version";
+import { sendVerificationEmailForAddress } from "@/lib/verification-email";
 
 export async function loginAction(formData: FormData) {
   try {
@@ -75,11 +76,18 @@ export async function registerUser(formData: FormData) {
         Email: email,
         Senha: hashedPassword,
         Telefone: telefone,
-        Celular: celular
-      }
+        Celular: celular,
+      },
     });
 
-    return { success: true };
+    const mail = await sendVerificationEmailForAddress(email);
+
+    return {
+      success: true,
+      emailSent: mail.emailSent,
+      verifyLink: mail.verifyLink,
+      message: mail.message,
+    };
   } catch (error) {
     console.error("Erro no cadastro:", error);
     return { success: false, error: "Ocorreu um erro interno ao tentar cadastrar." };

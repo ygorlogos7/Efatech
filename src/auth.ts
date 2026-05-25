@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import { authConfig } from "./auth.config";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { getUsuarioEmailStatus } from "@/lib/usuario-email-verificado";
 
 const SESSION_MAX_AGE = 60 * 60 * 8;
 /** Renova o JWT periodicamente (rotação de sessão enquanto o usuário está ativo). */
@@ -37,16 +38,17 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
           user.Senha
         );
 
-        if (passwordsMatch) {
-          return {
-            id: String(user.Id),
-            email: user.Email,
-            name: user.Nome,
-            sessaoVersao: user.SessaoVersao,
-          };
-        }
+        if (!passwordsMatch) return null;
 
-        return null;
+        const emailStatus = await getUsuarioEmailStatus(normalizedEmail);
+        if (!emailStatus.verified) return null;
+
+        return {
+          id: String(user.Id),
+          email: user.Email,
+          name: user.Nome,
+          sessaoVersao: user.SessaoVersao,
+        };
       },
     }),
   ],

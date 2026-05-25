@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { getUsuarioEmailStatus } from "@/lib/usuario-email-verificado";
 
 type ValidationResult = {
   success: boolean;
@@ -66,11 +67,19 @@ export async function validateRegisterInput(input: {
     };
   }
 
-  const existingUser = await prisma.usuarios.findFirst({
-    where: { Email: email },
-  });
+  const existingStatus = await getUsuarioEmailStatus(email);
 
-  if (existingUser) {
+  if (existingStatus.exists) {
+    if (!existingStatus.verified) {
+      return {
+        success: false,
+        error:
+          "Este e-mail ja foi cadastrado mas ainda nao foi confirmado. Reenvie o link de confirmacao.",
+        fieldErrors: {
+          email: "E-mail pendente de confirmacao.",
+        },
+      };
+    }
     return {
       success: false,
       error: "Este e-mail ja esta em uso.",
@@ -105,22 +114,34 @@ export async function validateLoginInput(input: {
 
   const user = await prisma.usuarios.findFirst({
     where: { Email: email },
+    select: { Senha: true },
   });
 
   if (!user) {
     return {
       success: false,
       error: "E-mail ou senha invalidos.",
-      fieldErrors: { email: "Credenciais invalidas." },
+      fieldErrors: { auth: "Credenciais invalidas." },
     };
   }
 
-  const passwordsMatch = await bcrypt.compare(senha, user.Senha);
+  const passwordsMatch = user ? await bcrypt.compare(senha, user.Senha) : false;
+
   if (!passwordsMatch) {
     return {
       success: false,
       error: "E-mail ou senha invalidos.",
-      fieldErrors: { senha: "Credenciais invalidas." },
+      fieldErrors: { auth: "Credenciais invalidas." },
+    };
+  }
+
+  const emailStatus = await getUsuarioEmailStatus(email);
+  if (!emailStatus.verified) {
+    return {
+      success: false,
+      error:
+        "Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada ou reenvie o link.",
+      fieldErrors: { auth: "E-mail nao confirmado." },
     };
   }
 

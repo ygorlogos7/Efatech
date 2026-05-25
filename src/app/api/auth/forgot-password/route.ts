@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     const token = createPasswordResetToken(email);
     const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
     const resetLink = `${baseUrl}/redefinir-senha?token=${encodeURIComponent(token)}`;
-    const resendApiKey = process.env.RESEND_API_KEY;
+    const resendApiKey = process.env.RESEND_API_KEY?.trim();
     const emailFrom = process.env.EMAIL_FROM ?? "onboarding@resend.dev";
 
     // Modo simples: envia com Resend quando configurado.

@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Info, CheckCircle2 } from "lucide-react";
 import { registerUser } from "@/actions/auth";
 
@@ -18,7 +17,8 @@ export default function CadastroPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [devVerifyLink, setDevVerifyLink] = useState<string | null>(null);
 
   // States for password rules
   const [ruleLength, setRuleLength] = useState(false);
@@ -65,10 +65,9 @@ export default function CadastroPage() {
     setIsLoading(false);
 
     if (result.success) {
+      setRegisteredEmail(email);
+      setDevVerifyLink(result.verifyLink ?? null);
       setSuccess(true);
-      setTimeout(() => {
-        router.push("/login");
-      }, 3000);
     } else {
       setError(result.error || "Ocorreu um erro ao cadastrar.");
     }
@@ -94,8 +93,44 @@ export default function CadastroPage() {
           </h2>
 
           {success && (
-            <div className="bg-green-100 text-green-800 p-3 rounded-md mb-4 flex items-center gap-2 text-sm font-medium">
-              <CheckCircle2 size={16} /> Conta criada com sucesso! Redirecionando...
+            <div className="bg-green-100 text-green-800 p-3 rounded-md mb-4 text-sm font-medium space-y-2">
+              <p className="flex items-center gap-2">
+                <CheckCircle2 size={16} /> Conta criada!
+              </p>
+              <p>
+                {devVerifyLink ? (
+                  <>
+                    O e-mail pode nao ter sido entregue (Resend). Use o link abaixo
+                    para confirmar:
+                  </>
+                ) : (
+                  <>
+                    Enviamos um link de confirmacao para{" "}
+                    <strong>{registeredEmail}</strong>. Confirme o e-mail antes de
+                    entrar (verifique spam).
+                  </>
+                )}
+              </p>
+              {devVerifyLink && (
+                <a
+                  href={devVerifyLink}
+                  className="block break-all text-[var(--color-primary-green)] font-bold hover:underline"
+                >
+                  Confirmar e-mail agora
+                </a>
+              )}
+              <p className="text-xs text-green-900/80">
+                Nao recebeu?{" "}
+                <Link href="/reenviar-confirmacao" className="underline font-semibold">
+                  Reenviar confirmacao
+                </Link>
+              </p>
+              <Link
+                href="/login"
+                className="inline-block text-[var(--color-primary-green)] font-bold hover:underline"
+              >
+                Ir para o login
+              </Link>
             </div>
           )}
 
@@ -105,7 +140,7 @@ export default function CadastroPage() {
             </div>
           )}
 
-          <form onSubmit={handleCadastro}>
+          <form onSubmit={handleCadastro} className={success ? "hidden" : ""}>
             <div className="mb-[15px] text-left">
               <label className="block text-[14px] text-[var(--color-text-gray)] mb-[5px]">
                 Nome completo <span className="text-red-500">*</span>
@@ -167,7 +202,17 @@ export default function CadastroPage() {
                 className="w-full py-[12px] px-[16px] border border-[var(--color-border-color)] rounded-[10px] text-[15px] text-black bg-[#fcfcfc] focus:outline-none focus:border-[var(--color-primary-green)] transition-colors"
               />
               {fieldErrors.email && (
-                <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>
+                <p className="mt-1 text-xs text-red-600">
+                  {fieldErrors.email}{" "}
+                  {fieldErrors.email.includes("pendente") && (
+                    <Link
+                      href="/reenviar-confirmacao"
+                      className="text-[var(--color-primary-green)] underline"
+                    >
+                      Reenviar link
+                    </Link>
+                  )}
+                </p>
               )}
             </div>
 

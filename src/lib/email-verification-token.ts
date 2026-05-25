@@ -1,7 +1,9 @@
 import crypto from "crypto";
 import { getAuthSecret } from "@/lib/auth-secret";
 
-const TOKEN_TTL_MS = 15 * 60 * 1000;
+/** Link de confirmacao de e-mail — 1 hora (reenvio gera token novo). */
+export const EMAIL_VERIFICATION_TTL_MS = 60 * 60 * 1000;
+const TOKEN_TTL_MS = EMAIL_VERIFICATION_TTL_MS;
 
 type TokenPayload = {
   email: string;
@@ -17,10 +19,13 @@ function fromBase64Url(value: string) {
 }
 
 function sign(data: string) {
-  return crypto.createHmac("sha256", getAuthSecret()).update(data).digest("base64url");
+  return crypto
+    .createHmac("sha256", getAuthSecret())
+    .update(data)
+    .digest("base64url");
 }
 
-export function createPasswordResetToken(email: string) {
+export function createEmailVerificationToken(email: string) {
   const payload: TokenPayload = {
     email: email.toLowerCase(),
     exp: Date.now() + TOKEN_TTL_MS,
@@ -30,7 +35,9 @@ export function createPasswordResetToken(email: string) {
   return `${payloadEncoded}.${signature}`;
 }
 
-export function verifyPasswordResetToken(token: string): { valid: boolean; email?: string } {
+export function verifyEmailVerificationToken(
+  token: string,
+): { valid: boolean; email?: string } {
   const [payloadEncoded, signature] = token.split(".");
   if (!payloadEncoded || !signature) return { valid: false };
 

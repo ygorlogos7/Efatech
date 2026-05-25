@@ -23,7 +23,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    console.error("[validate-register]", error);
     return NextResponse.json(
       { success: false, error: "Erro interno ao validar cadastro." },
       { status: 500 },

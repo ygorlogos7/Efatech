@@ -17,6 +17,8 @@ export const authConfig = {
         "/cadastro",
         "/esqueci-senha",
         "/redefinir-senha",
+        "/verificar-email",
+        "/reenviar-confirmacao",
       ]);
 
       const isPublic =

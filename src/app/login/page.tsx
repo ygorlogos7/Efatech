@@ -1,12 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Eye, EyeOff, Info } from "lucide-react";
+import { Eye, EyeOff, Info, CheckCircle2 } from "lucide-react";
 import { loginAction } from "@/actions/auth";
 
-export default function LoginPage() {
+function LoginForm() {
+  const searchParams = useSearchParams();
+  const verifiedBanner = searchParams.get("verified") === "1";
+
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -69,9 +73,21 @@ export default function LoginPage() {
             Acesse sua conta
           </h2>
 
+          {verifiedBanner && (
+            <div className="bg-green-100 text-green-800 p-3 rounded-md mb-4 flex items-center gap-2 text-sm">
+              <CheckCircle2 size={16} /> E-mail confirmado. Faca login abaixo.
+            </div>
+          )}
+
           {error && (
-            <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4 flex items-center gap-2">
+            <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4 flex items-center gap-2 text-sm">
               <Info size={16} /> {error}
+            </div>
+          )}
+
+          {fieldErrors.auth && !error && (
+            <div className="bg-amber-50 text-amber-900 p-3 rounded-md mb-4 text-sm">
+              {fieldErrors.auth}
             </div>
           )}
 
@@ -125,8 +141,17 @@ export default function LoginPage() {
               )}
             </div>
 
-            <div className="flex justify-end mb-2">
-              <Link href="/esqueci-senha" className="flex justify-end text-[12px] text-gray-500 hover:text-[var(--color-primary-green)] hover:underline">
+            <div className="flex justify-between mb-2 text-[12px]">
+              <Link
+                href="/reenviar-confirmacao"
+                className="text-gray-500 hover:text-[var(--color-primary-green)] hover:underline"
+              >
+                Reenviar confirmacao de e-mail
+              </Link>
+              <Link
+                href="/esqueci-senha"
+                className="text-gray-500 hover:text-[var(--color-primary-green)] hover:underline"
+              >
                 Esqueci minha senha
               </Link>
             </div>
@@ -173,5 +198,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[var(--color-bg-page)]" />}>
+      <LoginForm />
+    </Suspense>
   );
 }

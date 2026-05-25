@@ -163,6 +163,8 @@ model Usuarios {
   Celular       String?
   /// Invalida JWTs antigos ao incrementar (sair de todos / troca de senha).
   SessaoVersao  Int     @default(0)
+  EmailVerificado Boolean @default(false)
+  EmailVerificadoEm DateTime? @db.Timestamp(6)
 }
 
 model ValoresVenda {
