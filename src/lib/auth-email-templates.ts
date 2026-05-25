@@ -120,3 +120,112 @@ Se o link expirar: ${baseUrl}/reenviar-confirmacao
 
 Efatech — Assistencia tecnica e acessorios`;
 }
+
+export function buildPasswordResetHtml(options: {
+  email: string;
+  resetLink: string;
+  expiresMinutes?: number;
+}) {
+  const baseUrl = getAppBaseUrl().replace(/\/$/, "");
+  const logoUrl = `${baseUrl}/images/logo_efatech.png`;
+  const forgotUrl = `${baseUrl}/esqueci-senha`;
+  const email = escapeHtml(options.email);
+  const resetLink = escapeHtml(options.resetLink);
+  const minutes = options.expiresMinutes ?? 15;
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Redefinicao de senha - Efatech</title>
+</head>
+<body style="margin:0;padding:0;background-color:${PAGE_BG};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:${PAGE_BG};padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:520px;background-color:${CARD_BG};border-radius:16px;overflow:hidden;box-shadow:0 12px 32px rgba(46,150,95,0.12);">
+          <tr>
+            <td style="background:linear-gradient(135deg,${BRAND_GREEN} 0%,${BRAND_GREEN_DARK} 100%);padding:28px 24px;text-align:center;">
+              <img src="${logoUrl}" alt="Efatech" width="220" style="display:block;margin:0 auto;max-width:220px;height:auto;border:0;" />
+              <p style="margin:12px 0 0;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.92);font-weight:600;">
+                Assistencia tecnica e acessorios
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 28px 8px;text-align:center;">
+              <h1 style="margin:0;font-size:22px;line-height:1.3;color:${TEXT_MAIN};font-weight:700;">
+                Redefinicao de senha
+              </h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 28px 24px;text-align:center;">
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:${TEXT_MUTED};">
+                Recebemos uma solicitacao para redefinir a senha da sua conta no Efatech.
+              </p>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:${TEXT_MUTED};">
+                Endereco: <strong style="color:${BRAND_GREEN};">${email}</strong>
+              </p>
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto;">
+                <tr>
+                  <td style="border-radius:999px;background-color:${BRAND_GREEN};">
+                    <a href="${resetLink}" target="_blank" style="display:inline-block;padding:14px 32px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:999px;">
+                      Redefinir minha senha
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:${TEXT_MUTED};">
+                O link expira em <strong>${minutes} minutos</strong> e so pode ser usado uma vez. Depois disso, solicite um novo em
+                <a href="${forgotUrl}" style="color:${BRAND_GREEN};font-weight:600;text-decoration:underline;">Esqueci minha senha</a>.
+              </p>
+              <p style="margin:16px 0 0;font-size:13px;line-height:1.5;color:${TEXT_MUTED};">
+                Se voce nao solicitou, ignore este e-mail. Links antigos foram invalidados.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 28px 28px;">
+              <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 16px;" />
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#9ca3af;text-align:center;">
+                Se o botao nao abrir, copie e cole no navegador:<br />
+                <a href="${resetLink}" style="color:${BRAND_GREEN};word-break:break-all;">${resetLink}</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:16px 0 0;font-size:11px;color:#9ca3af;text-align:center;">
+          &copy; Efatech — voce recebeu este e-mail por ter solicitado redefinicao de senha.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export function buildPasswordResetText(options: {
+  email: string;
+  resetLink: string;
+  expiresMinutes?: number;
+}) {
+  const baseUrl = getAppBaseUrl().replace(/\/$/, "");
+  const minutes = options.expiresMinutes ?? 15;
+  return `Efatech — Redefinicao de senha
+
+Ola,
+
+Recebemos uma solicitacao para redefinir a senha do e-mail ${options.email}.
+
+Acesse o link abaixo (valido por ${minutes} minutos, uso unico):
+
+${options.resetLink}
+
+Se o link expirar: ${baseUrl}/esqueci-senha
+
+Se voce nao solicitou, ignore este e-mail.
+
+Efatech — Assistencia tecnica e acessorios`;
+}

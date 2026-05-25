@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  buildPasswordResetHtml,
+  buildPasswordResetText,
+} from "@/lib/auth-email-templates";
 import { getRequestBaseUrl, sendAuthEmail } from "@/lib/send-auth-email";
+import { PASSWORD_RESET_TTL_MS } from "@/lib/password-reset-token";
 import { issuePasswordResetToken } from "@/lib/password-reset-store";
 import { getClientIp } from "@/lib/ratelimit";
 
@@ -34,14 +39,21 @@ export async function POST(request: Request) {
 
     const resetLink = `${getRequestBaseUrl(request)}/redefinir-senha?token=${encodeURIComponent(issued.plainToken)}`;
 
+    const expiresMinutes = Math.round(PASSWORD_RESET_TTL_MS / 60_000);
+
     const mail = await sendAuthEmail({
       to: email,
       subject: "Redefinicao de senha - Efatech",
-      html: `<p>Recebemos uma solicitacao para redefinir sua senha.</p>
-<p>Clique no link abaixo (valido por 15 minutos, uso unico):</p>
-<p><a href="${resetLink}">Redefinir senha</a></p>
-<p>Se voce nao solicitou, ignore este e-mail. Links antigos foram invalidados.</p>`,
-      text: `Redefinir senha: ${resetLink}\nValido por 15 minutos. Uso unico.`,
+      html: buildPasswordResetHtml({
+        email,
+        resetLink,
+        expiresMinutes,
+      }),
+      text: buildPasswordResetText({
+        email,
+        resetLink,
+        expiresMinutes,
+      }),
       logLabel: "Reset de senha",
       fallbackLink: resetLink,
     });
