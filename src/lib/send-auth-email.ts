@@ -79,16 +79,7 @@ export function getAppBaseUrl() {
   return process.env.NEXTAUTH_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
 }
 
-/** Em dev, usa o host da requisicao (evita link em :3001 com app em :3000). */
-export function getRequestBaseUrl(request: Request): string {
-  if (process.env.NODE_ENV === "production") {
-    return getAppBaseUrl();
-  }
-  const host =
-    request.headers.get("x-forwarded-host") ?? request.headers.get("host");
-  if (host) {
-    const proto = request.headers.get("x-forwarded-proto") ?? "http";
-    return `${proto}://${host.split(",")[0]?.trim()}`;
-  }
+/** Links de e-mail/auth sempre usam NEXTAUTH_URL (ex.: http://localhost:3000). */
+export function getRequestBaseUrl(_request: Request): string {
   return getAppBaseUrl();
 }
