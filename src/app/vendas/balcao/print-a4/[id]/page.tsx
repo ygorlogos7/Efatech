@@ -15,11 +15,15 @@ export default async function PrintVendaA4Page({ params }: { params: Promise<{ i
     notFound();
   }
 
-  const { data: venda } = await getVendaById(vendaId);
-  const { data: empresa } = await getEmpresa();
+  const [vendaRes, empRes] = await Promise.all([
+    getVendaById(vendaId),
+    getEmpresa(),
+  ]);
   const session = await auth();
 
+  const venda = vendaRes.data;
   if (!venda) notFound();
+  const empresa = empRes.data || null;
 
   const cliente = venda.Cliente;
   const endereco = cliente?.Endereco?.[0]; // Pega o primeiro endereço do cliente
@@ -165,7 +169,7 @@ export default async function PrintVendaA4Page({ params }: { params: Promise<{ i
                   <span><span style={{color: "#00FFAA"}}>E</span>fatech</span>
               </div>
               <div className="os-header-center">
-                  <div style={{fontSize: "13px", fontWeight: "bold"}}>{empresa?.RazaoSocial || "EFATECH ASSISTÊNCIA TÉCNICA E ACESSÓRIOS"}</div>
+                  <div style={{fontSize: "13px", fontWeight: "bold"}}>EFATECH ASSISTÊNCIA TÉCNICA E ACESSÓRIOS</div>
                   <div>CNPJ: {empresa?.Cnpj || "41.092.084/0001-18"}</div>
                   <div>{empresa?.Logradouro || "Praça Lauro Gomes"}, {empresa?.Numero || "20"} - {empresa?.Bairro || "Centro"}</div>
                   <div>{empresa?.Cidade || "São Bernardo do Campo"}/{empresa?.Uf || "SP"} - CEP: {empresa?.Cep || "09710-040"}</div>

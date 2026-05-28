@@ -11,7 +11,7 @@ export default async function EmpresasPage({
 }) {
   const resolvedParams = await searchParams;
   const pesquisa = resolvedParams?.pesquisa || "";
-  const { success, data: empresas } = await getEmpresas(pesquisa);
+  const { success, data: empresas } = await getEmpresas(pesquisa, "cadastro");
 
   return (
     <div className="space-y-6">

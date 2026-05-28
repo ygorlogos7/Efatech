@@ -23,7 +23,7 @@ export default async function PrintVendaPage({ params }: { params: Promise<{ id:
 
   const [vendaRes, empRes] = await Promise.all([
     getVendaById(vendaId),
-    getEmpresa()
+    getEmpresa(),
   ]);
 
   if (!vendaRes.success || !vendaRes.data) {
@@ -117,7 +117,7 @@ export default async function PrintVendaPage({ params }: { params: Promise<{ id:
           <div className="header-container">
               <img src="/images/logo_efatech.png" alt="EFATECH" className="w-14 h-14 object-contain shrink-0" />
               <div className="company-info leading-tight">
-                  <b>{empresa.RazaoSocial}</b><br />
+                  <b>EFATECH ASSISTÊNCIA TÉCNICA E ACESSÓRIOS</b><br />
                   CNPJ: {empresa.Cnpj}<br />
                   {empresa.Logradouro}, {empresa.Numero || '20'} - {empresa.Bairro}<br />
                   {empresa.Cidade} - CEP: {empresa.Cep || '09710-040'}<br />

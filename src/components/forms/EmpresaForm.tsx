@@ -1,19 +1,35 @@
 "use client";
 
-import React, { useTransition } from "react";
+import React, { useState, useTransition } from "react";
 import { createEmpresa, updateEmpresa } from "@/actions/empresas";
 import { Edit, MapPin, Phone, Mail, Check, X, Building2, Globe } from "lucide-react";
 import Link from "next/link";
 import { useNotification } from "@/hooks/use-notification";
+import { useRouter } from "next/navigation";
 
 interface EmpresaFormProps {
   initialData?: any;
   isReadOnly?: boolean;
+  redirectTo?: string;
+  categoriaEmpresa?: "cadastro" | "interno";
 }
 
-export function EmpresaForm({ initialData, isReadOnly = false }: EmpresaFormProps) {
+export function EmpresaForm({
+  initialData,
+  isReadOnly = false,
+  redirectTo,
+  categoriaEmpresa = "cadastro",
+}: EmpresaFormProps) {
   const [isPending, startTransition] = useTransition();
   const { success, error } = useNotification();
+  const router = useRouter();
+  const [cep, setCep] = useState(initialData?.Cep || "");
+  const [logradouro, setLogradouro] = useState(initialData?.Logradouro || "");
+  const [numero, setNumero] = useState(initialData?.Numero || "");
+  const [bairro, setBairro] = useState(initialData?.Bairro || "");
+  const [cidade, setCidade] = useState(initialData?.Cidade || "");
+  const [uf, setUf] = useState(initialData?.Uf || "");
+  const [isBuscandoCep, setIsBuscandoCep] = useState(false);
 
   const isEdit = !!initialData && !isReadOnly;
 
@@ -30,12 +46,45 @@ export function EmpresaForm({ initialData, isReadOnly = false }: EmpresaFormProp
         error(r.error || "Erro ao salvar empresa.");
       } else {
         success(isEdit ? "Empresa atualizada com sucesso!" : "Empresa cadastrada com sucesso!");
+        if (redirectTo) {
+          router.push(redirectTo);
+        }
       }
     });
   };
 
+  const onlyDigits = (value: string) => value.replace(/\D/g, "");
+
+  const preencherEnderecoPorCep = async (cepInformado: string) => {
+    const cepLimpo = onlyDigits(cepInformado);
+    if (cepLimpo.length !== 8) return;
+
+    try {
+      setIsBuscandoCep(true);
+      const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+      if (!response.ok) return;
+
+      const data = await response.json();
+      if (data?.erro) return;
+
+      setLogradouro(data.logradouro || "");
+      setBairro(data.bairro || "");
+      setCidade(data.localidade || "");
+      setUf((data.uf || "").toUpperCase());
+    } catch {
+      // Falha de rede nao impede preenchimento manual.
+    } finally {
+      setIsBuscandoCep(false);
+    }
+  };
+
   return (
     <form action={handleSubmit} className="space-y-6 max-w-5xl">
+      <input
+        type="hidden"
+        name="CategoriaEmpresa"
+        value={initialData?.CategoriaEmpresa || categoriaEmpresa}
+      />
       {/* 1. Dados Gerais */}
       <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center gap-2">
@@ -64,7 +113,27 @@ export function EmpresaForm({ initialData, isReadOnly = false }: EmpresaFormProp
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1">Inscrição Estadual</label>
-            <input type="text" name="InscricaoEstadual" defaultValue={initialData?.InscricaoEstadual} disabled={isReadOnly} className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed" />
+            <input
+              type="text"
+              name="InscricaoEstadual"
+              defaultValue={initialData?.InscricaoEstadual}
+              disabled={isReadOnly}
+              placeholder="Somente números ou ISENTO"
+              className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">Regime tributário (CRT)</label>
+            <select
+              name="RegimeTributario"
+              defaultValue={String(initialData?.RegimeTributario ?? 1)}
+              disabled={isReadOnly}
+              className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="1">1 - Simples Nacional</option>
+              <option value="2">2 - Simples (excesso sublimite)</option>
+              <option value="3">3 - Regime Normal</option>
+            </select>
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1">Telefone</label>
@@ -86,27 +155,80 @@ export function EmpresaForm({ initialData, isReadOnly = false }: EmpresaFormProp
         <div className="p-5 grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1">CEP</label>
-            <input type="text" name="Cep" defaultValue={initialData?.Cep} disabled={isReadOnly} className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed" />
+            <input
+              type="text"
+              name="Cep"
+              value={cep}
+              onChange={(e) => {
+                const raw = e.target.value;
+                setCep(raw);
+                if (onlyDigits(raw).length === 8) {
+                  void preencherEnderecoPorCep(raw);
+                }
+              }}
+              onBlur={() => void preencherEnderecoPorCep(cep)}
+              disabled={isReadOnly}
+              className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
+            {isBuscandoCep && (
+              <p className="text-[11px] text-gray-500 mt-1">Buscando endereco pelo CEP...</p>
+            )}
           </div>
           <div className="md:col-span-2">
             <label className="block text-xs font-bold text-gray-700 mb-1">Logradouro</label>
-            <input type="text" name="Logradouro" defaultValue={initialData?.Logradouro} disabled={isReadOnly} className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed" />
+            <input
+              type="text"
+              name="Logradouro"
+              value={logradouro}
+              onChange={(e) => setLogradouro(e.target.value)}
+              disabled={isReadOnly}
+              className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1">Número</label>
-            <input type="text" name="Numero" defaultValue={initialData?.Numero} disabled={isReadOnly} className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed" />
+            <input
+              type="text"
+              name="Numero"
+              value={numero}
+              onChange={(e) => setNumero(e.target.value)}
+              disabled={isReadOnly}
+              className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1">Bairro</label>
-            <input type="text" name="Bairro" defaultValue={initialData?.Bairro} disabled={isReadOnly} className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed" />
+            <input
+              type="text"
+              name="Bairro"
+              value={bairro}
+              onChange={(e) => setBairro(e.target.value)}
+              disabled={isReadOnly}
+              className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
           </div>
           <div className="md:col-span-2">
             <label className="block text-xs font-bold text-gray-700 mb-1">Cidade</label>
-            <input type="text" name="Cidade" defaultValue={initialData?.Cidade} disabled={isReadOnly} className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed" />
+            <input
+              type="text"
+              name="Cidade"
+              value={cidade}
+              onChange={(e) => setCidade(e.target.value)}
+              disabled={isReadOnly}
+              className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1">UF</label>
-            <input type="text" name="Uf" defaultValue={initialData?.Uf} disabled={isReadOnly} maxLength={2} className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed" />
+            <input
+              type="text"
+              name="Uf"
+              value={uf}
+              onChange={(e) => setUf(e.target.value.toUpperCase())}
+              disabled={isReadOnly}
+              maxLength={2}
+              className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
           </div>
         </div>
       </div>

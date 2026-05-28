@@ -19,6 +19,21 @@ const toNum = (v: any) => {
   };
 };
 
+const normalizeString = (value: FormDataEntryValue | null) => {
+  const parsed = typeof value === "string" ? value.trim() : "";
+  return parsed.length > 0 ? parsed : null;
+};
+
+const normalizeFiscalItem = (item: any) => ({
+  cod_ncm: typeof item?.cod_ncm === "string" ? item.cod_ncm.trim() || null : null,
+  cod_cfop: typeof item?.cod_cfop === "string" ? item.cod_cfop.trim() || null : null,
+  unidade_comercial: typeof item?.unidade_comercial === "string" ? item.unidade_comercial.trim() || null : null,
+  icms_origem: Number(item?.icms_origem ?? 0),
+  icms_cst_csosn: typeof item?.icms_cst_csosn === "string" ? item.icms_cst_csosn.trim() || null : null,
+  pis_cst: typeof item?.pis_cst === "string" ? item.pis_cst.trim() || null : null,
+  cofins_cst: typeof item?.cofins_cst === "string" ? item.cofins_cst.trim() || null : null,
+});
+
 // --- Vendas ---
 export async function getVendas(tipo?: string, page: number = 1, pageSize: number = 20, searchQuery?: string) {
   const skip = (page - 1) * pageSize;
@@ -101,6 +116,25 @@ export async function createVenda(tipo: string, formData: FormData) {
     const clienteTelefone = formData.get("ClienteTelefone") as string;
     const clienteCPF = formData.get("ClienteCPF") as string;
     const clienteEmail = formData.get("ClienteEmail") as string;
+    const clienteCep = normalizeString(formData.get("ClienteCep"));
+    const clienteLogradouro = normalizeString(formData.get("ClienteLogradouro"));
+    const clienteNumero = normalizeString(formData.get("ClienteNumero"));
+    const clienteBairro = normalizeString(formData.get("ClienteBairro"));
+    const clienteCidade = normalizeString(formData.get("ClienteCidade"));
+    const clienteUf = normalizeString(formData.get("ClienteUf"));
+
+    const empresaRazaoSocial = normalizeString(formData.get("EmpresaRazaoSocial"));
+    const empresaNomeFantasia = normalizeString(formData.get("EmpresaNomeFantasia"));
+    const empresaCnpj = normalizeString(formData.get("EmpresaCnpj"));
+    const empresaIE = normalizeString(formData.get("EmpresaIE"));
+    const empresaEmailComercial = normalizeString(formData.get("EmpresaEmailComercial"));
+    const empresaTelefoneComercial = normalizeString(formData.get("EmpresaTelefoneComercial"));
+    const empresaCep = normalizeString(formData.get("EmpresaCep"));
+    const empresaLogradouro = normalizeString(formData.get("EmpresaLogradouro"));
+    const empresaNumero = normalizeString(formData.get("EmpresaNumero"));
+    const empresaBairro = normalizeString(formData.get("EmpresaBairro"));
+    const empresaCidade = normalizeString(formData.get("EmpresaCidade"));
+    const empresaUf = normalizeString(formData.get("EmpresaUf"));
 
     // Se não tiver ID mas tiver Nome, cria um novo cliente
     if (!clienteId && clienteNome) {
@@ -154,6 +188,84 @@ export async function createVenda(tipo: string, formData: FormData) {
       },
     });
 
+    if (clienteId) {
+      await prisma.clientes.update({
+        where: { Id: clienteId },
+        data: {
+          Nome: clienteNome || undefined,
+          Telefone: clienteTelefone || null,
+          CPFCNPJ: clienteCPF || null,
+          Email: clienteEmail || null,
+        },
+      });
+
+      const hasClienteAddressData = Boolean(
+        clienteCep || clienteLogradouro || clienteNumero || clienteBairro || clienteCidade || clienteUf,
+      );
+      if (hasClienteAddressData) {
+        const enderecoExistente = await prisma.endereco.findFirst({
+          where: { ClienteId: clienteId },
+          orderBy: { Id: "asc" },
+          select: { Id: true },
+        });
+
+        if (enderecoExistente) {
+          await prisma.endereco.update({
+            where: { Id: enderecoExistente.Id },
+            data: {
+              Cep: clienteCep,
+              Logradouro: clienteLogradouro,
+              Numero: clienteNumero,
+              Bairro: clienteBairro,
+              Cidade: clienteCidade,
+              UF: clienteUf,
+            },
+          });
+        } else {
+          await prisma.endereco.create({
+            data: {
+              ClienteId: clienteId,
+              Cep: clienteCep,
+              Logradouro: clienteLogradouro,
+              Numero: clienteNumero,
+              Bairro: clienteBairro,
+              Cidade: clienteCidade,
+              UF: clienteUf,
+            },
+          });
+        }
+      }
+    }
+
+    const empresaId = venda.EmpresaId;
+    if (empresaId) {
+      await prisma.empresa.update({
+        where: { Id: empresaId },
+        data: {
+          RazaoSocial: empresaRazaoSocial || undefined,
+          NomeFantasia: empresaNomeFantasia,
+          Cnpj: empresaCnpj || undefined,
+          InscricaoEstadual: empresaIE,
+          Email: empresaEmailComercial,
+          Telefone: empresaTelefoneComercial,
+          Cep: empresaCep,
+          Logradouro: empresaLogradouro,
+          Numero: empresaNumero,
+          Bairro: empresaBairro,
+          Cidade: empresaCidade,
+          Uf: empresaUf,
+        },
+      });
+    }
+
+    for (const item of itens) {
+      if (!item?.ProdutoId) continue;
+      await prisma.produtos.update({
+        where: { Id: Number(item.ProdutoId) },
+        data: normalizeFiscalItem(item),
+      });
+    }
+
     console.log(">>> [VENDA] CRIADA COM SUCESSO! ID:", venda.Id);
 
     return { success: true, id: venda.Id, data: venda };
@@ -178,6 +290,34 @@ export async function getProximoNumeroVenda() {
 export async function updateVenda(id: number, tipo: string, formData: FormData) {
   try {
     const total = Number(formData.get("Total") || 0);
+    const itensJson = formData.get("Itens") as string;
+    const itens = itensJson ? JSON.parse(itensJson) : [];
+    const clienteId = formData.get("ClienteId") ? Number(formData.get("ClienteId")) : null;
+    const clienteNome = formData.get("ClienteNome") as string;
+    const clienteTelefone = formData.get("ClienteTelefone") as string;
+    const clienteCPF = formData.get("ClienteCPF") as string;
+    const clienteEmail = formData.get("ClienteEmail") as string;
+    const clienteCep = normalizeString(formData.get("ClienteCep"));
+    const clienteLogradouro = normalizeString(formData.get("ClienteLogradouro"));
+    const clienteNumero = normalizeString(formData.get("ClienteNumero"));
+    const clienteBairro = normalizeString(formData.get("ClienteBairro"));
+    const clienteCidade = normalizeString(formData.get("ClienteCidade"));
+    const clienteUf = normalizeString(formData.get("ClienteUf"));
+
+    const empresaId = formData.get("EmpresaId") ? Number(formData.get("EmpresaId")) : null;
+    const empresaRazaoSocial = normalizeString(formData.get("EmpresaRazaoSocial"));
+    const empresaNomeFantasia = normalizeString(formData.get("EmpresaNomeFantasia"));
+    const empresaCnpj = normalizeString(formData.get("EmpresaCnpj"));
+    const empresaIE = normalizeString(formData.get("EmpresaIE"));
+    const empresaEmailComercial = normalizeString(formData.get("EmpresaEmailComercial"));
+    const empresaTelefoneComercial = normalizeString(formData.get("EmpresaTelefoneComercial"));
+    const empresaCep = normalizeString(formData.get("EmpresaCep"));
+    const empresaLogradouro = normalizeString(formData.get("EmpresaLogradouro"));
+    const empresaNumero = normalizeString(formData.get("EmpresaNumero"));
+    const empresaBairro = normalizeString(formData.get("EmpresaBairro"));
+    const empresaCidade = normalizeString(formData.get("EmpresaCidade"));
+    const empresaUf = normalizeString(formData.get("EmpresaUf"));
+
     await prisma.vendas.update({
       where: { Id: id },
       data: {
@@ -188,11 +328,88 @@ export async function updateVenda(id: number, tipo: string, formData: FormData) 
         Observacoes: formData.get("Observacoes") as string | null,
         Vendedor: formData.get("Vendedor") as string | null,
         Garantia: formData.get("Garantia") as string | null,
-        EmpresaId: formData.get("EmpresaId") ? Number(formData.get("EmpresaId")) : null,
+        EmpresaId: empresaId,
         FormaPagamentoId: formData.get("FormaPagamentoId") ? Number(formData.get("FormaPagamentoId")) : null,
         Ativo: formData.get("Situacao") === "Concluída",
       },
     });
+
+    if (clienteId) {
+      await prisma.clientes.update({
+        where: { Id: clienteId },
+        data: {
+          Nome: clienteNome || undefined,
+          Telefone: clienteTelefone || null,
+          CPFCNPJ: clienteCPF || null,
+          Email: clienteEmail || null,
+        },
+      });
+
+      const hasClienteAddressData = Boolean(
+        clienteCep || clienteLogradouro || clienteNumero || clienteBairro || clienteCidade || clienteUf,
+      );
+      if (hasClienteAddressData) {
+        const enderecoExistente = await prisma.endereco.findFirst({
+          where: { ClienteId: clienteId },
+          orderBy: { Id: "asc" },
+          select: { Id: true },
+        });
+
+        if (enderecoExistente) {
+          await prisma.endereco.update({
+            where: { Id: enderecoExistente.Id },
+            data: {
+              Cep: clienteCep,
+              Logradouro: clienteLogradouro,
+              Numero: clienteNumero,
+              Bairro: clienteBairro,
+              Cidade: clienteCidade,
+              UF: clienteUf,
+            },
+          });
+        } else {
+          await prisma.endereco.create({
+            data: {
+              ClienteId: clienteId,
+              Cep: clienteCep,
+              Logradouro: clienteLogradouro,
+              Numero: clienteNumero,
+              Bairro: clienteBairro,
+              Cidade: clienteCidade,
+              UF: clienteUf,
+            },
+          });
+        }
+      }
+    }
+
+    if (empresaId) {
+      await prisma.empresa.update({
+        where: { Id: empresaId },
+        data: {
+          RazaoSocial: empresaRazaoSocial || undefined,
+          NomeFantasia: empresaNomeFantasia,
+          Cnpj: empresaCnpj || undefined,
+          InscricaoEstadual: empresaIE,
+          Email: empresaEmailComercial,
+          Telefone: empresaTelefoneComercial,
+          Cep: empresaCep,
+          Logradouro: empresaLogradouro,
+          Numero: empresaNumero,
+          Bairro: empresaBairro,
+          Cidade: empresaCidade,
+          Uf: empresaUf,
+        },
+      });
+    }
+
+    for (const item of itens) {
+      if (!item?.ProdutoId) continue;
+      await prisma.produtos.update({
+        where: { Id: Number(item.ProdutoId) },
+        data: normalizeFiscalItem(item),
+      });
+    }
     await logAction("Atualizar Venda", MODULO, `Venda ID: ${id} (${tipo}) atualizada para R$ ${total.toFixed(2)}.`);
     revalidatePath(`/vendas/${tipo}`);
   } catch (error) {

@@ -16,6 +16,10 @@ export default async function EditEmpresaPage({
     notFound();
   }
 
+  const isEmpresaInterna = empresa.CategoriaEmpresa === "interno";
+  const listaPath = isEmpresaInterna ? "/configuracoes/empresas" : "/cadastros/opcoes/empresas";
+  const breadcrumbLabel = isEmpresaInterna ? "Empresa / lojas" : "Empresas";
+
   return (
     <div className="space-y-6">
       {/* Cabeçalho com Breadcrumbs */}
@@ -25,13 +29,13 @@ export default async function EditEmpresaPage({
           <Home className="w-4 h-4 mr-1" />
           <Link href="/home" className="hover:underline">Início</Link>
           <span>&gt;</span>
-          <Link href="/cadastros/opcoes/empresas" className="hover:underline">Empresas</Link>
+          <Link href={listaPath} className="hover:underline">{breadcrumbLabel}</Link>
           <span>&gt;</span>
           <span className="text-gray-400">Editar</span>
         </div>
       </div>
 
-      <EmpresaForm initialData={empresa} />
+      <EmpresaForm initialData={empresa} redirectTo={listaPath} />
     </div>
   );
 }

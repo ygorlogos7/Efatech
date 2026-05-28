@@ -6,7 +6,12 @@ import { revalidatePath } from "next/cache";
 // ---- Dados da Empresa ----
 export async function getEmpresa() {
   try {
-    const item = await prisma.empresa.findUnique({ where: { Id: 1 } });
+    const item =
+      await prisma.empresa.findFirst({
+        where: { CategoriaEmpresa: "interno", Ativo: true },
+        orderBy: { Id: "asc" },
+      }) ??
+      await prisma.empresa.findUnique({ where: { Id: 1 } });
     return { success: true, data: item };
   } catch (error) {
     return { success: false, error: "Falha ao buscar dados da empresa." };

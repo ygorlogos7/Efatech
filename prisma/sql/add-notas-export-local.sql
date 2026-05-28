@@ -1,0 +1,2 @@
+ALTER TABLE "NotasConfig" ADD COLUMN IF NOT EXISTS "SalvarArquivosLocal" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "NotasConfig" ADD COLUMN IF NOT EXISTS "PastaExportacaoLocal" TEXT;

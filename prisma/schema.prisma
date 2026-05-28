@@ -134,6 +134,12 @@ model Produtos {
   Ativo            Boolean
   cod_venda        Float?
   cod_ncm          String?      @db.VarChar(20)
+  cod_cfop         String?      @db.VarChar(10)
+  icms_origem      Int?         @default(0)
+  icms_cst_csosn   String?      @db.VarChar(4)
+  pis_cst          String?      @db.VarChar(2)
+  cofins_cst       String?      @db.VarChar(2)
+  unidade_comercial String?     @db.VarChar(10)
   dat_cadastro     DateTime?    @db.Timestamp(6)
   VendaItens       VendaItens[]
 }
@@ -447,13 +453,26 @@ model NotaFiscal {
   Numero       Int?
   Serie        Int?
   Chave        String?  @unique
+  FocusRef     String?  @unique
+  VendaId      Int?
+  EmpresaId    Int?
   Tipo         String
   Status       String   @default("pendente")
+  StatusSefaz  String?
+  Ambiente     String?  @db.VarChar(20)
+  ProtocoloAutorizacao String?
+  MotivoSefaz  String?
+  PdfUrl       String?
   Destinatario String?
   ValorTotal   Decimal  @default(0)
   DataEmissao  DateTime @default(now())
   Xml          String?
   CreatedAt    DateTime @default(now())
+  Vendas       Vendas?  @relation(fields: [VendaId], references: [Id])
+  Empresa      Empresa? @relation(fields: [EmpresaId], references: [Id])
+
+  @@index([VendaId])
+  @@index([EmpresaId])
 }
 
 model NotaCompra {
@@ -511,12 +530,14 @@ model Intermediador {
 }
 
 model NotasConfig {
-  Id                Int    @id @default(1)
-  Ambiente          String @default("homologacao")
-  SeriePadrao       Int    @default(1)
-  ProximoNumeroNFe  Int    @default(1)
-  ProximoNumeroNFSe Int    @default(1)
-  ProximoNumeroNFCe Int    @default(1)
+  Id                    Int     @id @default(1)
+  Ambiente              String  @default("homologacao")
+  SeriePadrao           Int     @default(1)
+  ProximoNumeroNFe      Int     @default(1)
+  ProximoNumeroNFSe     Int     @default(1)
+  ProximoNumeroNFCe     Int     @default(1)
+  SalvarArquivosLocal   Boolean @default(false)
+  PastaExportacaoLocal  String?
 }
 
 model Atendimento {
@@ -565,7 +586,10 @@ model Empresa {
   RazaoSocial       String
   NomeFantasia      String?
   Cnpj              String   @unique
+  CategoriaEmpresa  String   @default("cadastro")
   InscricaoEstadual String?
+  RegimeTributario  Int?     @default(1)
+  CodigoIbgeMunicipio String? @db.VarChar(10)
   Logradouro        String?
   Numero            String?
   Bairro            String?
@@ -579,6 +603,7 @@ model Empresa {
   Ativo             Boolean  @default(true)
   CreatedAt         DateTime @default(now())
   Vendas            Vendas[]
+  NotasFiscais      NotaFiscal[]
 }
 
 model Plano {
@@ -700,6 +725,7 @@ model Vendas {
   FormaPagamentoId  Int?
   EmpresaId         Int?
   Itens             VendaItens[]
+  NotasFiscais      NotaFiscal[]
   Cliente           Clientes?    @relation(fields: [ClienteId], references: [Id])
   FormaPagamento    FormaPagamento? @relation(fields: [FormaPagamentoId], references: [Id])
   Empresa           Empresa?     @relation(fields: [EmpresaId], references: [Id])

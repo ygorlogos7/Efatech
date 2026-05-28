@@ -2,12 +2,68 @@
 
 import React, { useState, useTransition } from "react";
 import Link from "next/link";
-import { getNotas } from "@/actions/notas";
-import { ShoppingCart, Search, Filter, PlusCircle, ExternalLink, FileText, CheckCircle2, Clock } from "lucide-react";
+import { enviarNotaNfePorEmail, getNotas } from "@/actions/notas";
+import { ShoppingCart, Search, Filter, PlusCircle, CheckCircle2, Clock, XCircle } from "lucide-react";
+
+const DANFE_ICON_URL = "https://img.icons8.com/?size=100&id=299&format=png&color=000000";
+const XML_ICON_URL = "https://img.icons8.com/?size=100&id=38248&format=png&color=000000";
+const EMAIL_ICON_URL = "https://img.icons8.com/?size=100&id=85500&format=png&color=000000";
+
+function getNotaStatusBadge(status?: string) {
+  const normalized = (status || "").toLowerCase();
+
+  if (normalized.includes("nao") && normalized.includes("autoriz")) {
+    return {
+      className: "bg-yellow-50 text-yellow-700 border-yellow-200",
+      Icon: Clock,
+    };
+  }
+
+  if (normalized.includes("autoriz") && !normalized.includes("erro")) {
+    return {
+      className: "bg-green-50 text-green-700 border-green-200",
+      Icon: CheckCircle2,
+    };
+  }
+
+  if (normalized.includes("rejeit") || normalized.includes("erro") || normalized.includes("deneg")) {
+    return {
+      className: "bg-red-50 text-red-700 border-red-200",
+      Icon: XCircle,
+    };
+  }
+
+  return {
+    className: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    Icon: Clock,
+  };
+}
 
 export default function NotasProdutosPage() {
   const [items, setItems] = useState<any[]>([]);
   const [isPending, startTransition] = useTransition();
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  const handleSendNotaEmail = (notaId: number) => {
+    setFeedback(null);
+    startTransition(async () => {
+      const res = await enviarNotaNfePorEmail(notaId);
+      if (!res.success) {
+        setFeedback({
+          type: "error",
+          message: res.error || "Falha ao enviar NF-e por e-mail.",
+        });
+        return;
+      }
+      setFeedback({
+        type: "success",
+        message: "NF-e enviada por e-mail com sucesso!",
+      });
+    });
+  };
 
   React.useEffect(() => {
     startTransition(async () => {
@@ -23,6 +79,17 @@ export default function NotasProdutosPage() {
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Notas de Produtos (NFe)</h2>
           <p className="text-xs text-gray-500">Gerenciamento de Notas Fiscais Eletrônicas</p>
         </div>
+        {feedback && (
+          <div
+            className={`w-full sm:w-auto text-sm font-medium px-3 py-2 rounded-md border ${
+              feedback.type === "success"
+                ? "bg-green-50 text-green-700 border-green-200"
+                : "bg-red-50 text-red-700 border-red-200"
+            }`}
+          >
+            {feedback.message}
+          </div>
+        )}
         <Link href="/notas/produtos/create" className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-[#00a859] hover:bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-md shadow-sm transition-all active:scale-95 decoration-transparent">
           <PlusCircle className="w-4 h-4" /> Emitir Nova NFe
         </Link>
@@ -61,7 +128,11 @@ export default function NotasProdutosPage() {
                   <p className="text-sm text-gray-400 max-w-xs mx-auto">Emita notas fiscais eletrônicas de produtos diretamente pelo sistema.</p>
                 </td>
               </tr>
-            ) : items.map(item => (
+            ) : items.map(item => {
+              const statusBadge = getNotaStatusBadge(item.Status);
+              const StatusIcon = statusBadge.Icon;
+
+              return (
               <tr key={item.Id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                 <td className="py-3 px-6">
                    <div className="font-bold text-gray-900">{item.Numero || "---"}</div>
@@ -71,17 +142,58 @@ export default function NotasProdutosPage() {
                 <td className="py-3 px-4 text-right font-bold text-gray-900">R$ {item.ValorTotal.toFixed(2).replace(".", ",")}</td>
                 <td className="py-3 px-4 text-center text-gray-600 font-mono text-xs">{new Date(item.DataEmissao).toLocaleDateString("pt-BR")}</td>
                 <td className="py-3 px-4 text-center">
-                   <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-full border ${item.Status === "autorizada" ? "bg-green-50 text-green-700 border-green-200" : "bg-yellow-50 text-yellow-700 border-yellow-200"}`}>
-                      {item.Status === "autorizada" ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                      {item.Status.toUpperCase()}
+                   <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-full border ${statusBadge.className}`}>
+                      <StatusIcon className="w-3 h-3" />
+                      {(item.Status || "pendente").replace(/_/g, " ").toUpperCase()}
                    </span>
                 </td>
                 <td className="py-3 px-4 text-center">
-                   <button className="p-1.5 text-gray-400 hover:text-[#38b473] transition-colors"><FileText className="w-4 h-4" /></button>
-                   <button className="p-1.5 text-gray-400 hover:text-blue-500 transition-colors"><ExternalLink className="w-4 h-4" /></button>
+                   {item.FocusRef && /autoriz/i.test(item.Status || "") && !/erro|rejeit|deneg|nao/i.test(item.Status || "") ? (
+                     <>
+                       <a
+                         href={`/api/notas/${item.Id}/danfe`}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         title="Abrir DANFE (PDF)"
+                        className="inline-flex items-center justify-center p-2 rounded-lg bg-gray-100 hover:bg-green-50 border border-transparent hover:border-green-200 transition-all"
+                       >
+                        <img
+                          src={DANFE_ICON_URL}
+                          alt="DANFE"
+                          className="w-6 h-6 object-contain"
+                        />
+                       </a>
+                       <a
+                         href={`/api/notas/${item.Id}/xml`}
+                         title="Baixar XML"
+                        className="inline-flex items-center justify-center p-2 rounded-lg bg-gray-100 hover:bg-blue-50 border border-transparent hover:border-blue-200 transition-all ml-1"
+                       >
+                        <img
+                          src={XML_ICON_URL}
+                          alt="XML"
+                          className="w-6 h-6 object-contain"
+                        />
+                       </a>
+                       <button
+                        type="button"
+                        onClick={() => handleSendNotaEmail(item.Id)}
+                        title="Enviar NF-e por e-mail"
+                        className="inline-flex items-center justify-center p-2 rounded-lg bg-gray-100 hover:bg-amber-50 border border-transparent hover:border-amber-200 transition-all ml-1"
+                       >
+                        <img
+                          src={EMAIL_ICON_URL}
+                          alt="Enviar por e-mail"
+                          className="w-6 h-6 object-contain"
+                        />
+                       </button>
+                     </>
+                   ) : (
+                     <span className="text-[10px] text-gray-400">—</span>
+                   )}
                 </td>
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>

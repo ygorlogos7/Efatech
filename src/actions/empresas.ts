@@ -6,10 +6,34 @@ import { logAction } from "@/lib/logger";
 
 const MODULO = "EMPRESA";
 
-export async function getEmpresas(pesquisa: string = "") {
+type EscopoEmpresa = "cadastro" | "interno" | "todas";
+
+function normalizeInscricaoEstadual(value: FormDataEntryValue | null) {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw) return null;
+  if (raw.toLowerCase() === "isento") return "ISENTO";
+  const digits = raw.replace(/\D/g, "");
+  return digits || null;
+}
+
+function parseRegimeTributario(value: FormDataEntryValue | null) {
+  const parsed = Number(value);
+  if (parsed === 1 || parsed === 2 || parsed === 3) return parsed;
+  return 1;
+}
+
+export async function getEmpresas(pesquisa: string = "", escopo: EscopoEmpresa = "todas") {
   try {
+    const whereScope =
+      escopo === "interno"
+        ? { CategoriaEmpresa: "interno" as const }
+        : escopo === "cadastro"
+          ? { CategoriaEmpresa: "cadastro" as const }
+          : {};
+
     const items = await prisma.empresa.findMany({
       where: {
+        ...whereScope,
         OR: [
           { RazaoSocial: { contains: pesquisa, mode: "insensitive" } },
           { NomeFantasia: { contains: pesquisa, mode: "insensitive" } },
@@ -39,10 +63,12 @@ export async function getEmpresaById(id: number) {
 export async function createEmpresa(formData: FormData) {
   try {
     const data = {
+      CategoriaEmpresa: (formData.get("CategoriaEmpresa") as string) || "cadastro",
       RazaoSocial: formData.get("RazaoSocial") as string,
       NomeFantasia: formData.get("NomeFantasia") as string,
       Cnpj: formData.get("Cnpj") as string,
-      InscricaoEstadual: formData.get("InscricaoEstadual") as string,
+      InscricaoEstadual: normalizeInscricaoEstadual(formData.get("InscricaoEstadual")),
+      RegimeTributario: parseRegimeTributario(formData.get("RegimeTributario")),
       Email: formData.get("Email") as string,
       Telefone: formData.get("Telefone") as string,
       Cep: formData.get("Cep") as string,
@@ -57,6 +83,7 @@ export async function createEmpresa(formData: FormData) {
     const empresa = await prisma.empresa.create({ data });
     await logAction("Criar Empresa", MODULO, `Empresa ${data.RazaoSocial} (CNPJ: ${data.Cnpj}) cadastrada com sucesso.`);
     revalidatePath("/cadastros/opcoes/empresas");
+    revalidatePath("/configuracoes/empresas");
     return { success: true };
   } catch (error) {
     console.error("Erro ao criar empresa:", error);
@@ -67,11 +94,14 @@ export async function createEmpresa(formData: FormData) {
 
 export async function updateEmpresa(id: number, formData: FormData) {
   try {
+    const categoriaEmpresa = (formData.get("CategoriaEmpresa") as string) || undefined;
     const data = {
+      ...(categoriaEmpresa ? { CategoriaEmpresa: categoriaEmpresa } : {}),
       RazaoSocial: formData.get("RazaoSocial") as string,
       NomeFantasia: formData.get("NomeFantasia") as string,
       Cnpj: formData.get("Cnpj") as string,
-      InscricaoEstadual: formData.get("InscricaoEstadual") as string,
+      InscricaoEstadual: normalizeInscricaoEstadual(formData.get("InscricaoEstadual")),
+      RegimeTributario: parseRegimeTributario(formData.get("RegimeTributario")),
       Email: formData.get("Email") as string,
       Telefone: formData.get("Telefone") as string,
       Cep: formData.get("Cep") as string,
@@ -89,6 +119,7 @@ export async function updateEmpresa(id: number, formData: FormData) {
     });
     await logAction("Atualizar Empresa", MODULO, `Empresa ID: ${id} (${data.RazaoSocial}) atualizada com sucesso.`);
     revalidatePath("/cadastros/opcoes/empresas");
+    revalidatePath("/configuracoes/empresas");
     return { success: true };
   } catch (error) {
     console.error("Erro ao atualizar empresa:", error);
@@ -119,6 +150,7 @@ export async function quickCreateEmpresa(formData: FormData) {
     const cnpjTrim = ((formData.get("Cnpj") as string) || "").trim();
     const nfTrim = ((formData.get("NomeFantasia") as string) || "").trim();
     const data = {
+      CategoriaEmpresa: "cadastro",
       RazaoSocial: razao,
       NomeFantasia: nfTrim || razao,
       Cnpj: cnpjTrim || `TEMP-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,

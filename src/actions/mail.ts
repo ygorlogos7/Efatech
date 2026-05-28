@@ -8,9 +8,19 @@ interface SendEmailParams {
   html: string;
 }
 
+function resolveEmailFrom() {
+  const fromRaw = process.env.EMAIL_FROM?.trim();
+  if (fromRaw) {
+    return fromRaw.includes("<") ? fromRaw : `Efatech PRO <${fromRaw}>`;
+  }
+  const sender = process.env.NEXT_PUBLIC_SENDER_EMAIL?.trim();
+  if (sender) return `Efatech PRO <${sender}>`;
+  return "Efatech PRO <onboarding@resend.dev>";
+}
+
 export async function sendEmailAction({ to, subject, html }: SendEmailParams) {
   try {
-    const from = process.env.NEXT_PUBLIC_SENDER_EMAIL || "onboarding@resend.dev";
+    const from = resolveEmailFrom();
     
     if (!resend) {
       console.warn(">>> [MAIL] Resend não configurado. Chave de API ausente.");
@@ -18,7 +28,7 @@ export async function sendEmailAction({ to, subject, html }: SendEmailParams) {
     }
 
     const { data, error } = await resend.emails.send({
-      from: `Efatech PRO <${from}>`,
+      from,
       to: [to],
       subject: subject,
       html: html,

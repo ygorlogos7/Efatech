@@ -3,7 +3,7 @@
 import React, { useTransition, useState, useEffect, useRef } from "react";
 import { createVenda, updateVenda, getProximoNumeroVenda } from "@/actions/vendas";
 import { getClientes, quickCreateCliente } from "@/actions/clientes";
-import { getProdutos, quickCreateProduto } from "@/actions/produtos";
+import { getProdutoFiscalDefaults, getProdutos, quickCreateProduto } from "@/actions/produtos";
 import { getFuncionarios } from "@/actions/funcionarios";
 import { getFormasPagamento } from "@/actions/financeiro";
 import { getEmpresas } from "@/actions/empresas";
@@ -24,7 +24,8 @@ import {
   Building2,
   PlusCircle,
   Plus,
-  Search
+  Search,
+  Wand2
 } from "lucide-react";
 import Link from "next/link";
 import { useNotification } from "@/hooks/use-notification";
@@ -44,6 +45,13 @@ interface VendaItem {
   Desconto: number;
   ValorTotal: number;
   Estoque: number;
+  cod_ncm?: string;
+  cod_cfop?: string;
+  unidade_comercial?: string;
+  icms_origem?: number;
+  icms_cst_csosn?: string;
+  pis_cst?: string;
+  cofins_cst?: string;
 }
 
 export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormProps) {
@@ -64,6 +72,13 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
   const [empresaIE, setEmpresaIE] = useState("");
   const [empresaEmailComercial, setEmpresaEmailComercial] = useState("");
   const [empresaTelefoneComercial, setEmpresaTelefoneComercial] = useState("");
+  const [empresaCep, setEmpresaCep] = useState("");
+  const [empresaLogradouro, setEmpresaLogradouro] = useState("");
+  const [empresaNumero, setEmpresaNumero] = useState("");
+  const [empresaBairro, setEmpresaBairro] = useState("");
+  const [empresaCidade, setEmpresaCidade] = useState("");
+  const [empresaUf, setEmpresaUf] = useState("");
+  const [isBuscandoCepEmpresa, setIsBuscandoCepEmpresa] = useState(false);
 
   const lastHydratedEmpresaIdRef = useRef<number | null>(null);
 
@@ -72,6 +87,13 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
   const [clienteTelefone, setClienteTelefone] = useState(initialData?.Cliente?.Telefone || "");
   const [clienteCPF, setClienteCPF] = useState(initialData?.Cliente?.CPFCNPJ || "");
   const [clienteEmail, setClienteEmail] = useState(initialData?.Cliente?.Email || "");
+  const [clienteCep, setClienteCep] = useState(initialData?.Cliente?.Endereco?.[0]?.Cep || "");
+  const [clienteLogradouro, setClienteLogradouro] = useState(initialData?.Cliente?.Endereco?.[0]?.Logradouro || "");
+  const [clienteNumero, setClienteNumero] = useState(initialData?.Cliente?.Endereco?.[0]?.Numero || "");
+  const [clienteBairro, setClienteBairro] = useState(initialData?.Cliente?.Endereco?.[0]?.Bairro || "");
+  const [clienteCidade, setClienteCidade] = useState(initialData?.Cliente?.Endereco?.[0]?.Cidade || "");
+  const [clienteUf, setClienteUf] = useState(initialData?.Cliente?.Endereco?.[0]?.UF || "");
+  const [isBuscandoCepCliente, setIsBuscandoCepCliente] = useState(false);
 
   const [selectedEmpresaId, setSelectedEmpresaId] = useState<number | null>(initialData?.EmpresaId || null);
   const [selectedVendedor, setSelectedVendedor] = useState<string>(initialData?.Vendedor || "");
@@ -94,10 +116,18 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
     Preco: Number(i.Produtos?.Cod_Preco || 0),
     Desconto: Number(i.Desconto || 0),
     ValorTotal: Number(i.ValorTotal),
-    Estoque: Number(i.Produtos?.Cod_Estoque || 0)
+    Estoque: Number(i.Produtos?.Cod_Estoque || 0),
+    cod_ncm: i.Produtos?.cod_ncm || "",
+    cod_cfop: i.Produtos?.cod_cfop || "",
+    unidade_comercial: i.Produtos?.unidade_comercial || "UN",
+    icms_origem: Number(i.Produtos?.icms_origem ?? 0),
+    icms_cst_csosn: i.Produtos?.icms_cst_csosn || "",
+    pis_cst: i.Produtos?.pis_cst || "",
+    cofins_cst: i.Produtos?.cofins_cst || "",
   })) || []);
   const [signature, setSignature] = useState<string>(initialData?.AssinaturaCliente || "");
   const [searchProd, setSearchProd] = useState("");
+  const [selectedFiscalProdutoId, setSelectedFiscalProdutoId] = useState<number | null>(null);
 
   const isEdit = !!initialData && !isReadOnly;
 
@@ -122,7 +152,7 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
       const formaRes = await getFormasPagamento();
       if (formaRes.success) setFormasPagamento(formaRes.data || []);
 
-      const empRes = await getEmpresas();
+      const empRes = await getEmpresas("", "cadastro");
       if (empRes.success) {
         const emps = empRes.data || [];
         setEmpresas(emps);
@@ -179,7 +209,23 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
     setEmpresaIE(emp.InscricaoEstadual || "");
     setEmpresaEmailComercial(emp.Email || "");
     setEmpresaTelefoneComercial(emp.Telefone || "");
+    setEmpresaCep(emp.Cep || "");
+    setEmpresaLogradouro(emp.Logradouro || "");
+    setEmpresaNumero(emp.Numero || "");
+    setEmpresaBairro(emp.Bairro || "");
+    setEmpresaCidade(emp.Cidade || "");
+    setEmpresaUf(emp.Uf || "");
   }, [selectedEmpresaId, empresas]);
+
+  useEffect(() => {
+    if (items.length === 0) {
+      setSelectedFiscalProdutoId(null);
+      return;
+    }
+    if (!selectedFiscalProdutoId || !items.some((i) => i.ProdutoId === selectedFiscalProdutoId)) {
+      setSelectedFiscalProdutoId(items[0].ProdutoId);
+    }
+  }, [items, selectedFiscalProdutoId]);
 
   const addItem = (produto: any) => {
     const existing = items.find(i => i.ProdutoId === produto.Id);
@@ -197,7 +243,14 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
         Preco: Number(produto.Cod_Preco),
         Desconto: 0,
         ValorTotal: Number(produto.Cod_Preco),
-        Estoque: Number(produto.Cod_Estoque || 0)
+        Estoque: Number(produto.Cod_Estoque || 0),
+        cod_ncm: produto.cod_ncm || "",
+        cod_cfop: produto.cod_cfop || "",
+        unidade_comercial: produto.unidade_comercial || "UN",
+        icms_origem: Number(produto.icms_origem ?? 0),
+        icms_cst_csosn: produto.icms_cst_csosn || "",
+        pis_cst: produto.pis_cst || "",
+        cofins_cst: produto.cofins_cst || "",
       }]);
     }
     setSearchProd("");
@@ -205,6 +258,18 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
 
   const removeItem = (id: number) => {
     setItems(items.filter(i => i.ProdutoId !== id));
+    if (selectedFiscalProdutoId === id) {
+      const proximo = items.find((i) => i.ProdutoId !== id);
+      setSelectedFiscalProdutoId(proximo?.ProdutoId ?? null);
+    }
+  };
+
+  const updateItemFiscal = (
+    produtoId: number,
+    field: "cod_ncm" | "cod_cfop" | "unidade_comercial" | "icms_origem" | "icms_cst_csosn" | "pis_cst" | "cofins_cst",
+    value: string | number,
+  ) => {
+    setItems((prev) => prev.map((i) => (i.ProdutoId === produtoId ? { ...i, [field]: value } : i)));
   };
 
   const updateQty = (id: number, qty: number) => {
@@ -246,6 +311,83 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
 
   const selectedCliente = clientes.find(c => c.Id === selectedClienteId);
   const endereco = selectedCliente?.Endereco?.[0];
+  const fiscalItem = items.find((i) => i.ProdutoId === selectedFiscalProdutoId) || null;
+
+  const onlyDigits = (value: string) => value.replace(/\D/g, "");
+
+  const preencherEnderecoPorCepCliente = async (cepInformado: string) => {
+    const cep = onlyDigits(cepInformado);
+    if (cep.length !== 8) return;
+
+    try {
+      setIsBuscandoCepCliente(true);
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      if (!response.ok) return;
+
+      const data = await response.json();
+      if (data?.erro) return;
+
+      setClienteLogradouro(data.logradouro || "");
+      setClienteBairro(data.bairro || "");
+      setClienteCidade(data.localidade || "");
+      setClienteUf((data.uf || "").toUpperCase());
+    } catch {
+      // Ignora falha de rede para nao bloquear o preenchimento manual.
+    } finally {
+      setIsBuscandoCepCliente(false);
+    }
+  };
+
+  const applyFiscalDefaultsToSelectedItem = async () => {
+    if (!selectedFiscalProdutoId) {
+      error("Selecione um produto no bloco fiscal para preencher automaticamente.");
+      return;
+    }
+    const res = await getProdutoFiscalDefaults();
+    if (!res.success || !res.data) {
+      error(res.error || "Não foi possível preencher os dados fiscais.");
+      return;
+    }
+    setItems((prev) =>
+      prev.map((i) =>
+        i.ProdutoId === selectedFiscalProdutoId
+          ? {
+              ...i,
+              cod_cfop: res.data.cod_cfop || "",
+              unidade_comercial: res.data.unidade_comercial || "UN",
+              icms_origem: Number(res.data.icms_origem ?? 0),
+              icms_cst_csosn: res.data.icms_cst_csosn || "",
+              pis_cst: res.data.pis_cst || "",
+              cofins_cst: res.data.cofins_cst || "",
+            }
+          : i,
+      ),
+    );
+    success("Dados fiscais preenchidos no produto selecionado.");
+  };
+
+  const preencherEnderecoPorCepEmpresa = async (cepInformado: string) => {
+    const cep = onlyDigits(cepInformado);
+    if (cep.length !== 8) return;
+
+    try {
+      setIsBuscandoCepEmpresa(true);
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      if (!response.ok) return;
+
+      const data = await response.json();
+      if (data?.erro) return;
+
+      setEmpresaLogradouro(data.logradouro || "");
+      setEmpresaBairro(data.bairro || "");
+      setEmpresaCidade(data.localidade || "");
+      setEmpresaUf((data.uf || "").toUpperCase());
+    } catch {
+      // Ignora falha de rede para nao bloquear o preenchimento manual.
+    } finally {
+      setIsBuscandoCepEmpresa(false);
+    }
+  };
 
   const handleSubmit = (formData: FormData) => {
     if (items.length === 0) {
@@ -265,6 +407,24 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
     formData.append("ClienteTelefone", clienteTelefone);
     formData.append("ClienteCPF", clienteCPF);
     formData.append("ClienteEmail", clienteEmail);
+    formData.append("ClienteCep", clienteCep);
+    formData.append("ClienteLogradouro", clienteLogradouro);
+    formData.append("ClienteNumero", clienteNumero);
+    formData.append("ClienteBairro", clienteBairro);
+    formData.append("ClienteCidade", clienteCidade);
+    formData.append("ClienteUf", clienteUf);
+    formData.append("EmpresaRazaoSocial", empresaRazaoSocial);
+    formData.append("EmpresaNomeFantasia", empresaNomeFantasia);
+    formData.append("EmpresaCnpj", empresaCnpj);
+    formData.append("EmpresaIE", empresaIE);
+    formData.append("EmpresaEmailComercial", empresaEmailComercial);
+    formData.append("EmpresaTelefoneComercial", empresaTelefoneComercial);
+    formData.append("EmpresaCep", empresaCep);
+    formData.append("EmpresaLogradouro", empresaLogradouro);
+    formData.append("EmpresaNumero", empresaNumero);
+    formData.append("EmpresaBairro", empresaBairro);
+    formData.append("EmpresaCidade", empresaCidade);
+    formData.append("EmpresaUf", empresaUf);
 
     if (selectedFormaPagamentoId) formData.append("FormaPagamentoId", String(selectedFormaPagamentoId));
     formData.append("TotalProdutos", totalProdutos.toString());
@@ -368,10 +528,16 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
                       setClienteTelefone("");
                       setClienteCPF("");
                       setClienteEmail("");
+                      setClienteCep("");
+                      setClienteLogradouro("");
+                      setClienteNumero("");
+                      setClienteBairro("");
+                      setClienteCidade("");
+                      setClienteUf("");
                     }
                   }}
                 />
-                <button type="button" onClick={() => { setSelectedClienteId(null); setSearchCli(""); setClienteTelefone(""); setClienteCPF(""); setClienteEmail(""); }} className="bg-white border-l border-gray-200 p-2 hover:bg-gray-50"><Trash2 className="w-3 h-3 text-gray-400" /></button>
+                <button type="button" onClick={() => { setSelectedClienteId(null); setSearchCli(""); setClienteTelefone(""); setClienteCPF(""); setClienteEmail(""); setClienteCep(""); setClienteLogradouro(""); setClienteNumero(""); setClienteBairro(""); setClienteCidade(""); setClienteUf(""); }} className="bg-white border-l border-gray-200 p-2 hover:bg-gray-50"><Trash2 className="w-3 h-3 text-gray-400" /></button>
               </div>
               {searchCli && !selectedClienteId && (
                 <div className="absolute z-[100] top-full left-0 right-0 bg-white border border-gray-300 shadow-2xl rounded-md mt-1 max-h-60 overflow-y-auto ring-1 ring-black/5">
@@ -382,6 +548,13 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
                       setClienteTelefone(c.Telefone || "");
                       setClienteCPF(c.CPFCNPJ || "");
                       setClienteEmail(c.Email || "");
+                      const cliEndereco = c.Endereco?.[0];
+                      setClienteCep(cliEndereco?.Cep || "");
+                      setClienteLogradouro(cliEndereco?.Logradouro || "");
+                      setClienteNumero(cliEndereco?.Numero || "");
+                      setClienteBairro(cliEndereco?.Bairro || "");
+                      setClienteCidade(cliEndereco?.Cidade || "");
+                      setClienteUf(cliEndereco?.UF || "");
                     }} className="p-3 hover:bg-emerald-50 cursor-pointer border-b last:border-0 text-sm font-bold flex flex-col">
                       <span>{c.Nome}</span>
                       {c.CPFCNPJ && <span className="text-[10px] text-gray-400 font-normal">{c.CPFCNPJ}</span>}
@@ -421,6 +594,78 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
                 className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
                 value={clienteEmail}
                 onChange={(e) => setClienteEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-600">CEP</label>
+              <input
+                type="text"
+                placeholder="00000-000"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
+                value={clienteCep}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  setClienteCep(raw);
+                  const digits = onlyDigits(raw);
+                  if (digits.length === 8) {
+                    preencherEnderecoPorCepCliente(raw);
+                  }
+                }}
+                onBlur={() => preencherEnderecoPorCepCliente(clienteCep)}
+              />
+              {isBuscandoCepCliente && (
+                <p className="text-[11px] text-gray-500 mt-1">Buscando endereco pelo CEP...</p>
+              )}
+            </div>
+            <div className="space-y-1.5 text-xs lg:col-span-2">
+              <label className="font-semibold text-gray-600">Logradouro</label>
+              <input
+                type="text"
+                placeholder="Rua, avenida..."
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
+                value={clienteLogradouro}
+                onChange={(e) => setClienteLogradouro(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-600">Numero</label>
+              <input
+                type="text"
+                placeholder="123"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
+                value={clienteNumero}
+                onChange={(e) => setClienteNumero(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-600">Bairro</label>
+              <input
+                type="text"
+                placeholder="Centro"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
+                value={clienteBairro}
+                onChange={(e) => setClienteBairro(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-600">Cidade</label>
+              <input
+                type="text"
+                placeholder="Cidade"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
+                value={clienteCidade}
+                onChange={(e) => setClienteCidade(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-600">UF</label>
+              <input
+                type="text"
+                maxLength={2}
+                placeholder="UF"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm uppercase focus:ring-1 focus:ring-emerald-400"
+                value={clienteUf}
+                onChange={(e) => setClienteUf(e.target.value.toUpperCase())}
               />
             </div>
 
@@ -474,6 +719,12 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
                   setEmpresaIE("");
                   setEmpresaEmailComercial("");
                   setEmpresaTelefoneComercial("");
+                  setEmpresaCep("");
+                  setEmpresaLogradouro("");
+                  setEmpresaNumero("");
+                  setEmpresaBairro("");
+                  setEmpresaCidade("");
+                  setEmpresaUf("");
                   return;
                 }
                 setSelectedEmpresaId(Number(raw));
@@ -545,6 +796,78 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
                 className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
                 value={empresaTelefoneComercial}
                 onChange={(e) => setEmpresaTelefoneComercial(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-600">CEP</label>
+              <input
+                type="text"
+                placeholder="00000-000"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
+                value={empresaCep}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  setEmpresaCep(raw);
+                  const digits = onlyDigits(raw);
+                  if (digits.length === 8) {
+                    preencherEnderecoPorCepEmpresa(raw);
+                  }
+                }}
+                onBlur={() => preencherEnderecoPorCepEmpresa(empresaCep)}
+              />
+              {isBuscandoCepEmpresa && (
+                <p className="text-[11px] text-gray-500 mt-1">Buscando endereco pelo CEP...</p>
+              )}
+            </div>
+            <div className="space-y-1.5 text-xs lg:col-span-2">
+              <label className="font-semibold text-gray-600">Logradouro</label>
+              <input
+                type="text"
+                placeholder="Rua, avenida..."
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
+                value={empresaLogradouro}
+                onChange={(e) => setEmpresaLogradouro(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-600">Numero</label>
+              <input
+                type="text"
+                placeholder="123"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
+                value={empresaNumero}
+                onChange={(e) => setEmpresaNumero(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-600">Bairro</label>
+              <input
+                type="text"
+                placeholder="Centro"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
+                value={empresaBairro}
+                onChange={(e) => setEmpresaBairro(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-600">Cidade</label>
+              <input
+                type="text"
+                placeholder="Cidade"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm focus:ring-1 focus:ring-emerald-400"
+                value={empresaCidade}
+                onChange={(e) => setEmpresaCidade(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-gray-600">UF</label>
+              <input
+                type="text"
+                maxLength={2}
+                placeholder="UF"
+                className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm uppercase focus:ring-1 focus:ring-emerald-400"
+                value={empresaUf}
+                onChange={(e) => setEmpresaUf(e.target.value.toUpperCase())}
               />
             </div>
           </div>
@@ -725,8 +1048,106 @@ export function VendaForm({ tipo, initialData, isReadOnly = false }: VendaFormPr
            </div>
         </div>
       </div>
+      <div className="bg-white rounded-md shadow-sm border border-gray-200">
+        <div className="bg-[#fcfcfc] px-4 py-3 border-b border-gray-100 flex items-center justify-between rounded-t-md">
+          <h3 className="font-bold text-gray-700 text-sm uppercase tracking-tight">Dados fiscais do produto (NF-e)</h3>
+          <button
+            type="button"
+            onClick={() => void applyFiscalDefaultsToSelectedItem()}
+            disabled={!fiscalItem}
+            className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white text-xs font-bold px-3 py-1.5 rounded"
+          >
+            <Wand2 className="w-3.5 h-3.5" />
+            Auto preencher fiscal
+          </button>
+        </div>
+        <div className="p-4">
+          {items.length === 0 ? (
+            <p className="text-xs text-gray-500">Adicione um produto na venda para editar os dados fiscais.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-3">
+                <label className="block text-xs font-bold text-gray-600 mb-1">Produto da venda</label>
+                <select
+                  value={selectedFiscalProdutoId ?? ""}
+                  onChange={(e) => setSelectedFiscalProdutoId(Number(e.target.value) || null)}
+                  className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm font-bold text-sm"
+                >
+                  {items.map((item) => (
+                    <option key={item.ProdutoId} value={item.ProdutoId}>
+                      {item.Nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">NCM</label>
+                <input
+                  type="text"
+                  value={fiscalItem?.cod_ncm || ""}
+                  onChange={(e) => fiscalItem && updateItemFiscal(fiscalItem.ProdutoId, "cod_ncm", e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">CFOP</label>
+                <input
+                  type="text"
+                  value={fiscalItem?.cod_cfop || ""}
+                  onChange={(e) => fiscalItem && updateItemFiscal(fiscalItem.ProdutoId, "cod_cfop", e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Unidade</label>
+                <input
+                  type="text"
+                  value={fiscalItem?.unidade_comercial || ""}
+                  onChange={(e) => fiscalItem && updateItemFiscal(fiscalItem.ProdutoId, "unidade_comercial", e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Origem ICMS</label>
+                <input
+                  type="number"
+                  value={String(fiscalItem?.icms_origem ?? 0)}
+                  onChange={(e) => fiscalItem && updateItemFiscal(fiscalItem.ProdutoId, "icms_origem", Number(e.target.value || 0))}
+                  className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">CST/CSOSN ICMS</label>
+                <input
+                  type="text"
+                  value={fiscalItem?.icms_cst_csosn || ""}
+                  onChange={(e) => fiscalItem && updateItemFiscal(fiscalItem.ProdutoId, "icms_cst_csosn", e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">CST PIS</label>
+                <input
+                  type="text"
+                  value={fiscalItem?.pis_cst || ""}
+                  onChange={(e) => fiscalItem && updateItemFiscal(fiscalItem.ProdutoId, "pis_cst", e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">CST COFINS</label>
+                <input
+                  type="text"
+                  value={fiscalItem?.cofins_cst || ""}
+                  onChange={(e) => fiscalItem && updateItemFiscal(fiscalItem.ProdutoId, "cofins_cst", e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2.5 outline-none shadow-sm text-sm"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* 5. Card: Garantia */}
       <div className="bg-white rounded-md shadow-sm border border-gray-200">

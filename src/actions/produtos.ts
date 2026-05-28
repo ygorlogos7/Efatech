@@ -9,6 +9,41 @@ import { logAction } from "@/lib/logger";
 
 const MODULO = "PRODUTOS";
 
+function defaultFiscalByRegime(regimeTributario?: number | null) {
+  const regime = Number(regimeTributario || 1);
+  if (regime === 1) {
+    return {
+      cod_cfop: "5102",
+      icms_origem: 0,
+      icms_cst_csosn: "102",
+      pis_cst: "49",
+      cofins_cst: "49",
+      unidade_comercial: "UN",
+    };
+  }
+  return {
+    cod_cfop: "5102",
+    icms_origem: 0,
+    icms_cst_csosn: "00",
+    pis_cst: "01",
+    cofins_cst: "01",
+    unidade_comercial: "UN",
+  };
+}
+
+export async function getProdutoFiscalDefaults() {
+  try {
+    const empresaInterna = await prisma.empresa.findFirst({
+      where: { CategoriaEmpresa: "interno", Ativo: true },
+      orderBy: { Id: "asc" },
+      select: { RegimeTributario: true },
+    });
+    return { success: true, data: defaultFiscalByRegime(empresaInterna?.RegimeTributario) };
+  } catch (error) {
+    return { success: false, error: "Falha ao buscar padrões fiscais." };
+  }
+}
+
 export async function getProdutos(searchQuery?: string, page: number = 1, pageSize: number = 1000) {
   // O pageSize padrão é 1000 para retrocompatibilidade com PDV, mas telas com paginação podem passar 20 explicitamente.
   const skip = (page - 1) * pageSize;
@@ -77,6 +112,13 @@ export async function createProduto(formData: FormData) {
       Cod_CodigoBarras: formData.get("Cod_CodigoBarras") as string,
       Cod_Preco: Number(formData.get("Cod_Preco") || 0),
       Cod_Estoque: Number(formData.get("Cod_Estoque") || 0),
+      cod_ncm: ((formData.get("cod_ncm") as string) || "").trim() || null,
+      cod_cfop: ((formData.get("cod_cfop") as string) || "").trim() || null,
+      icms_origem: Number(formData.get("icms_origem") || 0),
+      icms_cst_csosn: ((formData.get("icms_cst_csosn") as string) || "").trim() || null,
+      pis_cst: ((formData.get("pis_cst") as string) || "").trim() || null,
+      cofins_cst: ((formData.get("cofins_cst") as string) || "").trim() || null,
+      unidade_comercial: ((formData.get("unidade_comercial") as string) || "").trim() || null,
     };
 
     await prisma.produtos.create({ data });
@@ -99,6 +141,13 @@ export async function updateProduto(id: number, formData: FormData) {
       Cod_CodigoBarras: formData.get("Cod_CodigoBarras") as string,
       Cod_Preco: Number(formData.get("Cod_Preco") || 0),
       Cod_Estoque: Number(formData.get("Cod_Estoque") || 0),
+      cod_ncm: ((formData.get("cod_ncm") as string) || "").trim() || null,
+      cod_cfop: ((formData.get("cod_cfop") as string) || "").trim() || null,
+      icms_origem: Number(formData.get("icms_origem") || 0),
+      icms_cst_csosn: ((formData.get("icms_cst_csosn") as string) || "").trim() || null,
+      pis_cst: ((formData.get("pis_cst") as string) || "").trim() || null,
+      cofins_cst: ((formData.get("cofins_cst") as string) || "").trim() || null,
+      unidade_comercial: ((formData.get("unidade_comercial") as string) || "").trim() || null,
     };
 
     await prisma.produtos.update({ where: { Id: id }, data });
@@ -136,6 +185,7 @@ export async function quickCreateProduto(formData: FormData) {
         Cod_Preco: preco,
         Cod_Estoque: estoque,
         Cod_CodigoBarras: codigo,
+        ...defaultFiscalByRegime(1),
         Ativo: true,
       }
     });
