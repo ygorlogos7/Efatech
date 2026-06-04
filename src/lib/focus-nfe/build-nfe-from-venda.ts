@@ -1,15 +1,4 @@
 import { FocusNfePayload } from "./types";
-import {
-  NFE_EMITENTE_BAIRRO,
-  NFE_EMITENTE_CEP,
-  NFE_EMITENTE_CIDADE,
-  NFE_EMITENTE_LOGRADOURO,
-  NFE_EMITENTE_NOME_FANTASIA,
-  NFE_EMITENTE_NUMERO,
-  NFE_EMITENTE_RAZAO_SOCIAL,
-  NFE_EMITENTE_TELEFONE,
-  NFE_EMITENTE_UF,
-} from "./emitente-brand";
 
 function digitsOnly(v?: string | null) {
   return (v || "").replace(/\D/g, "");
@@ -59,7 +48,7 @@ export function buildNfePayloadFromVenda(venda: any, empresaEmitente: any): Focu
     };
   });
 
-  const ufEmit = String(NFE_EMITENTE_UF || empresaEmitente?.Uf || "SP");
+  const ufEmit = String(empresaEmitente?.Uf || "SP");
   const ufDest = String(endCli?.UF || ufEmit);
 
   return {
@@ -71,17 +60,17 @@ export function buildNfePayloadFromVenda(venda: any, empresaEmitente: any): Focu
     consumidor_final: 1,
     presenca_comprador: 1,
     cnpj_emitente: emitCnpj,
-    nome_emitente: NFE_EMITENTE_RAZAO_SOCIAL,
-    nome_fantasia_emitente: NFE_EMITENTE_NOME_FANTASIA,
-    telefone_emitente: digitsOnly(NFE_EMITENTE_TELEFONE) || digitsOnly(empresaEmitente?.Telefone) || undefined,
+    nome_emitente: empresaEmitente?.RazaoSocial || undefined,
+    nome_fantasia_emitente: empresaEmitente?.NomeFantasia || empresaEmitente?.RazaoSocial || undefined,
+    telefone_emitente: digitsOnly(empresaEmitente?.Telefone) || undefined,
     inscricao_estadual_emitente: normalizeInscricaoEstadual(empresaEmitente?.InscricaoEstadual),
     regime_tributario_emitente: Number(empresaEmitente?.RegimeTributario) === 3 ? 3 : Number(empresaEmitente?.RegimeTributario) === 2 ? 2 : 1,
-    logradouro_emitente: NFE_EMITENTE_LOGRADOURO || empresaEmitente?.Logradouro || undefined,
-    numero_emitente: NFE_EMITENTE_NUMERO || empresaEmitente?.Numero || undefined,
-    bairro_emitente: NFE_EMITENTE_BAIRRO || empresaEmitente?.Bairro || undefined,
-    municipio_emitente: NFE_EMITENTE_CIDADE || empresaEmitente?.Cidade || undefined,
+    logradouro_emitente: empresaEmitente?.Logradouro || undefined,
+    numero_emitente: empresaEmitente?.Numero || undefined,
+    bairro_emitente: empresaEmitente?.Bairro || undefined,
+    municipio_emitente: empresaEmitente?.Cidade || undefined,
     uf_emitente: ufEmit,
-    cep_emitente: digitsOnly(NFE_EMITENTE_CEP) || digitsOnly(empresaEmitente?.Cep) || undefined,
+    cep_emitente: digitsOnly(empresaEmitente?.Cep) || undefined,
     nome_destinatario: cliente?.Nome || "CONSUMIDOR FINAL",
     cnpj_destinatario: destCnpj,
     cpf_destinatario: destCpf,

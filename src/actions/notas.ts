@@ -7,7 +7,7 @@ import { getAppBaseUrl } from "@/lib/send-auth-email";
 import { buildNfePayloadFromVenda } from "@/lib/focus-nfe/build-nfe-from-venda";
 import { aguardarNfeAutorizada, isNfeAutorizada } from "@/lib/focus-nfe/aguardar-autorizacao";
 import { salvarNfeArquivosLocais } from "@/lib/focus-nfe/export-local";
-import { baixarPdfNfeFocus, baixarXmlNfeFocus, emitirNfeFocus } from "@/lib/focus-nfe/nfe";
+import { baixarPdfNfeFocus, emitirNfeFocus } from "@/lib/focus-nfe/nfe";
 import { FocusAmbiente } from "@/lib/focus-nfe/types";
 
 const toNum = (v: any) => ({ ...v, ValorTotal: Number(v.ValorTotal || 0) });
@@ -76,7 +76,7 @@ function buildNfeEmailHtml(options: {
           <tr>
             <td style="padding:8px 28px 24px;text-align:center;">
               <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#6b7280;">Ola, <strong style="color:#2e965f;">${nome}</strong>.</p>
-              <p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#6b7280;">Segue em anexo o DANFE (PDF) e o XML da sua nota fiscal eletronica.</p>
+              <p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#6b7280;">Segue em anexo o DANFE (PDF) da sua nota fiscal eletronica.</p>
               <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#6b7280;">Numero NF-e: <strong style="color:#1f2937;">${numero}</strong></p>
               <p style="margin:0;font-size:13px;line-height:1.5;color:#9ca3af;">Referencia: ${referencia}</p>
             </td>
@@ -213,7 +213,6 @@ async function enviarNfePorEmailAutomatico(params: {
   }
 
   const pdfBuffer = await baixarPdfNfeFocus(params.ref, params.ambiente);
-  const xml = await baixarXmlNfeFocus(params.ref, params.ambiente);
   const numero = params.numero || "s-numero";
   const clienteNome = params.nomeCliente || "Cliente";
   const from = resolveEmailFrom();
@@ -231,10 +230,6 @@ async function enviarNfePorEmailAutomatico(params: {
       {
         filename: `NFe-${numero}.pdf`,
         content: pdfBuffer.toString("base64"),
-      },
-      {
-        filename: `NFe-${numero}.xml`,
-        content: Buffer.from(xml, "utf8").toString("base64"),
       },
     ],
   });

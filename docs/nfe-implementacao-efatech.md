@@ -106,8 +106,7 @@ Implementar emissao de NF-e integrada com Focus NFe, com:
 - `EMAIL_FROM`
 - `NEXT_PUBLIC_SENDER_EMAIL` (compatibilidade/fallback)
 - `RESEND_API_KEY`
-- `NFE_EMAIL_LOGO_URL` (opcional, recomendado para logo publica em e-mail)
-- `NFE_EMITENTE_*` (nome/endereco/telefone fixos do emitente no payload)
+- `NFE_EMAIL_LOGO_URL` (opcional; fallback quando logo da empresa não está acessível por URL pública)
 
 ## 6) Regras operacionais importantes
 

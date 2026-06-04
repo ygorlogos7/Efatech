@@ -1,10 +1,41 @@
 import { FocusAmbiente } from "./types";
 
+const FOCUS_PROD_DEFAULT = "https://api.focusnfe.com.br";
+const FOCUS_HML_DEFAULT = "https://homologacao.focusnfe.com.br";
+
+function normalizeFocusBaseUrl(raw: string | undefined, fallback: string, envName: string) {
+  const trimmed = raw?.trim();
+  if (!trimmed) return fallback;
+  try {
+    const url = new URL(trimmed);
+    if (!url.hostname.includes("focusnfe.com.br")) {
+      console.warn(
+        `[Focus NFe] ${envName} aponta para "${trimmed}" (host inválido). Usando ${fallback}.`,
+      );
+      return fallback;
+    }
+    return trimmed.replace(/\/$/, "");
+  } catch {
+    console.warn(
+      `[Focus NFe] ${envName} inválida ("${trimmed}"). Usando ${fallback}.`,
+    );
+    return fallback;
+  }
+}
+
 function resolveBaseUrl(ambiente: FocusAmbiente) {
   if (ambiente === "producao") {
-    return process.env.FOCUS_NFE_BASE_URL_PROD || "https://api.focusnfe.com.br";
+    return normalizeFocusBaseUrl(
+      process.env.FOCUS_NFE_BASE_URL_PROD,
+      FOCUS_PROD_DEFAULT,
+      "FOCUS_NFE_BASE_URL_PROD",
+    );
   }
-  return process.env.FOCUS_NFE_BASE_URL || "https://homologacao.focusnfe.com.br";
+  return normalizeFocusBaseUrl(
+    process.env.FOCUS_NFE_BASE_URL,
+    FOCUS_HML_DEFAULT,
+    "FOCUS_NFE_BASE_URL",
+  );
 }
 
 function resolveToken(ambiente: FocusAmbiente) {
