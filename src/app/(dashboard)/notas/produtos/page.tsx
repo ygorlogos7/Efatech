@@ -151,7 +151,7 @@ export default function NotasProdutosPage() {
                    {item.FocusRef && /autoriz/i.test(item.Status || "") && !/erro|rejeit|deneg|nao/i.test(item.Status || "") ? (
                      <>
                        <a
-                         href={`/api/notas/${item.Id}/danfe`}
+                         href={`/notas/danfe/${item.Id}`}
                          target="_blank"
                          rel="noopener noreferrer"
                          title="Abrir DANFE (PDF)"

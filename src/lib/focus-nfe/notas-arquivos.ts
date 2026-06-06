@@ -19,7 +19,7 @@ export async function obterPdfNotaFiscal(notaId: number) {
     throw new Error(`NF-e ainda não autorizada (${String(consulta?.status || "processando")}).`);
   }
   const buffer = await baixarPdfNfeFocus(ref, ambiente);
-  const nome = `NFe-${nota.Numero || nota.Id}.pdf`;
+  const nome = `NFE-${nota.Numero || nota.Id}.pdf`;
   return { buffer, nome };
 }
 
@@ -30,6 +30,6 @@ export async function obterXmlNotaFiscal(notaId: number) {
     throw new Error(`NF-e ainda não autorizada (${String(consulta?.status || "processando")}).`);
   }
   const xml = await baixarXmlNfeFocus(ref, ambiente);
-  const nome = `NFe-${nota.Numero || nota.Id}.xml`;
+  const nome = `NFE-${nota.Numero || nota.Id}.xml`;
   return { xml, nome };
 }
