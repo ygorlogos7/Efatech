@@ -16,6 +16,13 @@ function normalizeInscricaoEstadual(value: FormDataEntryValue | null) {
   return digits || null;
 }
 
+function normalizeInscricaoMunicipal(value: FormDataEntryValue | null) {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw) return null;
+  const digits = raw.replace(/\D/g, "");
+  return digits || null;
+}
+
 function parseRegimeTributario(value: FormDataEntryValue | null) {
   const parsed = Number(value);
   if (parsed === 1 || parsed === 2 || parsed === 3) return parsed;
@@ -68,6 +75,7 @@ export async function createEmpresa(formData: FormData) {
       NomeFantasia: formData.get("NomeFantasia") as string,
       Cnpj: formData.get("Cnpj") as string,
       InscricaoEstadual: normalizeInscricaoEstadual(formData.get("InscricaoEstadual")),
+      InscricaoMunicipal: normalizeInscricaoMunicipal(formData.get("InscricaoMunicipal")),
       RegimeTributario: parseRegimeTributario(formData.get("RegimeTributario")),
       Email: formData.get("Email") as string,
       Telefone: formData.get("Telefone") as string,
@@ -101,6 +109,7 @@ export async function updateEmpresa(id: number, formData: FormData) {
       NomeFantasia: formData.get("NomeFantasia") as string,
       Cnpj: formData.get("Cnpj") as string,
       InscricaoEstadual: normalizeInscricaoEstadual(formData.get("InscricaoEstadual")),
+      InscricaoMunicipal: normalizeInscricaoMunicipal(formData.get("InscricaoMunicipal")),
       RegimeTributario: parseRegimeTributario(formData.get("RegimeTributario")),
       Email: formData.get("Email") as string,
       Telefone: formData.get("Telefone") as string,
@@ -155,6 +164,7 @@ export async function quickCreateEmpresa(formData: FormData) {
       NomeFantasia: nfTrim || razao,
       Cnpj: cnpjTrim || `TEMP-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       InscricaoEstadual: ((formData.get("InscricaoEstadual") as string) || "").trim() || null,
+      InscricaoMunicipal: normalizeInscricaoMunicipal(formData.get("InscricaoMunicipal")),
       Email: ((formData.get("Email") as string) || "").trim() || null,
       Telefone: ((formData.get("Telefone") as string) || "").trim() || null,
       Ativo: true,

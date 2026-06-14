@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { resolverPeriodoRelatorio } from "@/lib/relatorioPeriodo";
+import { resolverPeriodoRelatorio, criarWhereDataCampo, dataParaChaveBr } from "@/lib/relatorioPeriodo";
 
 export async function getResumoGeral() {
   try {
@@ -79,10 +79,7 @@ export async function getRelatorioVendas(filtros?: any, page: number = 1, pageSi
       ];
     }
 
-    where.DataVenda = {
-      gte: new Date(`${periodo.dataInicio}T00:00:00`),
-      lte: new Date(`${periodo.dataFim}T23:59:59`),
-    };
+    where.DataVenda = criarWhereDataCampo("DataVenda", periodo).DataVenda as any;
 
     // OTIMIZAÇÃO: Buscamos apenas o necessário para o agrupamento
     const todasVendas = await prisma.vendas.findMany({
@@ -98,7 +95,8 @@ export async function getRelatorioVendas(filtros?: any, page: number = 1, pageSi
     const agrupado: Record<string, { data: string, total: number, qtd: number }> = {};
     
     todasVendas.forEach(v => {
-      const dataStr = new Date(v.DataVenda).toISOString().split('T')[0];
+      const dataStr = dataParaChaveBr(v.DataVenda);
+      if (dataStr < periodo.dataInicio || dataStr > periodo.dataFim) return;
       if (!agrupado[dataStr]) {
         agrupado[dataStr] = { data: dataStr, total: 0, qtd: 0 };
       }
@@ -173,7 +171,7 @@ export async function getRelatorioFinanceiro(filtros?: any) {
 export async function getRelatorioOrdensServico(filtros?: any, page: number = 1, pageSize: number = 20) {
   try {
     const periodo = resolverPeriodoRelatorio(filtros);
-    const where: any = { Ativo: true };
+    const where: any = { Ativo: false };
 
     if (filtros?.cliente) {
       where.OR = [
@@ -181,12 +179,8 @@ export async function getRelatorioOrdensServico(filtros?: any, page: number = 1,
       ];
     }
 
-    where.DataAbertura = {
-      gte: new Date(`${periodo.dataInicio}T00:00:00`),
-      lte: new Date(`${periodo.dataFim}T23:59:59`),
-    };
+    where.DataAbertura = criarWhereDataCampo("DataAbertura", periodo).DataAbertura as any;
 
-    // OTIMIZAÇÃO: Buscamos apenas o necessário para o agrupamento
     const todasOS = await prisma.ordensServico.findMany({
       where,
       select: {
@@ -199,7 +193,8 @@ export async function getRelatorioOrdensServico(filtros?: any, page: number = 1,
     const agrupado: Record<string, { data: string, total: number, qtd: number }> = {};
     
     todasOS.forEach(os => {
-      const dataStr = new Date(os.DataAbertura).toISOString().split('T')[0];
+      const dataStr = dataParaChaveBr(os.DataAbertura);
+      if (dataStr < periodo.dataInicio || dataStr > periodo.dataFim) return;
       if (!agrupado[dataStr]) {
         agrupado[dataStr] = { data: dataStr, total: 0, qtd: 0 };
       }

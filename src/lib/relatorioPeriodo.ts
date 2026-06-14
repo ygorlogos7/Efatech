@@ -1,5 +1,7 @@
 /** Utilitários de período (mês/ano) para relatórios — evita misturar meses na listagem. */
 
+export const TIMEZONE_BR = "America/Sao_Paulo";
+
 export type PeriodoRelatorio = {
   dataInicio: string;
   dataFim: string;
@@ -27,9 +29,14 @@ const MESES_PT = [
 ];
 
 export function getMesAnoAtual(): string {
-  const d = new Date();
-  const mes = String(d.getMonth() + 1).padStart(2, "0");
-  return `${d.getFullYear()}-${mes}`;
+  const parts = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: TIMEZONE_BR,
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(new Date());
+  const year = parts.find((p) => p.type === "year")?.value ?? "";
+  const month = parts.find((p) => p.type === "month")?.value ?? "";
+  return `${year}-${month}`;
 }
 
 /** Converte `YYYY-MM` (input type="month") em primeiro e último dia do mês. */
@@ -62,23 +69,42 @@ export function filtrosPeriodoPadrao(): PeriodoRelatorio & { mesAno: string } {
 
 /**
  * Garante intervalo sempre definido no servidor.
- * Prioridade: mesAno → dataInicio+dataFim → mês atual.
+ * Prioridade: dataInicio+dataFim (período customizado) → mesAno → mês atual.
  */
 export function resolverPeriodoRelatorio(
   filtros?: FiltrosComPeriodo | null
 ): PeriodoRelatorio & { mesAno: string } {
-  if (filtros?.mesAno) {
-    return { mesAno: filtros.mesAno, ...mesAnoParaIntervalo(filtros.mesAno) };
-  }
   if (filtros?.dataInicio && filtros?.dataFim) {
-    const mesAno = filtros.dataInicio.slice(0, 7);
     return {
-      mesAno,
+      mesAno: filtros.mesAno || filtros.dataInicio.slice(0, 7),
       dataInicio: filtros.dataInicio,
       dataFim: filtros.dataFim,
     };
   }
+  if (filtros?.mesAno) {
+    return { mesAno: filtros.mesAno, ...mesAnoParaIntervalo(filtros.mesAno) };
+  }
   return filtrosPeriodoPadrao();
+}
+
+/** Início/fim do dia no fuso de São Paulo (UTC-3). */
+export function inicioDiaBr(isoDate: string): Date {
+  return new Date(`${isoDate}T00:00:00-03:00`);
+}
+
+export function fimDiaBr(isoDate: string): Date {
+  return new Date(`${isoDate}T23:59:59.999-03:00`);
+}
+
+/** Chave YYYY-MM-DD no calendário brasileiro (evita deslocamento com toISOString/UTC). */
+export function dataParaChaveBr(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: TIMEZONE_BR,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
 }
 
 export function criarWhereDataCampo(
@@ -87,8 +113,8 @@ export function criarWhereDataCampo(
 ): Record<string, unknown> {
   return {
     [campo]: {
-      gte: new Date(`${periodo.dataInicio}T00:00:00`),
-      lte: new Date(`${periodo.dataFim}T23:59:59`),
+      gte: inicioDiaBr(periodo.dataInicio),
+      lte: fimDiaBr(periodo.dataFim),
     },
   };
 }

@@ -588,6 +588,7 @@ model Empresa {
   Cnpj              String   @unique
   CategoriaEmpresa  String   @default("cadastro")
   InscricaoEstadual String?
+  InscricaoMunicipal String?
   RegimeTributario  Int?     @default(1)
   CodigoIbgeMunicipio String? @db.VarChar(10)
   Logradouro        String?

@@ -123,6 +123,16 @@ export function EmpresaForm({
             />
           </div>
           <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">Inscrição Municipal</label>
+            <input
+              type="text"
+              name="InscricaoMunicipal"
+              defaultValue={initialData?.InscricaoMunicipal}
+              disabled={isReadOnly}
+              className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:border-[#00a859] focus:ring-1 focus:ring-[#00a859] disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
+          </div>
+          <div>
             <label className="block text-xs font-bold text-gray-700 mb-1">Regime tributário (CRT)</label>
             <select
               name="RegimeTributario"

@@ -73,6 +73,7 @@ export default async function PreviewEmpresaPage({ params }: { params: Promise<{
               <LabelValue label="Razão Social" value={empresa.RazaoSocial} />
               <LabelValue label="CNPJ" value={empresa.Cnpj} />
               <LabelValue label="I.E." value={empresa.InscricaoEstadual} />
+              <LabelValue label="I.M." value={empresa.InscricaoMunicipal} />
               <LabelValue label="E-mail" value={empresa.Email} />
               <LabelValue label="Telefone" value={empresa.Telefone} />
             </div>
