@@ -1,5 +1,6 @@
 import { getOrdemServicoById } from "@/actions/ordensServico";
 import { getEmpresa } from "@/actions/configuracoes";
+import { dadosEmitenteCupom } from "@/lib/cupom-emitente";
 import { notFound } from "next/navigation";
 import { Printer, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -18,6 +19,7 @@ export default async function PrintOSA4Page({ params }: { params: Promise<{ id: 
 
   const { data: os } = await getOrdemServicoById(osId);
   const { data: empresa } = await getEmpresa();
+  const emitente = dadosEmitenteCupom(empresa);
   const session = await auth();
 
   if (!os) notFound();
@@ -179,15 +181,15 @@ export default async function PrintOSA4Page({ params }: { params: Promise<{ id: 
                   <span><span style={{color: "#00FFAA"}}>E</span>fatech</span>
               </div>
               <div className="os-header-center">
-                  <div style={{fontSize: "13px", fontWeight: "bold"}}>{empresa?.RazaoSocial || "EFATECH ASSISTÊNCIA TÉCNICA E ACESSÓRIOS"}</div>
-                  <div>CNPJ: {empresa?.Cnpj || "41.092.084/0001-18"}</div>
-                  <div>{empresa?.Logradouro || "Praça Lauro Gomes"}, {empresa?.Numero || "20"} - {empresa?.Bairro || "Centro"}</div>
-                  <div>{empresa?.Cidade || "São Bernardo do Campo"}/{empresa?.Uf || "SP"} - CEP: {empresa?.Cep || "09710-040"}</div>
+                  <div style={{fontSize: "13px", fontWeight: "bold"}}>{emitente.nome}</div>
+                  <div>CNPJ: {emitente.cnpj}</div>
+                  <div>{emitente.enderecoLinha1}</div>
+                  <div>{emitente.enderecoLinha2}</div>
               </div>
               <div className="os-header-right">
-                  <div>{empresa?.Telefone || "(11) 91091-8448"}</div>
+                  <div>{emitente.telefone}</div>
                   <div>{empresa?.Email || "efatechassistencia@gmail.com"}</div>
-                  <div>Responsável: {empresa?.RazaoSocial?.split(' ')[0] || "Johnny Andrade"}<br />Ferreira</div>
+                  <div>Responsável: Johnny Andrade<br />Ferreira</div>
               </div>
           </div>
 

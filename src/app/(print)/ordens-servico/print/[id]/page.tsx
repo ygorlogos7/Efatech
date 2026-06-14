@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PrintButton } from "@/components/forms/PrintButton";
 import { getOrdemServicoById } from "@/actions/ordensServico";
 import { getEmpresa } from "@/actions/configuracoes";
+import { dadosEmitenteCupom } from "@/lib/cupom-emitente";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 
@@ -35,14 +36,7 @@ export default async function PrintOSPage({ params }: PageProps) {
     const equipMarca = eqParts.length >= 2 ? eqParts[1] : "—";
     const equipModelo = eqParts.length >= 3 ? eqParts.slice(2).join(" ") : "—";
 
-    const empresa = empRes.data || {
-        RazaoSocial: "EFATECH ASSISTÊNCIA TÉCNICA E ACESSÓRIOS",
-        Cnpj: "41.092.084/0001-18",
-        Logradouro: "Praça Lauro Gomes, 20",
-        Bairro: "Centro",
-        Cidade: "S. Bernardo do Campo",
-        Telefone: "(11) 91091-8448",
-    };
+    const emitente = dadosEmitenteCupom(empRes.data);
 
     // Cálculo de 90 dias
     const dataEntrada = new Date(os.DataAbertura);
@@ -137,11 +131,11 @@ export default async function PrintOSPage({ params }: PageProps) {
                 <div className="header-container">
                     <img src="/images/logo_efatech.png" alt="EFATECH" className="w-14 h-14 object-contain shrink-0" />
                     <div className="company-info leading-tight">
-                        <b>{empresa.RazaoSocial}</b><br />
-                        CNPJ: {empresa.Cnpj}<br />
-                        {empresa.Logradouro}, {empresa.Bairro}<br />
-                        {empresa.Cidade} - CEP: 09710-040<br />
-                        {empresa.Telefone}
+                        <b>{emitente.nome}</b><br />
+                        CNPJ: {emitente.cnpj}<br />
+                        {emitente.enderecoLinha1}<br />
+                        {emitente.enderecoLinha2}<br />
+                        {emitente.telefone}
                     </div>
                 </div>
 

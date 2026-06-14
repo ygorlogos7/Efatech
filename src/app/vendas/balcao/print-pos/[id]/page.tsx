@@ -1,6 +1,7 @@
 import { getVendaById } from "@/actions/vendas";
 import { getEmpresa } from "@/actions/configuracoes";
 import { formatCnpjCupom } from "@/lib/cupom-cliente-empresa";
+import { dadosEmitenteCupom } from "@/lib/cupom-emitente";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -31,15 +32,7 @@ export default async function PrintVendaPage({ params }: { params: Promise<{ id:
   }
 
   const venda = vendaRes.data;
-  const empresa = empRes.data || {
-    RazaoSocial: "EFATECH ASSISTÊNCIA TÉCNICA E ACESSÓRIOS",
-    Cnpj: "41.092.084/0001-18",
-    Logradouro: "Praça Lauro Gomes, 20",
-    Bairro: "Centro",
-    Cidade: "S. Bernardo do Campo",
-    Telefone: "(11) 91091-8448",
-  };
-
+  const emitente = dadosEmitenteCupom(empRes.data);
   const cliente = venda.Cliente;
 
   return (
@@ -117,11 +110,11 @@ export default async function PrintVendaPage({ params }: { params: Promise<{ id:
           <div className="header-container">
               <img src="/images/logo_efatech.png" alt="EFATECH" className="w-14 h-14 object-contain shrink-0" />
               <div className="company-info leading-tight">
-                  <b>EFATECH ASSISTÊNCIA TÉCNICA E ACESSÓRIOS</b><br />
-                  CNPJ: {empresa.Cnpj}<br />
-                  {empresa.Logradouro}, {empresa.Numero || '20'} - {empresa.Bairro}<br />
-                  {empresa.Cidade} - CEP: {empresa.Cep || '09710-040'}<br />
-                  {empresa.Telefone}
+                  <b>{emitente.nome}</b><br />
+                  CNPJ: {emitente.cnpj}<br />
+                  {emitente.enderecoLinha1}<br />
+                  {emitente.enderecoLinha2}<br />
+                  {emitente.telefone}
               </div>
           </div>
 
