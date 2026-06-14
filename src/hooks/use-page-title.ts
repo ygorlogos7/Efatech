@@ -24,8 +24,6 @@ const routeTitles: Record<string, string> = {
   "/vendas/balcao": "Vendas Balcao",
   "/estoque/movimentacoes": "Estoque - Movimentacoes",
   "/estoque/ajustes": "Estoque - Ajustes",
-  "/estoque/transferencias": "Estoque - Transferencias",
-  "/estoque/cotacoes": "Estoque - Cotacoes",
   "/estoque/compras/produtos": "Compras Produtos",
   "/estoque/compras/servicos": "Compras Servicos",
   "/estoque/trocas-devolucoes": "Trocas e Devolucoes",

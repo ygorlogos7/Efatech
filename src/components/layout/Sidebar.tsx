@@ -144,8 +144,6 @@ const MENU_ITEMS = [
     subItems: [
       { href: "/estoque/movimentacoes", label: "Movimentações", icon: Package },
       { href: "/estoque/ajustes", label: "Ajustes", icon: Settings },
-      { href: "/estoque/transferencias", label: "Transferências", icon: ArrowLeftRight },
-      { href: "/estoque/cotacoes", label: "Cotações", icon: FileText },
       {
         id: "estoque_compras",
         href: "#",
